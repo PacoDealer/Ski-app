@@ -1,0 +1,24 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
+
+# Recorded sessions pulled off the phone — these are data, not source.
+# Keep them out of git until we decide how to version fixtures deliberately.
+*.jsonl
+Sessions/
+
+# Python
+__pycache__/
+*.pyc
