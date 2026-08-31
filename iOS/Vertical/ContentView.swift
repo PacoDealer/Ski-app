@@ -103,6 +103,8 @@ struct ContentView: View {
             stat("ROUGH DESC", String(format: "%.0f m", recorder.roughDescent), .cyan)
             stat("GPS FIXES", "\(recorder.locCount)", .white)
             stat("BARO FIXES", "\(recorder.baroCount)", .white)
+            stat("DOPPLER", "\(recorder.dopplerValidCount)/\(recorder.locCount)", dopplerColor)
+            stat("TAGS", "\(recorder.markCount)", .indigo)
             stat("H.ACC", recorder.lastHorizontalAccuracy >= 0
                  ? String(format: "±%.0f m", recorder.lastHorizontalAccuracy) : "—",
                  accuracyColor)
@@ -114,6 +116,16 @@ struct ContentView: View {
     private var speedText: String {
         guard recorder.lastSpeed >= 0 else { return "—" }
         return String(format: "%.0f km/h", recorder.lastSpeed * 3.6)
+    }
+
+    /// Green once most fixes carry usable Doppler speed. Red means the receiver isn't giving us
+    /// the one field max speed depends on — worth knowing before a whole day is recorded.
+    private var dopplerColor: Color {
+        guard recorder.locCount > 5 else { return .secondary }
+        let ratio = Double(recorder.dopplerValidCount) / Double(recorder.locCount)
+        if ratio >= 0.8 { return .green }
+        if ratio >= 0.4 { return .yellow }
+        return .orange
     }
 
     private var accuracyColor: Color {
@@ -144,10 +156,23 @@ struct ContentView: View {
     /// dramatically easier to validate, so they're front and centre rather than buried.
     private var markButtons: some View {
         VStack(spacing: 10) {
-            Text("TAG A MOMENT")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // Confirmation that a tap actually registered. Without it, the smoke test showed
+            // three "Top" tags in three seconds — pressing again because nothing acknowledged
+            // the first press. In gloves, on a lift, that guessing is worse.
+            if let label = recorder.lastMarkLabel, let at = recorder.lastMarkAt,
+               now.timeIntervalSince(at) < 4 {
+                Label("Tagged “\(label)”", systemImage: "checkmark.circle.fill")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(.green, in: RoundedRectangle(cornerRadius: 12))
+                    .transition(.opacity)
+            } else {
+                Text("TAG A MOMENT")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            }
             HStack(spacing: 10) {
                 markButton("Top", "arrow.up.to.line")
                 markButton("Bottom", "arrow.down.to.line")

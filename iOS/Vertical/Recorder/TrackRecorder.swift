@@ -22,6 +22,13 @@ final class TrackRecorder {
     private(set) var lastGPSAltitude: Double = 0   // m
     private(set) var lastRelativeAltitude: Double = 0 // m, barometric, relative to start
     private(set) var lastHorizontalAccuracy: Double = -1
+    /// How many fixes carried a usable Doppler speed. Surfaced live because Doppler is the field
+    /// the entire max-speed approach depends on, and it's absent indoors — this makes "is the GPS
+    /// actually healthy?" answerable at a glance on the mountain instead of after a file pull.
+    private(set) var dopplerValidCount = 0
+    private(set) var markCount = 0
+    private(set) var lastMarkLabel: String?
+    private(set) var lastMarkAt: Date?
     private(set) var authStatus: CLAuthorizationStatus = .notDetermined
     private(set) var altimeterAvailable = CMAltimeter.isRelativeAltitudeAvailable()
     /// True when the bundle can't legally record in the background, so the UI can say so plainly.
@@ -104,6 +111,10 @@ final class TrackRecorder {
         startedAt = now
         locCount = 0
         baroCount = 0
+        dopplerValidCount = 0
+        markCount = 0
+        lastMarkLabel = nil
+        lastMarkAt = nil
         roughDescent = 0
         lastRelForDescent = nil
         lastError = nil
@@ -158,6 +169,9 @@ final class TrackRecorder {
     func mark(_ label: String) {
         guard isRecording else { return }
         writer?.write(MarkSample(dt: elapsed, label: label))
+        markCount += 1
+        lastMarkLabel = label
+        lastMarkAt = Date()
     }
 
     func note(_ text: String) {
@@ -194,6 +208,7 @@ final class TrackRecorder {
             )
             writer?.write(s)
             locCount += 1
+            if l.speed >= 0 && l.speedAccuracy >= 0 { dopplerValidCount += 1 }
             lastSpeed = l.speed
             lastGPSAltitude = l.altitude
             lastHorizontalAccuracy = l.horizontalAccuracy

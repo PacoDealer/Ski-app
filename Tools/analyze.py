@@ -169,6 +169,19 @@ def main(path):
         print("\n  No location samples. Nothing to analyse.")
         return
 
+    # CoreLocation hands over a cached fix the instant updates start — often timestamped seconds
+    # (sometimes much longer) BEFORE recording began. The recorder logs it deliberately: raw
+    # fidelity means never discarding data at capture time, because a dropped sample is gone
+    # forever while a filter can always be changed. Filtering belongs here instead.
+    stale = [l for l in locs if l["dt"] < 0]
+    if stale:
+        print(f"  stale       {len(stale)} pre-start cached fix(es) excluded "
+              f"(oldest {min(l['dt'] for l in stale):.1f}s before start)")
+        locs = [l for l in locs if l["dt"] >= 0]
+    if not locs:
+        print("\n  Only cached fixes. Nothing to analyse.")
+        return
+
     dur = locs[-1]["dt"] - locs[0]["dt"]
     print(f"\n  duration    {dur/3600:.2f} h ({dur/60:.0f} min)")
     print(f"  GPS fixes   {len(locs)}  ({len(locs)/dur:.2f} Hz)")
