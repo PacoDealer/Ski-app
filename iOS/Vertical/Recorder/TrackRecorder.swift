@@ -24,6 +24,8 @@ final class TrackRecorder {
     private(set) var lastHorizontalAccuracy: Double = -1
     private(set) var authStatus: CLAuthorizationStatus = .notDetermined
     private(set) var altimeterAvailable = CMAltimeter.isRelativeAltitudeAvailable()
+    /// True when the bundle can't legally record in the background, so the UI can say so plainly.
+    private(set) var backgroundUpdatesUnavailable = false
     private(set) var lastError: String?
 
     /// Naive running descent, summed from barometric deltas. **This is not the real vertical
@@ -107,11 +109,7 @@ final class TrackRecorder {
         lastError = nil
         isRecording = true
 
-        // Must be set only while we actually hold authorization, or CoreLocation throws.
-        if manager.authorizationStatus == .authorizedAlways
-            || manager.authorizationStatus == .authorizedWhenInUse {
-            manager.allowsBackgroundLocationUpdates = true
-        }
+        enableBackgroundUpdatesIfPossible()
         manager.showsBackgroundLocationIndicator = true
         manager.startUpdatingLocation()
 
@@ -225,11 +223,38 @@ final class TrackRecorder {
     fileprivate func authChanged(_ status: CLAuthorizationStatus) {
         authStatus = status
         note("authorization changed to \(status.rawValue)")
-        if isRecording,
-           status == .authorizedAlways || status == .authorizedWhenInUse {
-            manager.allowsBackgroundLocationUpdates = true
-        }
+        if isRecording { enableBackgroundUpdatesIfPossible() }
     }
+
+    /// Turns on background updates, but only when it is actually legal to do so.
+    ///
+    /// `allowsBackgroundLocationUpdates = true` raises an Objective-C exception — an instant,
+    /// uncatchable crash — if the bundle doesn't declare the `location` background mode. That
+    /// bit us once already: `INFOPLIST_KEY_UIBackgroundModes` is silently ignored by Xcode's
+    /// Info.plist generator, so the key vanished from the build with no warning and the app died
+    /// the moment recording started.
+    ///
+    /// A misconfiguration must never be able to kill a recording, so we check the bundle
+    /// ourselves and degrade to foreground-only with a visible warning instead.
+    private func enableBackgroundUpdatesIfPossible() {
+        let authorized = manager.authorizationStatus == .authorizedAlways
+            || manager.authorizationStatus == .authorizedWhenInUse
+        guard authorized else { return }
+
+        guard Self.declaresLocationBackgroundMode else {
+            backgroundUpdatesUnavailable = true
+            note("UIBackgroundModes lacks 'location' — recording is foreground-only")
+            return
+        }
+        backgroundUpdatesUnavailable = false
+        manager.allowsBackgroundLocationUpdates = true
+    }
+
+    /// Whether `Info.plist` actually declares the `location` background mode.
+    static let declaresLocationBackgroundMode: Bool = {
+        let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String]
+        return modes?.contains("location") ?? false
+    }()
 
     fileprivate func failed(_ error: Error) {
         lastError = error.localizedDescription

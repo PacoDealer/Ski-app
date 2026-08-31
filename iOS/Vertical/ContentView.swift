@@ -64,6 +64,9 @@ struct ContentView: View {
             if recorder.authStatus != .authorizedAlways {
                 warning("Location is not set to “Always”. Recording will stop when the phone locks. Fix in Settings → Vertical → Location.")
             }
+            if recorder.backgroundUpdatesUnavailable {
+                warning("This build can't record in the background — it will stop when the phone locks. Don't ski with it; tell Claude.")
+            }
             if !recorder.altimeterAvailable {
                 warning("Barometric altimeter unavailable — altitude will be GPS-only and much worse.")
             }

@@ -197,7 +197,7 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Vertical records your ski day.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Vertical uses the barometric altimeter to measure altitude far more accurately than GPS can.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIBackgroundModes = location;
+				INFOPLIST_FILE = "Vertical-Info.plist";
 				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
@@ -230,7 +230,7 @@
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Vertical records your ski day.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Vertical uses the barometric altimeter to measure altitude far more accurately than GPS can.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIBackgroundModes = location;
+				INFOPLIST_FILE = "Vertical-Info.plist";
 				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  This file exists for exactly one key.
+
+	  Everything else is generated from INFOPLIST_KEY_* build settings, but Xcode's generator
+	  does not honour INFOPLIST_KEY_UIBackgroundModes — it drops it silently, with no warning at
+	  build time. Without this array, `allowsBackgroundLocationUpdates = true` raises and the app
+	  dies the instant recording starts.
+
+	  GENERATE_INFOPLIST_FILE stays YES; Xcode merges the generated keys on top of this base.
+	-->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+
+	<!--
+	  Dropped by the generator for the same reason. Without it the Sessions folder is invisible
+	  to Finder and Files.app, which would leave AirDrop as the only way to get a day's data off
+	  the phone. Three independent recovery routes is the design; one is not.
+	-->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+</dict>
+</plist>
