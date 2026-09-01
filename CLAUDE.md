@@ -6,11 +6,23 @@
 
 A ski / snowboard day tracker for iOS that gives away everything Slopes charges for.
 
-The bet is **not** "same features, zero dollars" — it's that the whole category has soft numbers
-(documented 5–10% vertical overestimation, ~10 mph max-speed error, two phones side by side
-disagreeing by 1,878 ft) and **nobody has fixed accuracy**. That's a pure engineering problem with
-no dataset and no payroll behind it, which is exactly the kind of thing one careful developer beats
-a 12-person company at. Free is the distribution strategy; accuracy is the product.
+> ⚠️ **The original bet — "the category has soft numbers and nobody has fixed accuracy" — was
+> tested against three apps on a real mountain and is half false. Read `RESEARCH.md` §13.5 (the S8
+> audit) before planning anything.** Slopes ties us to within 1% on three independent measurements,
+> has 88K ratings at 4.9★, and is actively shipped. The accuracy gap we can demonstrate is against
+> **Carve**, which still has too few ratings to show an overview. So: *the app we can beat has no
+> users, and the app with the users we merely tie.* Free was already dead as a strategy in S4.
+>
+> **What survived the audit, and it is better:** Slopes' free tier gives a **daily summary only** —
+> per-run stats, speed heatmaps, offline maps, 3D and run comparison are all Premium. The paid line
+> in this category is drawn around **analysis**, not recording and not maps (the old "maps aren't
+> paywalled" line was simply wrong). Per-run detail is the thing people pay for, and it is the half
+> we have already built. The honest claim is **"per-run detail, free, and your raw track is a file
+> you own"** — not "we are more accurate."
+>
+> **Open decision D7: what is this project for?** Personal tool / narrow data-ownership product /
+> chase the IMU "how you ski" axis / stop. The roadmap quietly assumes it is a product; the audit
+> says nobody has decided that.
 
 Slopes' paywall protects GIS headcount and per-resort data labour, not hard technology. Open trail-map data
 (OpenSkiMap, 6,992 ski areas) is free and worldwide — but **do not repeat the old "3× larger than

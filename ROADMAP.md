@@ -5,7 +5,24 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S7)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S8)
+
+### ⚠️ S8 was a full audit, and it changes the framing. Read `RESEARCH.md` §13.5 first.
+
+Short version: **the accuracy thesis is half falsified by our own data** (Slopes ties us three
+times over; the app we beat, Carve, has no users), **"maps aren't paywalled" was false** (Slopes'
+free tier has trail maps), and the real paid line in this category is **analysis** — Slopes' free
+tier gives a daily summary only, and per-run detail is Premium. That last one is the better
+positioning and it is the half we already built.
+
+**The one thing with a deadline:** Martin leaves Portillo ~2026-09-07 and there is no snow within
+reach for ~3 months after. Desk work has unlimited runway; **capture does not**. And the recorder
+captures **no accelerometer and no gyroscope** — `TrackRecorder` never touches `CMMotionManager` —
+which permanently forecloses every "how you ski" question (turns, carving, airtime) for any day we
+record without it. See §13.5 for the sequencing that doesn't risk tomorrow's build.
+
+**Open decision D7 — what is this project for?** Personal tool, narrow data-ownership product, the
+IMU axis, or stop. The plan below quietly assumes "product". Nobody has actually decided.
 
 ### S7 in four lines
 
@@ -171,6 +188,7 @@ not a lost recording. But that is an argument, not a test.
 | **D4** | 3D in v1 | **Postponed.** Not killed — revisit when MapLibre ships iOS terrain, or when there's appetite for a Metal-shaped project. Phase 3 stays written down so the option is costed rather than forgotten. |
 | **D5** | $99 Apple Developer Program | **Not yet** — "I will eventually get it done." See the standing cost below; plan around a free account until then. |
 | **D6** | Name | **"Vertical" stays a placeholder.** Don't spend cycles on naming; revisit before anything is published. |
+| **D7** | **What is this project for?** (opened S8) | **Open — and it gates everything else.** (a) personal tool + engineering playground, (b) narrow product for people who want their data, (c) chase the IMU "how you ski" axis, (d) stop. The accuracy-vs-Slopes framing that the rest of this file was built on did not survive the audit, so the plan should not be executed as written until this is answered. `RESEARCH.md` §13.5. |
 | **A5** | Does Carve use the barometer? | **No** — absent from Motion & Fitness after a real 1 h 05 m recording. Its pipeline is now fully characterised (`RESEARCH.md` §2.2). |
 
 D2 (backend/social) and D3 (where we test next) are still open, but neither blocks current work:
@@ -338,7 +356,7 @@ measurement.**
 
 | Against | True claim | Claim we must NOT make |
 |---|---|---|
-| **Slopes** ($34.99/yr) | Same numbers, free — measured at **0.8%, 1.2% and 1.0%** on vertical across two sessions and the saved day total, ~2% on run-1 top speed. Plus: your raw track is a file you can read, and maps aren't paywalled. | That Slopes is inaccurate. It isn't. Saying so would be the exact sin we caught Carve committing. |
+| **Slopes** ($34.99/yr) | Same numbers, free — measured at **0.8%, 1.2% and 1.0%** on vertical across two sessions and the saved day total, ~2% on run-1 top speed. Plus **run-by-run stats free** (Slopes' free tier gives a *daily summary only*; per-run detail, speed heatmaps, offline maps, 3D and run comparison are all Premium), and your raw track is a file you can read. | That Slopes is inaccurate. It isn't. **And do not say "maps aren't paywalled" — S8 checked, and Slopes' free tier includes resort trail maps.** What Premium gates is the *analysis*, not the map. |
 | **Carve** (free) | **+10.1% vertical** on the same four descents, **+18.9% on the saved whole day** (S7 — the two figures are different questions: what its pipeline costs while skiing, and what a real day with a lunch break costs). And it published a **GPS multipath glitch as the day's top speed** — a number we can point at, second by second, in our own raw file. | That Carve is a toy. It ships more features than we do today. Also: don't quote +18.9% as if it were the skiing error, or +10.1% as if it were what a user sees at the end of the day. Quote both, labelled. |
 | **The category** | Naive methods cannot reject a bad second, and one bad second owns the day's headline number. We can show the second. | "+136% more accurate." That ratio is glitch-vs-gate; on clean data the same comparison is +9%. See WORKFLOW R12. |
 

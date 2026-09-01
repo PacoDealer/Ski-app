@@ -826,7 +826,9 @@ phase of the roadmap.
 |---|---|---|---|
 | A1 | Ski apps overestimate vertical 5–10%, so accuracy is our wedge against Slopes | ❌ | **Slopes: 912 m vs our 905 m, 0.8%** (§5.1.1). The folklore is about Ski Tracks and Garmin. **Carve** does fit it (+10.1%). Accuracy is a wedge against Carve, a tie against Slopes. |
 | A2 | Slopes' hand-crafted premium maps cover ~50 resorts, vs 6,992 open — "3× larger" | ❌ | Two different numbers got welded together. The ~50 **[V]** is from the founder's blog about an *early season* of hand-crafted maps — years stale. The "50+" in current Slopes marketing is **live lift & trail status in North America**. Present-day map coverage is stated only as "thousands of resorts worldwide", uncounted. **"3× larger" was our own arithmetic on mismatched figures and is withdrawn.** Open data is probably broader; nobody has measured it. |
-| A3 | Slopes Premium is ~$29.99/yr, ~$49.99 family | ❌ | **$34.99/yr, $59.99 family** (getslopes.com/premium, read 2026-09-01), plus in-app day and week passes. Prices had drifted since S1. |
+| A3 | Slopes Premium is ~$29.99/yr, ~$49.99 family | ⚠️ **both numbers are right — the price is per storefront** | US App Store listing, read 2026-09-01: **Premium Unlimited $34.99, Family $59.99**, Single Pass $3.99, 7-Pass Bundle $11.99. But the offer *inside the app on Martin's phone* the same day reads **"Then US$ 29,99 billed yearly"** (`Data/comparisons/2026-09-01_slopes_1618.png`) — his storefront is not the US one. **S5 "corrected" $29.99 to $34.99 and was half wrong.** Quote the storefront with the price, and remember the number a user actually sees may be lower than the one we cite at them. |
+| A22 | Slopes paywalls its maps | ❌ | getslopes.com/premium, read 2026-09-01: the **free** tier includes "Resort Trail Maps". Premium gates **run-by-run stats, winter maps + speed heatmaps, offline trail maps, virtual 3D mountains, level-of-effort insights, and run comparison**. So the free/paid line is drawn around **analysis**, not cartography — which kills "maps aren't paywalled" as a differentiator and hands us a better one: **Slopes' free tier gives a daily summary only, and per-run detail is the thing people pay for.** We already compute it. |
+| A23 | Carve is a real competitive threat | ⚠️ not yet | App Store listing, read 2026-09-01: still *"hasn't received enough ratings or reviews to display an overview"* — unchanged since S4 in April. Monetised only by donation IAPs ($1.99–$19.99 "buy me a coffee/lift ticket"). Slopes over the same read: **88K ratings, 4.9★**, last updated v2026.13 in May. **The accuracy gap we can demonstrate is against the app with no users; the app with the users is the one we tie.** This is the central strategic fact of the project (§13.5). |
 | A4 | Carve's 3D replay is MapKit, so Apple gives us 3D free (the S4 finding that reopened D4) | ❌ | See A9. MapKit **cannot** do what Carve's listing describes, so the inference from the " Maps · Legal" attribution was wrong — that attribution is on Carve's 2D *record* screen (visible in `Data/comparisons/2026-09-01_carve.png`), not necessarily on the 3D replay. |
 | A5 | Carve is GPS-only and inherits the category error | ✅ **confirmed** | Still absent from **Motion & Fitness** after a real 1 h 05 m recording (2026-09-01) — it never started `CMAltimeter`, so altitude is GPS-only. Our own GPS altitude with 3 m hysteresis, summed, gives **992 m** against its printed **996 m** (0.4%). My earlier reading — that 996 sitting between our baro-summed 944 and GPS-summed 1,227 implied barometer use — was wrong: it implied *smoothing*, not a barometer. See §2.2. |
 | A6 | Carve has no traction | ✅ | Still "not received enough ratings or reviews to display an overview" (App Store, 2026-09-01). |
@@ -898,6 +900,117 @@ phase of the roadmap.
    corrects elevation against a DEM for some activity types and uses the device barometer for
    others, so **establish which it did before treating its number as a sensor measurement** (R3 —
    primary source, and read it for the iOS ski/snowboard activity specifically, not in general).
+
+---
+
+### 13.5 The S8 audit — everything reconsidered, nothing taken for granted (2026-09-01)
+
+Martin asked for a full audit. This section is the uncomfortable half; §13.1–13.4 hold the claims,
+this holds the judgement about whether the project is pointed anywhere.
+
+#### What actually exists, counted rather than remembered
+
+| | |
+|---|---|
+| App code | **1,524 lines** of Swift, 8 files |
+| Offline tools | 885 lines (`analyze.py`, `detect.py`, `replay.*`) |
+| Docs | **2,171 lines** across 5 markdown files |
+| Real data | **2 sessions, one morning, one mountain, one phone** (4.4 MB) |
+| Age of the codebase | **2 days** (first commit 2026-08-31, 27 commits) |
+
+Two things follow. **We have written 40% more prose than software**, on a two-day-old codebase —
+some of it earned, because the findings are real and cost real analysis, but it is a ratio to watch
+rather than be proud of. And **the app is a data-collection rig, not a ski app**: START/STOP, live
+tiles, four tag buttons, and a list of filenames. No map, no run history, no per-run screen, no
+chart, no onboarding. That is a defensible thing to have built first — capture is irreversible and
+analysis is not — but nobody should describe it as an early version of a product.
+
+#### The thesis, audited
+
+The project's stated bet is that the category has soft numbers and nobody has fixed accuracy.
+**Our own measurements have now falsified the important half of that.**
+
+- **Slopes ties us.** 0.8%, 1.2%, 1.0% on vertical across two sessions and the saved day total; ~2%
+  on run-1 top speed. Three independent measurements, all a tie. Accuracy is not a wedge here.
+- **Slopes is not a soft target in any other sense either.** 88K ratings at **4.9★**, shipping
+  (v2026.13, May 2026), with a genuinely useful free tier.
+- **Carve is beatable and it does not matter yet.** +10% skiing, +18.9% on the saved day, and it
+  published a multipath glitch as its top speed. But it *still* has too few ratings to show an
+  overview, unchanged since April, and is monetised by tip jar. **The accuracy gap we can
+  demonstrate is against the app with no users; the app with the users is the one we tie.**
+- **"We'll be the free one" was already dead** (S4) and nothing has revived it.
+
+**Therefore: as a commercial product aimed at Slopes, this project has no wedge, and the audit
+should say so plainly rather than keep the thesis on life support.** Add that a free Apple account
+cannot ship to TestFlight or the App Store at all, so "ship it" is not currently reachable in
+principle, not just in practice.
+
+#### What the audit found that is *not* dead
+
+Checking `getslopes.com/premium` against the free tier produced a better positioning than the one
+we had, and it was sitting in plain sight (A22). **Slopes' free tier gives a daily summary only.
+Run-by-run stats are Premium**, along with speed heatmaps, offline maps, 3D and run comparison. So
+the paid line in this category is drawn around **analysis**, not recording and not maps.
+
+That is precisely the half we have already built. `detect.py` produces per-run vertical, duration,
+and rate with no user input; `LiveMetrics` does it live on the phone. **"Per-run detail, free, and
+your raw track is a file you own" is a true, specific, verifiable claim** — where "as accurate as
+Slopes" is true but not a reason to switch, and "maps aren't paywalled" was simply false.
+
+#### The one thing on the board with a real deadline
+
+**Martin is at Portillo until ~2026-09-07. After that there is no snow within reach until the
+northern season, ~3 months.** Everything else in this project is desk work with an unlimited
+runway; **capture is the only activity with a closing window**, and a day skied without capture is
+gone forever (which is already the project's stated first principle).
+
+So the audit's sharpest question is: *is the recorder capturing everything we might want in three
+months?* Counted from the fixture, a session file contains `loc`, `baro`, `abs`, `mark`, `note`,
+`meta`, `end` — location and barometer, nothing else. **`TrackRecorder` never instantiates
+`CMMotionManager`. There is no accelerometer, no gyroscope, no device attitude, in any file we
+have.**
+
+That closes off, permanently and retroactively, every question about **how** someone skis rather
+than where they went — turn count and rhythm, carving versus skidding, airtime, chatter, G-force
+in a turn. **[A]** on whether a pocketed phone can measure any of that well; the point is not that
+it can, the point is that **the cost of capturing is small and the cost of not capturing is
+absolute**, and the decision has a five-day fuse. It is also the one axis where the category has no
+incumbent at phone price: Slopes and Carve both measure where you went, and Carv charges ~£200 for
+a boot sensor to measure how you ski.
+
+**Risk, stated honestly:** adding IMU capture touches the recorder, and the recorder is the one
+component that must not break during the last data days of the season. It would also confound the
+battery measurement, which is itself an open question needing a 3 h+ recording. Sequencing that
+respects both: **leave tomorrow's known-good build alone**, build and walk-test IMU capture at the
+desk, install it for the day after.
+
+#### What to cut
+
+- **Phase 2 maps.** Weeks of work to arrive at something Slopes gives away free and Carve already
+  ships. It is not a differentiator and never was; it was inherited from a competitor feature list.
+  Keep it optional, well below detection work.
+- **Phase 3 / 3D.** Already cut in S5. Stays cut.
+- **Any positioning built on accuracy versus Slopes.** Replaced by the per-run-detail claim above.
+- **Doc growth.** Five files and 2,171 lines on a two-day codebase is enough. New findings edit
+  existing sections; they do not open new documents.
+
+#### The decision this leaves for Martin (D7)
+
+The audit cannot answer what the project is *for*, and the right next steps differ sharply by
+answer:
+
+- **(a) Personal tool and engineering playground.** Entirely legitimate, matches what is actually
+  happening, and it is producing real findings — we have characterised a shipping competitor's
+  pipeline from the outside and caught it publishing a corrupt sample. Optimise for interesting
+  problems, ignore App Store readiness, do not buy the $99 program.
+- **(b) A narrow product for people who want their data.** Per-run detail free, raw file you own,
+  GPX in and out. Needs the $99 program and a real UI, and the audience is small.
+- **(c) Chase the how-you-ski axis** the IMU opens up. The only genuinely unoccupied ground found
+  in this audit, and the only one with a capture deadline.
+- **(d) Stop.** Named for completeness. The two fixtures and the findings keep their value either
+  way.
+
+**Nothing in the plan below should be read as assuming (b).** The current roadmap quietly does.
 
 ---
 
