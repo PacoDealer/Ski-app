@@ -58,6 +58,9 @@ final class TrackRecorder {
 
     private let manager = CLLocationManager()
     private let altimeter = CMAltimeter()
+    /// Owns its own queue and writes straight to disk — nothing on the location or barometer path
+    /// depends on it. See `MotionRecorder`.
+    private let motion = MotionRecorder()
     private var writer: SampleWriter?
     private var proxy: LocationDelegateProxy?
     private var batteryTimer: Timer?
@@ -126,6 +129,7 @@ final class TrackRecorder {
         lastMarkAt = nil
         roughDescent = 0
         lastRelForDescent = nil
+        MotionRecorder.sampleCount.withLock { $0 = 0 }
         metrics = LiveMetrics()
         lastError = nil
         resumedAfterInterruption = nil
@@ -214,6 +218,8 @@ final class TrackRecorder {
             }
         }
 
+        if let writer { motion.start(writer: writer, elapsed: elapsed) }
+
         batteryTimer?.invalidate()
         batteryTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.logBattery() }
@@ -229,6 +235,8 @@ final class TrackRecorder {
         manager.allowsBackgroundLocationUpdates = false
         altimeter.stopRelativeAltitudeUpdates()
         altimeter.stopAbsoluteAltitudeUpdates()
+        // Before the writer is closed below — `stop()` flushes the final partial second into it.
+        motion.stop()
         batteryTimer?.invalidate()
         batteryTimer = nil
 
@@ -237,7 +245,8 @@ final class TrackRecorder {
         metrics.finish()
 
         logBattery()
-        writer?.write(EndSample(dt: elapsed, locCount: locCount, baroCount: baroCount))
+        writer?.write(EndSample(dt: elapsed, locCount: locCount, baroCount: baroCount,
+                                imuCount: MotionRecorder.sampleCount.current))
         writer?.close()
         writer = nil
         startedAt = nil
@@ -259,7 +268,15 @@ final class TrackRecorder {
     }
 
     /// Force everything to disk. Called when the app is backgrounded or about to die.
-    func flush() { writer?.flush() }
+    func flush() {
+        motion.flushPending()
+        writer?.flush()
+    }
+
+    /// Motion samples written this session, and whether the sensor is even present. Surfaced on the
+    /// main screen so a silently dead IMU is visible from the first chairlift (R17).
+    var imuSampleCount: Int { MotionRecorder.sampleCount.current }
+    var motionAvailable: Bool { motion.isAvailable }
 
     var elapsed: TimeInterval {
         guard let startedAt else { return 0 }

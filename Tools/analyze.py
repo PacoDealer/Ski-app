@@ -51,7 +51,8 @@ MAX_SPEED_H_ACC = 15.0  # m
 
 
 def load(path):
-    recs = {"meta": None, "loc": [], "baro": [], "abs": [], "mark": [], "note": [], "end": None}
+    recs = {"meta": None, "loc": [], "baro": [], "abs": [], "mark": [], "note": [],
+            "imu": [], "end": None}
     bad = 0
     with open(path) as f:
         for line in f:
@@ -325,6 +326,36 @@ def main(path):
         print(f"  usable fixes (<= {MAX_H_ACC:.0f} m)  {good}/{len(haccs)}  ({100*good/len(haccs):.1f}%)")
     dropped = sum(1 for l in locs if l["speed"] < 0 or l["speedAcc"] < 0)
     print(f"  fixes with no valid Doppler speed  {dropped}/{len(locs)}")
+
+    # ---- motion capture health ---------------------------------------------------------------
+    #
+    # S8 added device motion at 25 Hz. It is the one sensor with no other symptom when it fails —
+    # location and barometer keep working, the day looks normal, and the absence is only noticed
+    # months later when the data is wanted. So it gets checked on every pull, and the check is
+    # coverage rather than presence: a file with 40 minutes of motion out of a 3-hour day is a
+    # worse outcome than one with none, because it looks fine.
+    imu = recs["imu"]
+    print(f"\n  --- MOTION (IMU) ---")
+    if not imu:
+        v = (recs["meta"] or {}).get("formatVersion", 1)
+        print("  none in this file" + ("  (format v1 — recorded before motion capture existed)"
+                                       if v < 2 else "  ⚠️  format v2 but no samples — check the sensor"))
+    else:
+        n = sum(len(b["ax"]) for b in imu)
+        span = imu[-1]["dt"] + len(imu[-1]["ax"]) / imu[-1]["hz"] - imu[0]["dt"]
+        print(f"  {n} samples in {len(imu)} batches   nominal {imu[0]['hz']:.0f} Hz"
+              f"   effective {n/span:.1f} Hz over {span/60:.1f} min")
+        # Every batch is one second, so consecutive dt should step by ~1 s. Anything much larger is
+        # a stretch of the day with no motion recorded, and it is worth naming rather than averaging
+        # away — that is exactly the failure this block exists to catch.
+        gaps = [(b["dt"] - a["dt"] - len(a["ax"]) / a["hz"])
+                for a, b in zip(imu, imu[1:])]
+        big = [g for g in gaps if g > 2.0]
+        cover = 100 * n / imu[0]["hz"] / span if span else 0
+        print(f"  coverage {cover:.1f}% of the span"
+              + (f"   ⚠️  {len(big)} gap(s) > 2 s, worst {max(big):.0f} s" if big else "   no gaps > 2 s"))
+        if dur and span < 0.9 * dur:
+            print(f"  ⚠️  motion covers {span/60:.1f} min of a {dur/60:.0f} min session")
 
     # ---- SPEED: the headline comparison --------------------------------------------------
     print(f"\n  --- MAX SPEED: how you measure it changes the answer ---")

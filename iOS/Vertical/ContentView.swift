@@ -173,6 +173,7 @@ struct ContentView: View {
             stat("GPS FIXES", "\(recorder.locCount)", .white)
             stat("BARO FIXES", "\(recorder.baroCount)", .white)
             stat("DOPPLER", "\(recorder.dopplerValidCount)/\(recorder.locCount)", dopplerColor)
+            stat("MOTION", motionText, motionColor)
             stat("TAGS", "\(recorder.markCount)", .indigo)
             stat("H.ACC", recorder.lastHorizontalAccuracy >= 0
                  ? String(format: "±%.0f m", recorder.lastHorizontalAccuracy) : "—",
@@ -195,6 +196,24 @@ struct ContentView: View {
         if ratio >= 0.8 { return .green }
         if ratio >= 0.4 { return .yellow }
         return .orange
+    }
+
+    /// Motion samples in thousands — at 25 Hz the raw count runs away from a glance almost
+    /// immediately, and what matters here is only "is it still climbing?".
+    private var motionText: String {
+        guard recorder.motionAvailable else { return "N/A" }
+        let n = recorder.imuSampleCount
+        return n >= 1000 ? String(format: "%.0fk", Double(n) / 1000) : "\(n)"
+    }
+
+    /// The IMU is the one sensor with no other symptom when it dies — the file just quietly lacks a
+    /// day of motion, and nobody finds out until the season is over. So it gets a tile that goes
+    /// orange the moment it stops climbing while recording.
+    private var motionColor: Color {
+        guard recorder.motionAvailable else { return .orange }
+        guard recorder.isRecording else { return .white }
+        // ~25 Hz, so after 4 s of recording there should be something. Zero past that is a fault.
+        return recorder.elapsed > 4 && recorder.imuSampleCount == 0 ? .orange : .green
     }
 
     private var accuracyColor: Color {

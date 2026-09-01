@@ -16,7 +16,9 @@ import Foundation
 nonisolated final class SampleWriter: @unchecked Sendable {
 
     /// Bumped whenever the on-disk format changes, so old recordings stay readable.
-    static let formatVersion = 1
+    /// 2 — added the `imu` record and `end.imuCount` (S8). Purely additive: a reader that buckets
+    /// by `t` gains a bucket and loses nothing, so the two Portillo fixtures stay valid at v1.
+    static let formatVersion = 2
 
     private let queue = DispatchQueue(label: "com.gamberg.vertical.writer", qos: .utility)
     private let handle: FileHandle

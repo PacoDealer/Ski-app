@@ -11,9 +11,47 @@ nonisolated enum SampleKind: String, Codable {
     case loc        // CLLocation
     case baro       // CMAltimeter relative altitude (barometric)
     case abs        // CMAltimeter absolute altitude
+    case imu        // batched device motion — accelerometer + gyroscope
     case mark       // user-pressed marker
     case note       // lifecycle event (background, resumed, authorization change, …)
     case end        // clean session close
+}
+
+/// One second of device motion, stored column-wise.
+///
+/// **Why this exists.** GPS and the barometer arrive at about 1 Hz, and a ski turn takes one to
+/// two seconds — so every file recorded before 2026-09-01 can describe the path taken and nothing
+/// at all about the act of skiing it. Turn rhythm, airtime, chatter and how hard a ski is loaded
+/// all live above 1 Hz. Analysis can be rewritten forever; a day skied without this is gone, and
+/// there were about five ski days left in the season when it was added. That asymmetry is the
+/// whole argument — not a belief that any particular metric will work.
+///
+/// **Why column-wise, and why batched.** `SampleWriter` fsyncs every 20 records, which at 25 Hz
+/// would mean an fsync roughly every 0.8 s. Batching a second at a time keeps the write and sync
+/// rate at ~1 Hz, exactly as before, and storing parallel arrays instead of 25 little objects
+/// drops the repeated JSON keys: about 1.6 kB per second, ~5.7 MB per hour.
+///
+/// **What is logged, and what isn't.** `userAcceleration` and `gravity` are kept separately —
+/// that is the useful part for a phone loose in a pocket, because gravity gives the device's
+/// orientation relative to vertical without needing to know how the phone is sitting. Attitude is
+/// deliberately omitted: roll and pitch are recoverable from `gravity`, and yaw is not trustworthy
+/// without a magnetometer reference we have no reason to trust on a chairlift.
+nonisolated struct ImuSample: Codable {
+    let t = SampleKind.imu
+    /// Seconds since session start, for the **first** sample in the batch.
+    let dt: TimeInterval
+    /// Nominal sample rate, so a reader never has to guess the spacing.
+    let hz: Double
+    /// Motion the user contributes, gravity removed, in g. Device axes.
+    let ax: [Double], ay: [Double], az: [Double]
+    /// Rotation rate in rad/s. Device axes.
+    let gx: [Double], gy: [Double], gz: [Double]
+    /// The gravity vector in g, i.e. which way is down in device coordinates.
+    let vx: [Double], vy: [Double], vz: [Double]
+
+    enum CodingKeys: String, CodingKey {
+        case t, dt, hz, ax, ay, az, gx, gy, gz, vx, vy, vz
+    }
 }
 
 nonisolated struct MetaSample: Codable {
@@ -113,6 +151,8 @@ nonisolated struct EndSample: Codable {
     let dt: TimeInterval
     let locCount: Int
     let baroCount: Int
+    /// Individual motion samples, not batches. Zero on a device with no IMU, or if it never started.
+    let imuCount: Int
 
-    enum CodingKeys: String, CodingKey { case t, dt, locCount, baroCount }
+    enum CodingKeys: String, CodingKey { case t, dt, locCount, baroCount, imuCount }
 }
