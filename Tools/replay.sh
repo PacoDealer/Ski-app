@@ -10,5 +10,7 @@ set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 out=${TMPDIR:-/tmp}/vertical-replay
 swiftc -O -parse-as-library -o "$out" \
-    "$root/Tools/replay.swift" "$root/iOS/Vertical/Recorder/LiveMetrics.swift"
+    "$root/Tools/replay.swift" \
+    "$root/iOS/Vertical/Recorder/LiveMetrics.swift" \
+    "$root/iOS/Vertical/Recorder/SessionReplay.swift"
 exec "$out" "$@"

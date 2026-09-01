@@ -1,0 +1,258 @@
+import SwiftUI
+
+/// What a recorded day actually was — runs, vertical, top speed — on the phone, with no cable.
+///
+/// Before this screen the app was a capture rig: after a ski day it showed a filename and a byte
+/// count, and every number that mattered needed a Mac and Python. It replays the file through the
+/// same `LiveMetrics` that ran live, via `SessionReplay`, so nothing here is a second opinion.
+///
+/// It is also the half of the category that is paid: Slopes' free tier gives a **daily summary
+/// only**, and per-run detail is Premium (`RESEARCH.md` §13.5).
+///
+/// This one is allowed to be less shouty than `ContentView` — it gets read sitting down, indoors,
+/// not at speed in gloves. The **RECORDING QUALITY** section is the exception in spirit: it exists
+/// so a bad day is visible as a bad day rather than as a plausible number, which is the whole
+/// reason we keep raw files.
+struct SessionDetailView: View {
+    let file: SessionFile
+
+    @State private var summary: SessionReplay.Summary?
+    @State private var failed = false
+
+    var body: some View {
+        Group {
+            if let s = summary {
+                content(s)
+            } else if failed {
+                ContentUnavailableView("Couldn't read this recording",
+                                       systemImage: "exclamationmark.triangle",
+                                       description: Text("The file is still on disk and still valid — share it to the Mac and run Tools/analyze.py."))
+            } else {
+                // A 3 h day with motion is ~20 MB and tens of thousands of lines. Say so rather
+                // than showing a bare spinner over a screen that looks stuck.
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("Replaying \(file.sizeText)…")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .navigationTitle(file.displayName)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ShareLink(item: file.url) {
+                    Image(systemName: "square.and.arrow.up")
+                }
+            }
+        }
+        .task(id: file.id, load)
+    }
+
+    /// Parsing happens off the main thread — this is CPU-bound over the whole file, and blocking
+    /// the main actor here would freeze the list behind it for seconds on a full ski day.
+    @Sendable private func load() async {
+        let url = file.url
+        let result = await Task.detached(priority: .userInitiated) {
+            try? SessionReplay.summarize(url)
+        }.value
+        summary = result
+        failed = result == nil
+    }
+
+    // MARK: - Content
+
+    private func content(_ s: SessionReplay.Summary) -> some View {
+        List {
+            Section {
+                headline(s)
+                    .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
+            }
+
+            Section("THE DAY") {
+                row("Started", s.startedAt.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "—")
+                row("Duration", duration(s.duration))
+                // Slopes prints this same pair on its day card, and in S7 it graded our detector
+                // for free: our ski time read +33% high because runs counted standing at the top.
+                row("Ski time", duration(s.skiTime))
+                if !s.closedCleanly {
+                    row("Closed", "interrupted — data intact", tint: .orange)
+                }
+                if s.resumeSeams > 0 {
+                    row("Resumed", "\(s.resumeSeams)× after an interruption", tint: .orange)
+                }
+            }
+
+            if s.runs.isEmpty {
+                Section("RUNS") {
+                    Text("No descent over \(Int(LiveMetrics.minRunDropM)) m in this recording.")
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Section("\(s.runs.count) RUNS") {
+                    ForEach(Array(s.runs.enumerated()), id: \.offset) { i, r in
+                        runRow(index: i + 1, run: r)
+                    }
+                }
+            }
+
+            Section {
+                row("Doppler speed", "\(s.dopplerValidCount) of \(s.locCount) fixes",
+                    tint: s.dopplerRatio >= 0.8 ? .green : .orange)
+                row("Horizontal accuracy",
+                    s.hAccMedian >= 0 ? String(format: "median ±%.1f m", s.hAccMedian) : "—",
+                    tint: s.hAccMedian >= 0 && s.hAccMedian <= 15 ? .green : .orange)
+                // Stated, never hidden: the gate is a choice, and its cost belongs on screen.
+                row("Rejected by speed gate", "\(s.speedGateRejected) fixes")
+                if s.staleFixCount > 0 {
+                    row("Pre-start cached fixes", "\(s.staleFixCount) excluded")
+                }
+                if s.metrics.subThresholdDropM > 0 {
+                    row("Descent under threshold",
+                        String(format: "%.0f m not counted", s.metrics.subThresholdDropM))
+                }
+                row("Barometer", "\(s.baroCount) readings")
+                motionRow(s)
+                if s.markCount > 0 { row("Hand tags", "\(s.markCount)") }
+                row("File", "\(s.byteCount.formattedBytes) · v\(s.formatVersion)")
+            } header: {
+                Text("RECORDING QUALITY")
+            } footer: {
+                Text("These are the numbers that say whether the day above can be trusted. A recording is only as good as the fixes underneath it.")
+            }
+
+            if !s.marks.isEmpty {
+                Section("HAND TAGS") {
+                    ForEach(Array(s.marks.enumerated()), id: \.offset) { _, m in
+                        HStack {
+                            Text(m.label)
+                            Spacer()
+                            Text(clock(m.dt))
+                                .font(.body.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func headline(_ s: SessionReplay.Summary) -> some View {
+        HStack(spacing: 10) {
+            bigStat("VERTICAL", String(format: "%.0f", s.descentM), unit: "m")
+            bigStat("TOP SPEED",
+                    s.maxSpeedMS >= 0 ? String(format: "%.0f", s.maxSpeedMS * 3.6) : "—",
+                    unit: "km/h",
+                    // The ungated number is what an app without an accuracy gate would print.
+                    // When the two diverge the day contains a multipath burst — which is exactly
+                    // how Carve published a 4-second glitch as its top speed for 2026-09-01.
+                    note: s.maxSpeedUngatedMS > s.maxSpeedMS
+                        ? String(format: "ungated %.0f", s.maxSpeedUngatedMS * 3.6)
+                        : "gate clean")
+            bigStat("RUNS", "\(s.runs.count)")
+        }
+    }
+
+    private func bigStat(_ label: String, _ value: String,
+                         unit: String? = nil, note: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(value)
+                    .font(.system(size: 30, weight: .heavy, design: .rounded))
+                if let unit {
+                    Text(unit)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+            Text(note ?? " ")
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(.orange)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func runRow(index: Int, run: LiveMetrics.Run) -> some View {
+        HStack(spacing: 12) {
+            Text("\(index)")
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 22, alignment: .trailing)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(String(format: "%.0f m", run.drop))
+                    .font(.headline)
+                Text("\(clock(run.startTime)) → \(clock(run.endTime))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(duration(run.duration))
+                    .font(.body.monospacedDigit())
+                // Vertical metres per second of descent. It separates a pitch from a traverse
+                // without needing a map, and it is how run 2 of session 1 shows up as the
+                // 0.2 m/s crawl it was.
+                Text(String(format: "%.1f m/s", run.drop / max(run.duration, 1)))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// The IMU is the one sensor whose failure has no other symptom — the file just quietly lacks
+    /// a day of motion. Coverage, not rate, is the number that catches it.
+    @ViewBuilder
+    private func motionRow(_ s: SessionReplay.Summary) -> some View {
+        if s.imuCount > 0 {
+            let ok = s.imuCoverage >= 0.95 && s.imuMaxGapS < 30
+            row("Motion",
+                String(format: "%.0f%% coverage · %.0f Hz", s.imuCoverage * 100, s.imuRateHz),
+                tint: ok ? .green : .orange)
+            if !ok {
+                row("Longest motion gap", String(format: "%.0f s", s.imuMaxGapS), tint: .orange)
+            }
+        } else if s.formatVersion >= 2 {
+            row("Motion", "none recorded", tint: .orange)
+        }
+    }
+
+    private func row(_ label: String, _ value: String, tint: Color? = nil) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text(value)
+                .foregroundStyle(tint ?? .secondary)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    // MARK: - Formatting
+
+    /// Elapsed time from the session start, as `h:mm:ss` — the same clock the marks use, so a run
+    /// can be lined up against a hand tag by eye.
+    private func clock(_ t: TimeInterval) -> String {
+        let s = Int(t.rounded())
+        return s >= 3600
+            ? String(format: "%d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
+            : String(format: "%d:%02d", s / 60, s % 60)
+    }
+
+    private func duration(_ t: TimeInterval) -> String {
+        let m = Int((t / 60).rounded())
+        return m >= 60 ? "\(m / 60) h \(m % 60) min" : "\(m) min"
+    }
+}
+
+private extension Int {
+    var formattedBytes: String {
+        ByteCountFormatter.string(fromByteCount: Int64(self), countStyle: .file)
+    }
+}

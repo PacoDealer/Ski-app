@@ -44,23 +44,28 @@ struct SessionsView: View {
 
     private func row(_ s: SessionFile) -> some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(s.displayName)
-                    .font(.headline)
-                HStack(spacing: 10) {
-                    Text(s.sizeText)
-                    // A session with no `end` record was cut short — crash, force-quit, or dead
-                    // battery. The file is still perfectly valid; we say so plainly instead of
-                    // hiding it or asking a question about it.
-                    if !s.closedCleanly {
-                        Text("interrupted — data intact")
-                            .foregroundStyle(.orange)
+            // Tapping the row replays the file and shows what the day actually was. The share
+            // button stays a separate target rather than becoming a swipe action or a menu item:
+            // getting a recording off the phone is the one thing that must never take two guesses
+            // in gloves at the bottom of a lift.
+            NavigationLink(destination: SessionDetailView(file: s)) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(s.displayName)
+                        .font(.headline)
+                    HStack(spacing: 10) {
+                        Text(s.sizeText)
+                        // A session with no `end` record was cut short — crash, force-quit, or
+                        // dead battery. The file is still perfectly valid; we say so plainly
+                        // instead of hiding it or asking a question about it.
+                        if !s.closedCleanly {
+                            Text("interrupted — data intact")
+                                .foregroundStyle(.orange)
+                        }
                     }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
             }
-            Spacer()
             ShareLink(item: s.url) {
                 Image(systemName: "square.and.arrow.up")
                     .font(.title3)

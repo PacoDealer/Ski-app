@@ -20,7 +20,11 @@ import Foundation
 ///
 /// Pure Foundation on purpose — no CoreLocation, no UIKit — so `Tools/replay.swift` can run the
 /// exact same source over a fixture and check it against `analyze.py` without a device.
-struct LiveMetrics {
+///
+/// `nonisolated` for the same reason (S9): the app target defaults to main-actor isolation, and
+/// `SessionReplay` runs this over a whole file on a background task so opening a saved day does
+/// not freeze the UI. Nothing in here touches shared state — it is a value type over numbers.
+nonisolated struct LiveMetrics {
 
     // MARK: - Constants (must match Tools/analyze.py)
 
