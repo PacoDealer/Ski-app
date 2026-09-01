@@ -43,6 +43,29 @@ is 43.9 km/h, so it comes from session 1, where the only candidates are the clea
 11:28:59 multipath burst. See §5.1.2 and assumption **A18** — it is not yet known which, and the
 Run 2 top-speed field in `2026-09-01_slopes.png` that would answer it is behind the Premium blur.
 
+## Third batch — 16:18 / 16:20, the finished day records
+
+Martin skied no afternoon, so these are the same recording as the 13:39 batch, saved rather than
+live. **⚠️ The image files are not in this directory yet** — they were sent in conversation and need
+to be AirDropped to the Mac and committed here as `2026-09-01_slopes_1618.png` and
+`2026-09-01_carve_1620.png`. Until they are, the numbers below are transcribed from the screenshots
+and the archive is incomplete.
+
+| App | Saved day record | Live at 13:39 | Moved |
+|---|---|---|---|
+| Slopes | 8 runs, **1,380 m**, 8.4 km, 2 h 50 m, top **67,2 km/h**, tallest run 415 m, peak alt 3.173 m, ski 41 min / lift 40 min / rest 1 h 28 m | 1,384 m | −4 m |
+| Carve | 7 runs, **1,625 m**, 9.4 km, 3 h 2 m, top **67 km/h** | 1,509 m, 9.08 km, 3:01:43 paused | **+116 m** |
+
+**The finding is the Carve row.** Same run count, same elapsed once rounded, no afternoon skiing —
+and 116 m (+7.7%) more vertical in the saved entry than on the live screen. Slopes moved 4 m the
+other way. Against our 1,367 m the saved figures are **Slopes +1.0%, Carve +18.9%**. Written up in
+`RESEARCH.md` §5.1.3, with the decomposition of Carve's error and the two questions it opened
+(A19, A20).
+
+Also worth keeping from the Slopes screen: it recorded the same 10:37–13:27 span we did, including
+the 69-minute lunch break, and booked that break as **1 h 28 m of rest with no vertical**. And its
+**40 min of lift time** is an independent check on our own lift detector, which finds 37.4 min.
+
 ---
 
 Vertical's own numbers for the first session come from the fixture, via `Tools/analyze.py` and

@@ -339,8 +339,13 @@ summed:
 |---|---|---|---|
 | Runs reported | 8 | 7 | **7** (+2 descents under the 30 m threshold) |
 | Vertical | 1,384 m | 1,509 m | **1,367 m** (1,403 m counting those two) |
-| Δ vs. Vertical | **+1.2%** | **+10.4%** | — |
+| Δ vs. Vertical | **+1.2%** | ~~+10.4%~~ | — |
 | Top speed | 67.2 km/h | 66.8 km/h | **64.7 km/h** |
+
+> ⚠️ **The Carve column is a live screen, not a saved day, and the two disagree.** Carve's finished
+> logbook entry for this same recording reads **1,625 m**, not 1,509 — **+18.9%** over our 1,367,
+> not +10.4%. The Slopes column is unaffected (its saved entry is 1,380 m, +1.0%). See **§5.1.3**,
+> which supersedes the Carve row here.
 
 **Both S5 conclusions survive the repeat, which is the point of running it twice.** Slopes is within
 1.2% of us over 1.4 km of vertical (0.8% on session 1); Carve is +10.4% (+10.1% on session 1). The
@@ -397,6 +402,72 @@ it is a systematic offset in its estimator and (b) is right; if Slopes lands on 
 *both* competitors publish corrupt peaks and the top-speed wedge is much wider than the Carve-only
 claim in §5.1.1; (b) would mean Slopes is simply ungated and reads a few percent high, which is a
 far weaker claim we should stop implying. Tracked as **A18** in §13.4.
+
+### 5.1.3 The saved day, not the live screen — Carve's number moved after skiing stopped (S7, 2026-09-01)
+
+Martin sent the two apps' **finished day records** at 16:18/16:20, after skiing had ended (he did
+not ski in the afternoon). They do not say what the 13:39 live screens said, and the difference is
+the finding.
+
+| Whole day, 2026-09-01 | Slopes | Carve | Vertical |
+|---|---|---|---|
+| Live screen at 13:39 | 1,384 m | 1,509 m | — |
+| **Saved day record** | **1,380 m** | **1,625 m** | **1,367 m** |
+| Live → saved | −4 m (−0.3%) | **+116 m (+7.7%)** | — |
+| Δ saved vs. Vertical | **+1.0%** | **+18.9%** | — |
+| Runs | 8 | 7 | 7 |
+| Distance | 8.4 km | 9.4 km | — |
+| Top speed | 67.2 km/h | 67 km/h (66.8 live) | 64.7 km/h |
+| Elapsed | 2 h 50 m | 3 h 02 m | 1 h 43 m recorded |
+
+**Slopes' saved number is its live number. Carve's is not.** Carve's run count is unchanged at 7 and
+its elapsed time went 3:01:43 → "3h 2m", which is that same figure rounded — so at most ~47 s of
+further recording separates the two readings, and no new run. **[V]** on both readings (the 13:39
+one is `Data/comparisons/2026-09-01_carve_1339.png`, re-read from the image rather than from our own
+notes). Whatever produces the 116 m, it is not more skiing.
+
+**Which of the two numbers is the pipeline we characterised?** Replaying our own GPS altitude with
+hysteresis over both sessions — the model that reproduced Carve's session-1 figure to 0.4% in S6 —
+gives, for the day: **1,588 m at 3 m, 1,645 m at 2 m, 1,541 m at 4 m.** Carve's **saved** 1,625
+lands inside that band; its live 1,509 needs a ~6 m threshold and sits below it. So the saved figure
+is the better match to the pipeline S6 characterised, and **1,509 now looks like the anomaly.**
+**[A]** — this is model-fitting, not a mechanism, and it is not to be written down as one.
+
+**Honest decomposition of the +18.9%,** because the headline is not all one effect:
+
+- **~221 m of it is Carve's pipeline** on data we both recorded — no barometer, smoothed GPS
+  altitude, summed rather than measured top-to-bottom. That is the S6 finding, unchanged.
+- **~37 m of it is the lunch break.** Carve started at ~10:37 (13:39 minus 3:01:43) and ran
+  **continuously through the 69 minutes we were not recording at all** — our two sessions bracket
+  that gap. Slopes recorded the same gap and booked it as **1 h 28 m of "rest", adding no
+  vertical.** An app that sums altitude accrues vertical while its owner eats lunch; an app that
+  measures runs does not.
+- The remainder is the live-vs-saved gap above, which we cannot explain.
+
+**What must change in our own claims (R6):** §5.1.2's "Carve +10.4% on the day" was computed
+against the live 1,509. **The number a Carve user keeps is 1,625, and against our 1,367 that is
++18.9%.** Quote the skiing-only figure (~+10%) and the whole-day figure (+18.9%) together, and say
+which is which — the first is what its pipeline costs while skiing, the second is what a real day
+with a lunch break costs. Slopes over the same day is **+1.0%**, which is the third independent
+measurement of a tie (0.8%, 1.2%, 1.0%) and R20 still applies.
+
+**A cheap experiment this suggests, for the next ski day:** leave Vertical recording *through
+lunch*. We have never recorded a break, so the ~37 m above is inferred from a residual rather than
+measured, and it is the one part of Carve's error we have not reproduced directly. It costs
+nothing but leaving the app running, and it doubles as the 3 h+ recording the battery question
+needs (§13.4).
+
+**Two things the Slopes screen gave us for free, about our own detector:**
+
+- **Lift time: Slopes 40 min, our detector 37.4 min (−6.5%)** across both sessions — with no hand
+  tags involved, and including the surface tow the detector only started finding today. That is an
+  independent check on lift detection from a source that has no idea we exist.
+- **Ski time: Slopes 41 min, our detected run durations 54.6 min (+33%).** This one is a defect,
+  and it is ours. Runs are segmented between altitude turning points, so **standing still at the
+  top of a run counts as run time** — session 2's third run is 10.6 min of which 4.5 min is
+  stationary at 94 m before the first turn. **Vertical is unaffected** (measured top-to-bottom), but
+  every duration, vertical rate and average speed we print is wrong by about a third. The fix is the
+  mirror of the trim `detect.py` already applies to lift *starts*. Tracked as **A19**.
 
 ### 5.2 Recording reliability
 
@@ -758,8 +829,9 @@ phase of the roadmap.
 
 1. **~~Everything rests on one 56-minute morning.~~ Partly answered, S6.** A second session
    (`_s2.jsonl`, 48 min) replicates the fix-quality result and both competitor deltas — Slopes
-   +1.2%, Carve +10.4% on the day total. Still one mountain, one phone, one weather system, and
-   still **n=1 for the multipath glitch**, which is the single sample the top-speed claim rests on.
+   +1.0% and Carve +18.9% against the **saved** day records (§5.1.3; the +1.2%/+10.4% pair came
+   from live screens). Still one mountain, one phone, one weather system, and still **n=1 for the
+   multipath glitch**, which is the single sample the top-speed claim rests on.
 2. **No battery data at all, cold or otherwise.** The 5.5%/h and 6.7%/h figures are one 5%
    quantisation step each and mean nothing (§5.1.2); the real bound from both days is 0–11 %/h.
    Needs a 3 h+ recording, and then a cold one — lithium cells lose capacity below freezing and
@@ -773,6 +845,20 @@ phase of the roadmap.
    67.2 km/h is either the 11:28:59 burst (as Carve's demonstrably is) or the clean 11:01:11 peak
    read +3.9% high. §5.1.2 has both cases and the evidence for each; neither may be asserted. **The
    test is a session containing no multipath burst** — cheap, and every future recording is one.
+   **Still open after S7:** the finished day records add nothing — Slopes' saved top speed is the
+   same 67.2, Carve's saved 67 km/h is its 66.8 rounded. Both readings come from the day that
+   contains the burst, so only a new burst-free day can separate the cases.
+6. **A19 — our run durations include standing still, by about a third.** Slopes books 41 min of ski
+   time for the day; our detected run durations sum to 54.6 min, because a run is segmented between
+   altitude turning points and a skier stopped at the top is still at the top (§5.1.3). Vertical is
+   unaffected; duration, vertical rate and average speed are not. The fix is the mirror of the
+   lift-start trim already in `detect.py`, and it needs the same care: trimming the start of a
+   descent to the last moment at the ceiling must not eat a slow traversing start.
+7. **A20 — why did Carve's day vertical move 116 m between its live screen and its saved logbook
+   entry, on a recording that gained no runs and at most 47 s?** (§5.1.3.) Our GPS-hysteresis model
+   of its pipeline matches the **saved** number, which makes the live 1,509 the odd one out. We
+   cannot see inside the app, so this may stay a documented observation rather than an answer — but
+   it must be quoted as one reading superseding another, never as "Carve says 1,509".
 
 ---
 

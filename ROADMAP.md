@@ -5,7 +5,43 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S6)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S7)
+
+### S7 in four lines
+
+1. **The build is on the phone.** Rebuilt and installed 2026-09-01 16:17, launched, process
+   confirmed running. **The provisioning fuse now dies ~2026-09-08**, past the end of the trip. The
+   S6 screen (VERTICAL / TOP SPEED / RUNS) is on the device but **has still not been driven by a
+   human** — the smoke test below is the only thing left on it.
+2. **Carve's real day number is 1,625 m, not the 1,509 we had — +18.9% over us, not +10.4%.** Its
+   saved logbook entry and its live screen disagree by 116 m on the identical recording. Slopes'
+   saved day is 1,380 m, **+1.0%** over our 1,367 — a third independent tie. `RESEARCH.md` §5.1.3.
+3. **The detector was missing short surface tows.** A 38 s, +36 m platter in session 2 fell under a
+   60 s minimum and left a descent with no ride before it. Fixed, session 1 unchanged, and
+   `detect.py` now prints the day as an alternating lift/run timeline that complains when gravity
+   is violated — a check that works with no hand tags, which is what we now have.
+4. **Slopes handed us a free grade on our own detector:** lift time 40 min vs our 37.4 (good), ski
+   time 41 min vs our 54.6 (**bad — A19**, our runs count standing at the top as run time).
+
+### ⬅ Asks for Martin — batched, all small
+
+1. **Two minutes with the phone: the smoke test.** Launch Vertical, press START, confirm no yellow
+   background-mode warning, walk around for ~2 minutes, watch GPS FIXES climb and the three new
+   tiles populate, press STOP, check the session appears in Sessions. A screenshot of the running
+   screen is worth more than a description.
+2. **AirDrop today's two screenshots to the Mac** (the Slopes day card and the Carve logbook) so
+   they can be committed to `Data/comparisons/` — right now that evidence exists only in a chat.
+3. **One question about Carve:** after the 13:39 screenshot, did you ski anything at all, or just
+   press stop? The whole 116 m finding rests on the answer being "just pressed stop".
+4. **Next ski day, one free experiment: leave Vertical recording through lunch.** Don't stop it at
+   the restaurant. It measures the part of Carve's error we have only inferred, *and* it is the 3 h+
+   recording the battery question has needed since S5. Costs nothing but not pressing STOP.
+5. **Still true from S6:** any day with no multipath burst settles A18. Just record and screenshot
+   Slopes at the end.
+
+---
+
+## The S6 handoff, still current below this line
 
 **The GPS question is answered green and the three-app head-to-head is done.** Read
 `RESEARCH.md` §5.1.1 first — it is now the most important page in the repo, because it is the only
@@ -30,7 +66,9 @@ before repeating any number about a competitor, and R1–R4 before writing a new
 **✅ Done in S6: session 2 is pulled, analysed, and committed** as
 `Data/fixtures/2026-09-01_portillo_s2.jsonl` (the session-1 fixture was renamed `_s1` to match).
 Written up in **`RESEARCH.md` §5.1.2**. Both S5 conclusions replicated on an independent day-half —
-**Slopes +1.2%, Carve +10.4%** on the 1,367 m day total — and fix quality replicated too (0.97 Hz,
+**Slopes +1.2%, ~~Carve +10.4%~~** on the 1,367 m day total (**S7: against the apps' *saved* day
+records it is Slopes +1.0% and Carve +18.9%** — the S6 pair came from live screens, see §5.1.3) —
+and fix quality replicated too (0.97 Hz,
 hAcc ±7.9 m, Doppler on 2,768/2,773). The detector found exactly the 3 runs the screenshot
 subtraction had predicted, with one hand tag in the whole session.
 
@@ -42,7 +80,10 @@ on our number, then it published the glitch and the top-speed wedge applies to *
 not just Carve. This costs nothing but recording — see §5.1.2. Compare afterwards with:
 `Tools/analyze.py <file>` → the "MAX SPEED" block, against Slopes' Today's Stats top speed.
 
-**⚡ THE MOMENT THE PHONE IS NEXT PLUGGED IN — one command, two problems solved.**
+**✅ DONE IN S7 — the phone was plugged in at 16:17 and this was run.** Build succeeded,
+`UIBackgroundModes = ["location"]` verified in the **built** Info.plist with `plutil -p` (R14,
+R14a), installed, launched, process confirmed alive from the new bundle. **The fuse now runs to
+~2026-09-08.** Kept below because it is the recipe every future reinstall uses:
 
 ```sh
 cd ~/Desktop/Projects/Vertical/iOS
@@ -52,8 +93,8 @@ xcrun devicectl device install app --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6
   ~/Library/Developer/Xcode/DerivedData/Vertical-hhltzbilrpjrdxgsdbemtrfnvlhq/Build/Products/Debug-iphoneos/Vertical.app
 ```
 
-It **resets the 7-day provisioning fuse** (currently dying ~2026-09-07, the same week the trip
-ends) *and* ships the S6 screen, which shows accuracy-gated top speed and run-segmented vertical
+It **resets the 7-day provisioning fuse** (S7 reset it to ~2026-09-08, just past the end of the
+trip) *and* ships the S6 screen, which shows accuracy-gated top speed and run-segmented vertical
 live — the three numbers that get compared against Slopes on the mountain, without a file pull.
 
 **Then smoke-test it before skiing with it** (R16 — it has never run on the device): launch, press
@@ -72,7 +113,7 @@ not a lost recording. But that is an argument, not a test.
    mountain rather than thought at the desk.
 2. **Answer the five questions in "Asks for Martin" below.** They are batched deliberately; three of
    them take under a minute each and two of them are decisions only he can make.
-3. **Reinstall the build before the last ski day** — the 7-day profile expires ~2026-09-07 and D5
+3. **Reinstall the build before the last ski day** — the 7-day profile expires ~2026-09-08 and D5
    is deferred, so this is now a scheduled chore, not a contingency. See the box below.
 
 **Next, at the desk:**
@@ -108,7 +149,7 @@ everything in Phase 1 and Phase 2 is on-device, and the test site is Portillo un
 ### ⚠️ The standing cost of deferring D5 — read this before the trip ends
 
 A free account issues **7-day provisioning profiles**. The current build was installed
-**2026-08-31 23:24**, so it **stops launching around 2026-09-07** — which is the same week Martin
+**2026-09-01 16:17** (S7), so it **stops launching around 2026-09-08** — just after the week Martin
 stops skiing. Consequences to manage rather than discover:
 
 - **Reinstall before the trip's last ski day, not after the app dies.** A rebuild + `devicectl
@@ -147,7 +188,7 @@ delete them.** They are closed with an `end` record so they cannot auto-resume.
 ### If the build has expired
 
 Free provisioning lasts 7 days; reinstalled **2026-08-31 23:24**, so it dies around
-**2026-09-07**. If the app won't launch, rebuild + reinstall:
+**2026-09-08**. If the app won't launch, rebuild + reinstall:
    ```sh
    cd ~/Desktop/Projects/Vertical/iOS
    xcodebuild -project Vertical.xcodeproj -scheme Vertical -configuration Debug \
@@ -267,8 +308,8 @@ measurement.**
 
 | Against | True claim | Claim we must NOT make |
 |---|---|---|
-| **Slopes** ($34.99/yr) | Same numbers, free — measured at **0.8% on vertical** over a real morning, ~2% on run-1 top speed. Plus: your raw track is a file you can read, and maps aren't paywalled. | That Slopes is inaccurate. It isn't. Saying so would be the exact sin we caught Carve committing. |
-| **Carve** (free) | **+10.1% vertical** on the same four descents, and it published a **GPS multipath glitch as the day's top speed** — a number we can point at, second by second, in our own raw file. | That Carve is a toy. It ships more features than we do today. |
+| **Slopes** ($34.99/yr) | Same numbers, free — measured at **0.8%, 1.2% and 1.0%** on vertical across two sessions and the saved day total, ~2% on run-1 top speed. Plus: your raw track is a file you can read, and maps aren't paywalled. | That Slopes is inaccurate. It isn't. Saying so would be the exact sin we caught Carve committing. |
+| **Carve** (free) | **+10.1% vertical** on the same four descents, **+18.9% on the saved whole day** (S7 — the two figures are different questions: what its pipeline costs while skiing, and what a real day with a lunch break costs). And it published a **GPS multipath glitch as the day's top speed** — a number we can point at, second by second, in our own raw file. | That Carve is a toy. It ships more features than we do today. Also: don't quote +18.9% as if it were the skiing error, or +10.1% as if it were what a user sees at the end of the day. Quote both, labelled. |
 | **The category** | Naive methods cannot reject a bad second, and one bad second owns the day's headline number. We can show the second. | "+136% more accurate." That ratio is glitch-vs-gate; on clean data the same comparison is +9%. See WORKFLOW R12. |
 
 **The honest one-line positioning:** *as accurate as the app people pay for, free, worldwide, and
@@ -286,7 +327,7 @@ leader — and a tie against a $34.99/yr product, given away, is still a reason 
 - [ ] Settle D1–D3 above; pick a real name.
 - [ ] **D5 (new, S5): buy the $99 Apple Developer Program, or accept the ceiling.** A free account
       gives 7-day profiles, 3 devices, no TestFlight and no App Store (`RESEARCH.md` §13, A14). It
-      is already costing us: the build dies ~2026-09-07 mid-trip, and every reinstall is a manual
+      is already costing us: the build dies ~2026-09-08, and every reinstall is a manual
       cycle through Martin. This is the cheapest blocker on the board to clear.
 - [ ] **Install and actually use the competitors** — Slopes free tier, Ski Tracks, Open Ski Map.
       Yomi's S114 lesson: hands-on surfaces what reading never does.
@@ -395,6 +436,43 @@ when MapLibre ships terrain, or when there is appetite for a Metal-shaped projec
 ---
 
 ## Session log
+
+### S7 — 2026-09-01 · the build ships to the phone, and the saved day tells a different story
+
+**The install finally happened.** The phone was plugged in at 16:17. Rebuilt, verified
+`UIBackgroundModes` in the **built** Info.plist with `plutil -p` (R14/R14a — the command that ate a
+bundle in S6), installed with `devicectl`, launched, and confirmed the process running from the new
+bundle path. The provisioning fuse now runs to ~2026-09-08, past the end of the trip, and the S6
+screen is on the device. A human still has to press START on it — that is ask #1.
+
+**The detector was missing a whole class of lift.** Session 2 has a 38 s, +36 m surface tow at
+13:14:24 that the 60 s minimum threw away, leaving two descents with no ride between them. It is
+real and not a pressure artifact: GPS independently shows 130 m of travel at a rock-steady 3.0 m/s
+on a constant 70–78° course while climbing +45 m, hAcc flat at 8–9 m. Printing every raw ascent
+candidate on both days first (R7) showed real rides start at 42.6 m / 44.6 s and the largest
+non-ride is 5.1 m / 17 s — a wide empty gap, so 30 s / 20 m recovers the tow and leaves session 1
+bit-for-bit unchanged. **Both days now parse as strictly alternating lift → run → lift → run**, and
+`detect.py` prints that timeline and complains when it breaks. That check needs no hand tags, which
+matters: session 2 had one, and the miss was invisible to tag scoring while being obvious to
+gravity.
+
+**Martin sent the finished day records at 16:18/16:20, and Carve's number had moved.** Its live
+screen at 13:39 read 1,509 m; its saved logbook entry for the same recording reads **1,625 m** —
+same 7 runs, same elapsed once rounded, no afternoon skiing. Slopes moved 4 m the other way
+(1,384 → 1,380). **Against our 1,367 m the saved figures are Slopes +1.0% and Carve +18.9%**, and
+the +10.4% in S6 was computed against a live screen that Carve itself no longer agrees with. Our
+GPS-hysteresis model of Carve's pipeline gives 1,588 m for the day at 3 m — it matches the *saved*
+number, which makes 1,509 the anomaly. Written up as `RESEARCH.md` §5.1.3 with the error
+decomposed (~221 m pipeline, ~37 m lunch break, the rest unexplained), and opened **A19** and
+**A20**.
+
+**Slopes graded our detector for free.** Its day card breaks the time down: 41 min skiing, 40 min on
+lifts, 1 h 28 m at rest. Our lift detection sums to **37.4 min against its 40** — a −6.5% agreement
+from a source that has never heard of us, with no hand tags involved. Our run durations sum to
+**54.6 min against its 41** — a +33% error, because runs are segmented between altitude turning
+points and standing at the top of a run is still being counted as run time. Vertical is unaffected;
+every duration and rate we print is not. That is **A19**, and the fix is the mirror of the trim
+already applied to lift starts.
 
 ### S6 — 2026-09-01 · the second session, and the first result that isn't n=1
 
