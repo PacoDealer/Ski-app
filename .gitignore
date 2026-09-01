@@ -22,3 +22,9 @@ Sessions/
 # Python
 __pycache__/
 *.pyc
+
+# Exception: hand-picked reference recordings we replay the pipeline against.
+# A ski day cannot be re-recorded, and these are the only ground truth the
+# accuracy work has. They are versioned on purpose.
+!Data/fixtures/
+!Data/fixtures/*.jsonl
