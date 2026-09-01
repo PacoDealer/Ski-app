@@ -27,7 +27,14 @@ before repeating any number about a competitor, and R1–R4 before writing a new
 
 ### The plan, in order
 
-**Now, while Martin is still at Portillo (until ~2026-09-07) — this window does not come back:**
+**⬅ FIRST THING NEXT SESSION: pull the second session's file.** Martin skied again 11:30→~13:30 on
+2026-09-01 and both competitors were recording. Their day totals are screenshotted in
+`Data/comparisons/` (Slopes 8 runs / 1,384 m; Carve 7 runs / 1,509 m, and Carve's top speed is
+**still the 66.8 km/h glitch**). Vertical's own file for that session has not been pulled or
+analysed — do that before believing anything about session 2. Commands are below; run both
+`Tools/analyze.py` and `Tools/detect.py` on it, and commit it as a fixture.
+
+**Then, while Martin is still at Portillo (until ~2026-09-07) — this window does not come back:**
 
 1. **Record more days.** Every number we have is n=1: one 56-minute morning, one clean speed peak,
    one glitch. The same signature across three days is a finding; one day is an anecdote. Costs
@@ -269,10 +276,12 @@ store, raw capture of every CoreLocation + barometer field, live diagnostics, on
       weather pressure change doesn't inflate vertical.
 - [ ] **Doppler max speed** from `CLLocation.speed` with `speedAccuracy` gating. Never differentiate
       positions. (Targets the "+10 mph" bug.)
-- [ ] **Automatic lift vs. run segmentation** — sustained ascent + proximity to `aerialway`
-      geometry. Zero user interaction. Validate against the hand-placed tags in recorded sessions.
-      Portillo's *va-et-vient* slingshot platter lifts are an unusual edge case worth checking:
-      they won't look like a chairlift to a naive detector.
+- [~] **Automatic lift vs. run segmentation** — **prototyped S5 in `Tools/detect.py`, scoring
+      every hand tag on the first day** (see below). Deliberately physics-only so far: no
+      `aerialway` proximity, because a detector that needs the piste map can't work at a resort OSM
+      hasn't mapped and can't be validated against the one tagged day we have. Add the map later as
+      confirmation, not as a dependency. Still to do: port to Swift, validate on more days, and
+      check Portillo's *va-et-vient* slingshot platters, which won't look like a chairlift.
 - [ ] **Adaptive sampling** — high rate on descent, low on lift. Fixes both battery *and* the
       "faster skiing records less vertical" artefact at once.
 - [ ] Per-run stats; average speed over **descent time only**, excluding lifts and lift lines.
@@ -433,6 +442,37 @@ uses no barometer, and never measures a run top-to-bottom; its +10.1% is exactly
 choices cost. Three independent confirmations now agree: the permission list, the numeric
 reproduction, and its top speed being a multipath sample we can point at second by second.
 Written up in `RESEARCH.md` §2.2.
+
+**Auto-detection now works, unassisted, on the first day.** Built `Tools/detect.py` — the Phase 1
+prototype. It reads only the barometer, smooths over 20 s, classifies each sample as
+climbing/descending/flat, and turns the sustained stretches into lift rides and runs. Scored
+against Martin's hand tags on 2026-09-01:
+
+| Boundary | Matched | Median error | Worst |
+|---|---|---|---|
+| Lift start | 4/4 | 18.6 s | 36.8 s |
+| Lift end | 3/3 | 2.8 s | 19.6 s |
+| Run start | 2/2 | 15.9 s | 15.9 s |
+| Run end | 1/1 | 2.4 s | 2.4 s |
+
+**No missed tags, no spurious lift, and it independently recovered the 11-minute ride** that the
+tags record as 10:45:36 → 10:56:55.
+
+Two corrections were needed to get there, and both are the same shape as the S5 analyzer bugs —
+a threshold measuring the wrong moment:
+
+- **Lift ends were 55–157 s early (0/3 matched).** A chairlift flattens out before its station, so
+  the smoothed climb rate falls under the threshold while the rider is still on the chair. A ride
+  ends where the altitude *peaks*, not where the climbing gets lazy. Extending each ascent forward
+  to its peak before the next descent fixed all three — and collapsed a spuriously split ride into
+  the single 11-minute one.
+- **Lift starts were 25–44 s early.** The mirror problem: smoothing bleeds the end of a run and the
+  lift-line wait into the front of the ascent. Trimming the start to the last moment the altitude
+  is still at its lowest took the median from 25 s to 18.6 s.
+
+**Stopped tuning there deliberately.** 18.6 s against a button Martin taps in gloves is at the
+precision of the tag itself, and this is one day — `WORKFLOW.md` R5. Tuning further would be
+fitting the detector to n=1. The next real gain comes from more tagged days, not more knobs.
 
 **Worth noticing about our own reasoning:** in the first pass I read "996 sits between our
 baro-summed 944 and GPS-summed 1,227" as evidence Carve *did* use the barometer. It was evidence of

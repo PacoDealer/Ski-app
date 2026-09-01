@@ -73,6 +73,13 @@ it works — Martin flagged this and he's right.
   handoff.
 - `WORKFLOW.md` — the rules of process (R1–R20), each tied to the session that earned it.
 
+Two offline tools, both stdlib-only, both run against a raw session file:
+- `Tools/analyze.py` — the accuracy harness. Computes every metric the careful way *and* the naive
+  way on the same data, so the thesis is measurable rather than asserted.
+- `Tools/detect.py` — the auto-detection prototype (Phase 1). Finds lifts and runs with no user
+  input and scores itself against the hand tags. When its scores are good enough, the tag buttons
+  come out of the app.
+
 Four docs. The fourth was added in S5 because three separate false claims had survived five
 sessions, and "be careful" is not a process. Split more out when a doc actually gets unwieldy.
 
