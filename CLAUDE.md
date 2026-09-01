@@ -66,11 +66,15 @@ it works — Martin flagged this and he's right.
 
 ## Key docs
 
-- `RESEARCH.md` — market, competitor teardown, user complaints, data-source feasibility, technical risks. **Start here.**
-- `ROADMAP.md` — current state, phases, open decisions, session log.
+- `RESEARCH.md` — market, competitor teardown, user complaints, data-source feasibility, technical
+  risks, and **§13, the assumption register**: every claim the plan rests on, with a verdict against
+  a primary source. **Start here.**
+- `ROADMAP.md` — current state, phases, open decisions, session log. Its "⚡ START HERE" is the
+  handoff.
+- `WORKFLOW.md` — the rules of process (R1–R20), each tied to the session that earned it.
 
-Deliberately kept to three docs. Yomi's five-doc split earned its keep after 120 sessions; starting
-there on day one would be ceremony. Split more out when a doc actually gets unwieldy.
+Four docs. The fourth was added in S5 because three separate false claims had survived five
+sessions, and "be careful" is not a process. Split more out when a doc actually gets unwieldy.
 
 ## Tech stack (provisional — nothing committed until Phase 0)
 
@@ -146,31 +150,7 @@ These cost real sessions to learn there. They apply here unchanged:
 - **Check `project.pbxproj` build settings before asserting a violation.** Every false positive in
   Yomi's S118 audit came from reasoning about Swift source without reading build settings.
 
-Learned here, S3:
-
-- **Verify Info.plist keys by reading the built product, not the build settings.** Xcode's
-  generator silently ignores some `INFOPLIST_KEY_*` settings — `UIBackgroundModes` and
-  `UIFileSharingEnabled` both vanished with no warning, and the first caused an instant crash.
-  `plutil -p <built>.app/Info.plist` is the source of truth.
-- **Never drop sensor data at capture time.** A discarded sample is gone forever; a filter can be
-  changed at any point. Log everything raw (including obviously-bad values like pre-start cached
-  fixes) and filter in `Tools/analyze.py`.
-- **Make the app self-diagnosing.** The `DOPPLER` tile exists because the alternative was Martin
-  skiing a full day and only then discovering the data was unusable. On-device readouts beat
-  post-hoc file analysis when the user is somewhere you can't debug.
-
-Learned here, S5:
-
-- **Gate on the field that fails, not the field that correlates.** `speedAcc` rises with speed, so
-  a fixed `speedAcc` ceiling censors fast samples — the thing you are trying to measure — while
-  passing genuinely bad ones, because a receiver that has lost the sky still reports a confident
-  speed for a wrong position. `hAcc` is what actually degrades during multipath. Before shipping
-  any threshold, print the **distribution** of the field: ours sat at the median and silently
-  discarded 57% of a healthy track.
-- **Don't let category folklore stand in for the market leader.** "Ski apps overestimate 5–10%"
-  came from complaints about Ski Tracks and Garmin. Measured head-to-head, Slopes is within 2% of
-  us. A claim about "the category" must be re-checked against each competitor before it becomes a
-  pitch.
-- **Sanity-check a headline ratio against its own worst case.** "+136% vs. naive" is true and
-  nearly useless on its own — it compares our gated peak against a one-second GPS glitch. On clean
-  data the same comparison is +9%. Quote the mechanism, not the biggest number.
+**Learned here (S3–S5): all of it now lives in `WORKFLOW.md`,** as numbered rules R1–R20 with the
+session that earned each one — evidence standards, threshold and filter discipline, on-device
+verification, the session ritual, and the commit rule. Read it before writing a claim into a doc or
+a threshold into the analyzer.

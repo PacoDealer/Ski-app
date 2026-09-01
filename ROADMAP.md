@@ -21,16 +21,47 @@ place where the thesis meets measured numbers instead of forum posts. The short 
 - **Two bugs of our own** came out of the comparison, both now fixed: the speed gate used the wrong
   field, and run segmentation was silently deleting vertical (see S5 below).
 
-### The three things to do next session
+**S5 also opened `RESEARCH.md` §13, the assumption register, and `WORKFLOW.md`, the rules of
+process.** Between them they replaced three false claims that had survived five sessions. Read §13
+before repeating any number about a competitor, and R1–R4 before writing a new one down.
 
-1. **Record another day, ideally a full one.** Every number in §5.1.1 rests on a single 56-minute
-   morning with one clean speed peak and one glitch. One burst in one file is an anecdote; the same
-   signature on three days is a finding. This is the highest-value thing Martin can do while he is
-   still at Portillo (until ~2026-09-07), and it costs him nothing but pressing START.
-2. **Work the assumption register in `RESEARCH.md` §13** — everything the plan rests on that has
-   not actually been checked, ranked by what it would cost to be wrong.
-3. **Then Phase 1 auto-detection properly** — the detector already matched Martin's hand tags to
-   within 16 s at the top and 2 s at the bottom of run 1, so it is closer than expected.
+### The plan, in order
+
+**Now, while Martin is still at Portillo (until ~2026-09-07) — this window does not come back:**
+
+1. **Record more days.** Every number we have is n=1: one 56-minute morning, one clean speed peak,
+   one glitch. The same signature across three days is a finding; one day is an anecdote. Costs
+   nothing but pressing START, and no amount of analysis substitutes for it.
+2. **Answer the five questions in "Asks for Martin" below.** They are batched deliberately; three of
+   them take under a minute each and two of them are decisions only he can make.
+3. **Watch the build expiry (~2026-09-07).** If D5 lands as "buy the $99 program", this stops being
+   a recurring emergency.
+
+**Next, at the desk:**
+
+4. **Phase 1 auto-detection.** The detector already matched the hand tags to 16 s at the top and 2 s
+   at the bottom of run 1 — closer than expected. The work is lift detection (Portillo's
+   *va-et-vient* platters are the hard case) and validating against every day we have, not just the
+   first.
+5. **Fold the S5 analyzer fixes into the app itself.** The hAcc speed gate and the descent-merge
+   rule live only in `Tools/analyze.py`; the app still reports its own live numbers.
+6. **Phase 2 maps.** Unchanged and unblocked — MapKit in 2D is fine, OpenSkiMap data is alive
+   (§13, A7). Read the three licences in A8 before shipping any data.
+
+**Deferred with a reason, not by drift:** 3D (Phase 3, cut — see below), Apple Watch, social.
+
+### Asks for Martin — batched, per `WORKFLOW.md` §4
+
+1. **Check Settings → Privacy & Security → Motion & Fitness for Carve.** He recorded 1 h 05 m on it
+   on 2026-09-01, so `CMAltimeter` will have started if it uses the barometer at all — the test
+   that was void in S4 is now valid. Answers whether Carve's +10.1% is a GPS problem or a
+   segmentation problem. Ten seconds.
+2. **D5: buy the $99 Apple Developer Program?** Unblocks TestFlight, kills the 7-day reinstall
+   treadmill, and would have let tooling drive the device directly.
+3. **D4: confirm cutting 3D from v1.** Recommended, but he likes Strava's 3D, so it's his call.
+4. **D1/D2/D3** are still formally open (iOS-only, backend, where we test next) — though the first
+   two have been settled in practice for four sessions.
+5. **A name.** "Vertical" is still a placeholder and the repo is still `Ski-app`.
 
 ### Pulling and analysing a day (the routine, now that it works)
 
@@ -166,10 +197,35 @@ D4 (the 3D renderer) does **not** block Phase 1 — it's a Phase 3 spike.
 
 ---
 
+## What we can actually claim (S5 — read before writing any copy)
+
+The pitch in `CLAUDE.md` was written against forum folklore. Now that three apps have recorded the
+same morning, here is what survives contact with data. **Never claim more than this without a new
+measurement.**
+
+| Against | True claim | Claim we must NOT make |
+|---|---|---|
+| **Slopes** ($34.99/yr) | Same numbers, free — measured at **0.8% on vertical** over a real morning, ~2% on run-1 top speed. Plus: your raw track is a file you can read, and maps aren't paywalled. | That Slopes is inaccurate. It isn't. Saying so would be the exact sin we caught Carve committing. |
+| **Carve** (free) | **+10.1% vertical** on the same four descents, and it published a **GPS multipath glitch as the day's top speed** — a number we can point at, second by second, in our own raw file. | That Carve is a toy. It ships more features than we do today. |
+| **The category** | Naive methods cannot reject a bad second, and one bad second owns the day's headline number. We can show the second. | "+136% more accurate." That ratio is glitch-vs-gate; on clean data the same comparison is +9%. See WORKFLOW R12. |
+
+**The honest one-line positioning:** *as accurate as the app people pay for, free, worldwide, and
+it shows its work.* "Accuracy" is a wedge against the free competitor and a **tie** against the paid
+leader — and a tie against a $34.99/yr product, given away, is still a reason to switch.
+
+**What is n=1 and must be said as such:** all of it. One morning, one mountain, one phone
+(`WORKFLOW.md` R5).
+
+---
+
 ## Phase 0 — Foundations
 
+- [x] `git init`, GitHub repo, Xcode project, `CLAUDE.md` — done S2–S3.
 - [ ] Settle D1–D3 above; pick a real name.
-- [ ] `git init`, GitHub repo, Xcode project, `CLAUDE.md` finalised.
+- [ ] **D5 (new, S5): buy the $99 Apple Developer Program, or accept the ceiling.** A free account
+      gives 7-day profiles, 3 devices, no TestFlight and no App Store (`RESEARCH.md` §13, A14). It
+      is already costing us: the build dies ~2026-09-07 mid-trip, and every reinstall is a manual
+      cycle through Martin. This is the cheapest blocker on the board to clear.
 - [ ] **Install and actually use the competitors** — Slopes free tier, Ski Tracks, Open Ski Map.
       Yomi's S114 lesson: hands-on surfaces what reading never does.
 - [ ] Re-run community research in-season (see `CLAUDE.md` → Tooling → `last30days`).
@@ -216,15 +272,29 @@ against a known reference, with the error quantified.
 - [ ] ODbL attribution surface, correctly placed.
 - [ ] Track drawn over the map; run replay with speed heatmap; scrubber.
 
-## Phase 3 — 3D (spike first, commit second)
+## Phase 3 — 3D — **cut from v1** (S5)
 
-**Narrowed at S4.** Carve ships 3D terrain with satellite drape on **MapKit** (`RESEARCH.md` §9.1
-amendment), so the four-way exploration collapses to one question.
+**The S4 narrowing was wrong and is withdrawn.** MapKit flattens the terrain the moment any custom
+overlay is added; only `MKDirections` routes follow it (`RESEARCH.md` §9.1, S5 amendment, quoting
+WWDC22 session 10035). So MapKit gives us 3D terrain *or* our track, never both — and our track on
+the terrain is the entire feature.
 
-- [ ] **Spike `MKMapView` + `MKOverlay` with real OpenSkiMap piste geometry.** The base map and 3D
-      terrain are free from Apple; the only real unknown is how well arbitrary OSM run/lift
-      geometry draws and styles on top of it. Check Apple's docs first via the `apple-docs` MCP.
-- [ ] Fall back to the other three options from §9.1 only if that overlay story genuinely fails.
+What that leaves:
+
+- **MapLibre Native** — terrain in active development, nothing shipped. Watch it; don't plan on it.
+- **SceneKit/RealityKit + DEM mesh** — the front-runner by elimination, and the terrain source is
+  now solved and free: **Mapterhorn** global Terrain-RGB, CC BY 4.0 (`RESEARCH.md` §13, A16). The
+  unsolved piece is the **satellite imagery drape**, which needs its own licensed source — Apple's
+  imagery cannot be lifted out of MapKit into our own scene.
+- **MapLibre GL JS in a `WKWebView`** — works today, at a real UX cost for a glove-panned map.
+
+**Decision (D4), recommended: cut 3D from v1 and say so publicly.** It is now known-expensive
+rather than assumed-cheap, nothing else depends on it, and the accuracy work is worth more. Revisit
+when MapLibre ships terrain, or when there is appetite for a Metal-shaped project.
+
+- [ ] Martin to confirm the cut (it is his call — Strava's 3D is a design reference he likes).
+- [ ] If confirmed: state "2D maps in v1" openly rather than letting it read as a missing feature.
+- [ ] Park a watch on MapLibre Native's terrain milestone.
 
 ## Phase 4 — Lift status
 
