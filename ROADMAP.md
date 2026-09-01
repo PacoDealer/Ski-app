@@ -10,9 +10,14 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 ### S7 in four lines
 
 1. **The build is on the phone.** Rebuilt and installed 2026-09-01 16:17, launched, process
-   confirmed running. **The provisioning fuse now dies ~2026-09-08**, past the end of the trip. The
-   S6 screen (VERTICAL / TOP SPEED / RUNS) is on the device but **has still not been driven by a
-   human** — the smoke test below is the only thing left on it.
+   confirmed running. **The provisioning fuse now dies ~2026-09-08**, past the end of the trip.
+   **Be precise about what is and isn't proven here:** Martin skied two full sessions with the app
+   today, so the recording path — START, background capture, STOP, file on disk — is proven on
+   device by a real ski day, twice. But he skied them on the **2026-08-31 build**. The S6/S7 screen
+   (VERTICAL / TOP SPEED / RUNS, and now trimmed run durations) only reached the phone at 16:17,
+   *after* the skiing. So what is untested is the new **screen**, not the recorder, and the failure
+   it can produce is a wrong number displayed, never a lost recording — `LiveMetrics` only reads
+   samples already written. Two minutes with the app would still retire it.
 2. **Carve's real day number is 1,625 m, not the 1,509 we had — +18.9% over us, not +10.4%.** Its
    saved logbook entry and its live screen disagree by 116 m on the identical recording. Slopes'
    saved day is 1,380 m, **+1.0%** over our 1,367 — a third independent tie. `RESEARCH.md` §5.1.3.
@@ -28,19 +33,26 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ### ⬅ Asks for Martin — batched, all small
 
-1. **Two minutes with the phone: the smoke test.** Launch Vertical, press START, confirm no yellow
-   background-mode warning, walk around for ~2 minutes, watch GPS FIXES climb and the three new
-   tiles populate, press STOP, check the session appears in Sessions. A screenshot of the running
-   screen is worth more than a description.
-2. **AirDrop today's two screenshots to the Mac** (the Slopes day card and the Carve logbook) so
-   they can be committed to `Data/comparisons/` — right now that evidence exists only in a chat.
-3. **One question about Carve:** after the 13:39 screenshot, did you ski anything at all, or just
-   press stop? The whole 116 m finding rests on the answer being "just pressed stop".
-4. **Next ski day, one free experiment: leave Vertical recording through lunch.** Don't stop it at
-   the restaurant. It measures the part of Carve's error we have only inferred, *and* it is the 3 h+
-   recording the battery question has needed since S5. Costs nothing but not pressing STOP.
-5. **Still true from S6:** any day with no multipath burst settles A18. Just record and screenshot
-   Slopes at the end.
+**Tomorrow morning (2026-09-02) Martin skis again.** Everything below fits in that one session.
+
+1. **Press START once, at the very beginning, and do not press STOP until you are done for the
+   day** — including any break, coffee, or lunch. This single habit answers three open questions at
+   once and costs nothing:
+   - **Battery (open since S5).** `batteryLevel` moves in 5% steps and no session has been long
+     enough to see more than one, so every %/h figure in these docs has been retracted. A 3 h+
+     continuous recording is the only thing that fixes it.
+   - **A20 / Carve's lunch accrual.** Carve recorded 2026-09-01's 69-minute lunch and Slopes booked
+     it as rest with no vertical. We have never recorded a break at all, so the ~37 m we attribute
+     to it is a residual, not a measurement. One recorded break makes it a measurement.
+   - **The auto-detector's hardest case.** A long stationary break is exactly what a lift/run
+     detector must *not* mistake for anything, and we have no example of one.
+2. **Screenshot Slopes and Carve at the end of the day, from the saved day record** — the Logbook
+   entry, not the live Record screen. R12b exists because the two disagreed by 7.7%.
+3. **A18 still needs a burst-free day.** Nothing special to do; if the day happens to contain no
+   multipath burst, the top-speed question settles itself from the screenshot in #2.
+4. **Optional, two minutes:** open the app before skiing and check the new VERTICAL / TOP SPEED /
+   RUNS tiles look sane. Today's two sessions were recorded on the older build, so the recorder is
+   proven but this screen has never been looked at on the device.
 
 ---
 

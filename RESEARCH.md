@@ -421,10 +421,12 @@ the finding.
 | Elapsed | 2 h 50 m | 3 h 02 m | 1 h 43 m recorded |
 
 **Slopes' saved number is its live number. Carve's is not.** Carve's run count is unchanged at 7 and
-its elapsed time went 3:01:43 → "3h 2m", which is that same figure rounded — so at most ~47 s of
-further recording separates the two readings, and no new run. **[V]** on both readings (the 13:39
-one is `Data/comparisons/2026-09-01_carve_1339.png`, re-read from the image rather than from our own
-notes). Whatever produces the 116 m, it is not more skiing.
+its elapsed time went 3:01:43 → "3h 2m", which is that same figure rounded. **[V]** on both readings
+(both images are in `Data/comparisons/`, and the 13:39 one was re-read from the image rather than
+from our own notes). And the remaining loophole is closed by testimony rather than inference:
+**Martin confirms he pressed stop after the 13:39 screenshot and skied nothing further** — so this
+is not a last steep pitch hiding inside a rounded minute. Whatever produces the 116 m, it is not
+more skiing.
 
 **Which of the two numbers is the pipeline we characterised?** Replaying our own GPS altitude with
 hysteresis over both sessions — the model that reproduced Carve's session-1 figure to 0.4% in S6 —
@@ -859,7 +861,8 @@ phase of the roadmap.
    `Tools/replay.sh` (R12a). **Vertical was never affected** — it is measured top-to-bottom — so no
    accuracy claim in this document changes.
 7. **A20 — why did Carve's day vertical move 116 m between its live screen and its saved logbook
-   entry, on a recording that gained no runs and at most 47 s?** (§5.1.3.) Our GPS-hysteresis model
+   entry, on a recording that gained no runs and, per Martin, no further skiing at all?** (§5.1.3.)
+   The "he skied one more pitch" explanation is ruled out by testimony. Our GPS-hysteresis model
    of its pipeline matches the **saved** number, which makes the live 1,509 the odd one out. We
    cannot see inside the app, so this may stay a documented observation rather than an answer — but
    it must be quoted as one reading superseding another, never as "Carve says 1,509".

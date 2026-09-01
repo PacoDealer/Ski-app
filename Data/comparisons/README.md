@@ -45,19 +45,18 @@ Run 2 top-speed field in `2026-09-01_slopes.png` that would answer it is behind 
 
 ## Third batch — 16:18 / 16:20, the finished day records
 
-Martin skied no afternoon, so these are the same recording as the 13:39 batch, saved rather than
-live. **⚠️ The image files are not in this directory yet** — they were sent in conversation and need
-to be AirDropped to the Mac and committed here as `2026-09-01_slopes_1618.png` and
-`2026-09-01_carve_1620.png`. Until they are, the numbers below are transcribed from the screenshots
-and the archive is incomplete.
+`2026-09-01_slopes_1618.png` and `2026-09-01_carve_1620.png`. Martin skied no afternoon and
+**confirmed he pressed stop straight after the 13:39 screenshot** — he did not ski again — so these
+are the same recording as the 13:39 batch, saved rather than live.
 
 | App | Saved day record | Live at 13:39 | Moved |
 |---|---|---|---|
 | Slopes | 8 runs, **1,380 m**, 8.4 km, 2 h 50 m, top **67,2 km/h**, tallest run 415 m, peak alt 3.173 m, ski 41 min / lift 40 min / rest 1 h 28 m | 1,384 m | −4 m |
 | Carve | 7 runs, **1,625 m**, 9.4 km, 3 h 2 m, top **67 km/h** | 1,509 m, 9.08 km, 3:01:43 paused | **+116 m** |
 
-**The finding is the Carve row.** Same run count, same elapsed once rounded, no afternoon skiing —
-and 116 m (+7.7%) more vertical in the saved entry than on the live screen. Slopes moved 4 m the
+**The finding is the Carve row.** Same run count, same elapsed once rounded, and **Martin confirms
+he pressed stop and skied nothing further** — and 116 m (+7.7%) more vertical in the saved entry
+than on the live screen. Slopes moved 4 m the
 other way. Against our 1,367 m the saved figures are **Slopes +1.0%, Carve +18.9%**. Written up in
 `RESEARCH.md` §5.1.3, with the decomposition of Carve's error and the two questions it opened
 (A19, A20).
