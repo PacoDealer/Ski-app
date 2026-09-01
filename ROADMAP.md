@@ -27,12 +27,20 @@ before repeating any number about a competitor, and R1–R4 before writing a new
 
 ### The plan, in order
 
-**⬅ FIRST THING NEXT SESSION: pull the second session's file.** Martin skied again 11:30→~13:30 on
-2026-09-01 and both competitors were recording. Their day totals are screenshotted in
-`Data/comparisons/` (Slopes 8 runs / 1,384 m; Carve 7 runs / 1,509 m, and Carve's top speed is
-**still the 66.8 km/h glitch**). Vertical's own file for that session has not been pulled or
-analysed — do that before believing anything about session 2. Commands are below; run both
-`Tools/analyze.py` and `Tools/detect.py` on it, and commit it as a fixture.
+**✅ Done in S6: session 2 is pulled, analysed, and committed** as
+`Data/fixtures/2026-09-01_portillo_s2.jsonl` (the session-1 fixture was renamed `_s1` to match).
+Written up in **`RESEARCH.md` §5.1.2**. Both S5 conclusions replicated on an independent day-half —
+**Slopes +1.2%, Carve +10.4%** on the 1,367 m day total — and fix quality replicated too (0.97 Hz,
+hAcc ±7.9 m, Doppler on 2,768/2,773). The detector found exactly the 3 runs the screenshot
+subtraction had predicted, with one hand tag in the whole session.
+
+**⬅ THE ONE THING TO GET FROM THE NEXT RECORDING — assumption A18.** Slopes' day top speed is
+**67.2 km/h** and it is *either* the 11:28:59 multipath burst (which Carve demonstrably published)
+*or* our clean 64.7 peak read +3.9% high. **A session with no multipath burst settles it**: if
+Slopes still reads 2–4% over our accuracy-gated Doppler, it is systematically ungated; if it lands
+on our number, then it published the glitch and the top-speed wedge applies to *both* competitors,
+not just Carve. This costs nothing but recording — see §5.1.2. Compare afterwards with:
+`Tools/analyze.py <file>` → the "MAX SPEED" block, against Slopes' Today's Stats top speed.
 
 **Then, while Martin is still at Portillo (until ~2026-09-07) — this window does not come back:**
 
@@ -358,6 +366,43 @@ when MapLibre ships terrain, or when there is appetite for a Metal-shaped projec
 ---
 
 ## Session log
+
+### S6 — 2026-09-01 · the second session, and the first result that isn't n=1
+
+Pulled session 2 off the phone (`12:39:04–13:27`, 48 min) and ran both tools on it. Committed as
+`Data/fixtures/2026-09-01_portillo_s2.jsonl`; the first fixture was renamed `_s1` to match, and the
+references in `RESEARCH.md`, `Tools/detect.py` and the comparisons README were updated with it.
+
+**The point of this session is replication, and it replicated.** Fix quality: **0.97 Hz**, hAcc
+median **±7.9 m**, 99.9% of fixes usable, Doppler valid on **2,768/2,773** — session 1's outdoor
+result was not a fluke of one morning. Against the 13:39 day-total screenshots, **Slopes is +1.2%**
+over our 1,367 m and **Carve is +10.4%**, against +0.8% and +10.1% on session 1. Two apps, two
+independent day-halves, the same two places. Carve's error is now a property of its pipeline, not a
+bad morning.
+
+**The detector was right before the file was opened.** The comparisons README had predicted ~3 runs
+for session 2 by subtracting the two screenshot batches; `detect.py` found exactly 3 runs and 2
+lift rides, from one hand tag in the entire session (matched to 15.7 s). Slopes and Carve also both
+agree on 3 for session 2 — the day-total run-count disagreement (8 vs 7) is entirely session 1's
+base-area split, already explained in §5.1.1 finding 4.
+
+**A slow session put an honest bound on the headline.** Session 2 tops out at 43.9 km/h with no
+multipath anywhere, and position-differentiation beats gated Doppler by only **+8.8%**. That is the
+real cost of the naive method on a clean session; §5.1.1's +136.5% is what a single bad second does
+to it. Both numbers should always appear together.
+
+**New open question, tracked as A18 — where does Slopes' 67.2 km/h come from?** Session 2's maximum
+is 43.9, so it is from session 1, and the whole day holds only four samples ≥62 km/h: the clean
+64.7 at 11:01:11 and the three-sample 11:28:59 burst (66.8 / 69.6 / 63.4, hAcc 22–25 m). Either
+Slopes published the glitch as Carve did, or it read the clean peak +3.9% high — consistent with
+the +2.3% it ran over us on run 1. Every smoothed estimator tried (3 s / 5 s rolling means of
+Doppler and of position-differentiation) peaks inside the burst, which leans (a); Slopes' Run 2
+stamp of 10:57 containing the clean peak leans (b). The Premium blur over Run 2's top speed is too
+heavy to recover — tried. **Neither version goes in a doc until a burst-free session settles it**
+(R1). Full argument in `RESEARCH.md` §5.1.2.
+
+Also noted: battery **6.7 %/h** this session against 5.5 %/h on session 1, same phone, same day.
+Unexplained; logged in §13.4 rather than averaged away.
 
 ### S5 — 2026-09-01 · the three-app head-to-head, and the gate we had backwards
 

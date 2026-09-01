@@ -11,7 +11,7 @@ answers "did we find the right runs at all". They share segment_runs and nothing
 
 Stdlib only.
 
-    ./detect.py Data/fixtures/2026-09-01_portillo_day1.jsonl
+    ./detect.py Data/fixtures/2026-09-01_portillo_s1.jsonl
 """
 
 import datetime as dtm

@@ -1,7 +1,7 @@
 # Competitor screenshots — the evidence behind `RESEARCH.md` §5.1.1
 
 Screenshots Martin took of the **other two apps recording the same morning as
-`../fixtures/2026-09-01_portillo_day1.jsonl`**. They are the only record of those numbers: neither
+`../fixtures/2026-09-01_portillo_s1.jsonl`**. They are the only record of those numbers: neither
 app exports raw samples, and both screens are live views that are gone once the session is cleared.
 Keep them.
 
@@ -32,9 +32,16 @@ Three things worth noting before the second session's raw file is pulled and ana
    which is the base-area split described in §5.1.1 finding 4 — worth re-checking against the
    second file rather than assumed.
 
-**Not yet analysed: Vertical's own second session.** The file is still on the phone. Pull it and run
-both tools before drawing any conclusion from the numbers above — the whole point of this project is
-that a screenshot is not evidence about a pipeline.
+**Analysed S6 (2026-09-01).** The second session was pulled and is now
+`../fixtures/2026-09-01_portillo_s2.jsonl`. Results in `RESEARCH.md` §5.1.2. All three predictions
+above held: session 2 is **3 runs** exactly as the subtraction said, Carve is **+10.4%** on the day
+total against our 1,367 m, and Slopes is **+1.2%**. The run-count disagreement (8 vs 7) is entirely
+session 1's base-area split — both apps agree with us on 3 runs for session 2.
+
+One thing the subtraction could **not** settle: Slopes' 67.2 km/h day top speed. Session 2's maximum
+is 43.9 km/h, so it comes from session 1, where the only candidates are the clean 64.7 peak and the
+11:28:59 multipath burst. See §5.1.2 and assumption **A18** — it is not yet known which, and the
+Run 2 top-speed field in `2026-09-01_slopes.png` that would answer it is behind the Premium blur.
 
 ---
 

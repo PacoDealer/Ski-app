@@ -256,7 +256,7 @@ Concretely, the fixes are known **[A]**:
 
 Everything above §5.1 is forum posts and star ratings. This is the first time the claim has been
 tested: Martin recorded **the same morning simultaneously on Slopes, Carve, and Vertical**, and
-Vertical's raw JSONL (`Data/fixtures/2026-09-01_portillo_day1.jsonl`, 3,342 fixes at 1.00 Hz,
+Vertical's raw JSONL (`Data/fixtures/2026-09-01_portillo_s1.jsonl`, 3,342 fixes at 1.00 Hz,
 hAcc median ±8 m) is the referee — because unlike the other two, we can open it.
 
 **Windows are not identical.** Vertical recorded 10:35:07–11:30:39 local and **Martin confirmed he
@@ -323,6 +323,77 @@ Five findings, in order of how much they change the plan:
 honest claims are price, an inspectable file, and 6,992 resorts against ~50. Against Carve, which
 is the free competitor, accuracy is a real and demonstrable gap. See ROADMAP → "What we can
 actually claim".
+
+### 5.1.2 Session 2 and the day total — the head-to-head repeated (S6, 2026-09-01)
+
+Martin skied again **12:39:04–13:27** on the same day, all three apps recording, and screenshotted
+Slopes and Carve at 13:39 (`Data/comparisons/`, second batch). Vertical's file is
+`Data/fixtures/2026-09-01_portillo_s2.jsonl` — 2,773 fixes at **0.97 Hz**, hAcc median **±7.9 m**,
+99.9% of fixes usable, Doppler valid on 2,768 of 2,773. **The outdoor-GPS result from S5 replicates
+on a second session.** This is the first number in the project that is no longer n=1.
+
+The competitor screenshots are day cumulative totals, so the comparison is against our two sessions
+summed:
+
+| Whole day, 2026-09-01 | Slopes | Carve | Vertical |
+|---|---|---|---|
+| Runs reported | 8 | 7 | **7** (+2 descents under the 30 m threshold) |
+| Vertical | 1,384 m | 1,509 m | **1,367 m** (1,403 m counting those two) |
+| Δ vs. Vertical | **+1.2%** | **+10.4%** | — |
+| Top speed | 67.2 km/h | 66.8 km/h | **64.7 km/h** |
+
+**Both S5 conclusions survive the repeat, which is the point of running it twice.** Slopes is within
+1.2% of us over 1.4 km of vertical (0.8% on session 1); Carve is +10.4% (+10.1% on session 1). The
+same two apps land in the same two places on a second, independent day-half, and Carve's error is
+stable enough to be a property of its pipeline rather than a bad day.
+
+**A prediction made before the file was pulled came true.** The comparisons README subtracted the
+two screenshot batches and predicted session 2 was ~3 runs (Slopes 8−5, Carve 7−4). `detect.py`
+finds exactly **3** runs and 2 lift rides, with no tags to lean on — Martin placed one marker all
+session ("Lift on", matched to 15.7 s). All three apps agree on the run count for session 2.
+
+**Session 2 was slow skiing, and that is useful.** 462 m over three descents at 0.1–0.3 m/s
+vertical rate, against session 1's 1.1 m/s on run 1; top speed **43.9 km/h** against 64.7. Nothing
+in the session goes near the multipath regime, and the naive-vs-gated gap collapses accordingly:
+position-differentiation reads 47.7 vs Doppler's 43.9, **+8.8%**. That is the honest shape of the
+headline claim — **on a clean session the naive method costs ~9%; the +136.5% in §5.1.1 is what one
+bad second does to it.** Two sessions now agree on the ~9% figure (§5.1.1 finding 3 measured +9% on
+the clean acceleration).
+
+Battery was **6.7 %/h**, against 5.5 %/h on session 1 — same phone, same day, colder/shorter
+session. Projected full-day cost 47%. Not a concern yet, but the spread is worth watching before
+any battery claim goes into a doc.
+
+#### The open question this raised: where does Slopes' 67.2 km/h come from?
+
+Slopes' day top speed is **67.2 km/h**, ours is 64.7. Session 2's maximum is 43.9, so the number
+comes from session 1, and **the whole day contains only four Doppler samples at or above 62 km/h:**
+
+| Time | Doppler | hAcc | Reading |
+|---|---|---|---|
+| 11:01:11 | 64.7 km/h | ±9.3 m | clean — a smooth 10 s ramp, pos-diff agrees at 70.6 |
+| 11:28:59 | 66.8 km/h | ±22.3 m | the multipath burst (Carve's published number) |
+| 11:29:00 | 69.6 km/h | ±23.7 m | same burst |
+| 11:29:01 | 63.4 km/h | ±25.4 m | same burst |
+
+So 67.2 has exactly two possible origins, and **the data cannot separate them:**
+
+- **(a) Slopes published the glitch too**, as Carve did — 67.2 sits between the burst's 66.8 and
+  69.6, and every smoothed estimator tested (3 s and 5 s rolling means of Doppler and of
+  position-differentiation) peaks *inside* the burst rather than at the clean sample.
+- **(b) Slopes read the clean peak high.** On run 1 Slopes ran **+2.3%** over our accuracy-gated
+  Doppler (53.8 vs 52.6); 67.2 is **+3.9%** over 64.7 — the same order. Slopes' Run 2 is stamped
+  **10:57** against our run 2 at 10:56:57, and the clean 11:01:11 peak falls inside it. The Run 2
+  top-speed field in the 11:46 screenshot would settle this, but it is behind the Premium blur;
+  recovering it by crop-and-upscale was attempted and the blur is too heavy.
+
+**Do not write either version down as fact** (`WORKFLOW.md` R1). What settles it is a recording day
+that contains **no multipath burst at all**: if Slopes still reports 2–4% above our gated Doppler,
+it is a systematic offset in its estimator and (b) is right; if Slopes lands on our number, then
+(a) was right and Slopes' 67.2 was the glitch. Either answer is worth having — (a) would mean
+*both* competitors publish corrupt peaks and the top-speed wedge is much wider than the Carve-only
+claim in §5.1.1; (b) would mean Slopes is simply ungated and reads a few percent high, which is a
+far weaker claim we should stop implying. Tracked as **A18** in §13.4.
 
 ### 5.2 Recording reliability
 
@@ -682,15 +753,22 @@ phase of the roadmap.
 
 ### 13.4 What is still genuinely unknown
 
-1. **Everything rests on one 56-minute morning.** One clean speed peak, one glitch, four descents,
-   one mountain, one phone, one weather system. Every percentage in §5.1.1 is n=1.
-2. **No cold-weather or full-day battery data.** 5.5%/h was measured over 56 min at ~10 °C.
-   Lithium cells lose capacity in cold; a −10 °C day is a different test.
+1. **~~Everything rests on one 56-minute morning.~~ Partly answered, S6.** A second session
+   (`_s2.jsonl`, 48 min) replicates the fix-quality result and both competitor deltas — Slopes
+   +1.2%, Carve +10.4% on the day total. Still one mountain, one phone, one weather system, and
+   still **n=1 for the multipath glitch**, which is the single sample the top-speed claim rests on.
+2. **No cold-weather or full-day battery data.** 5.5%/h (session 1) and 6.7%/h (session 2) were
+   measured over 56 and 48 min at ~10 °C. Lithium cells lose capacity in cold; a −10 °C day is a
+   different test. The 1.2 pt spread between two sessions of the same day is itself unexplained.
 3. **No competitor has been installed and driven by us** — S1 flagged this and it is still true.
    Slopes' free tier and Carve are both installed on Martin's phone, which is as close as we get
    without the paid account.
 4. **No App Store review exposure has been assessed at all** for background location and the
    health/fitness framing.
+5. **A18 — does Slopes publish the multipath glitch, or is it just ungated?** Its day top speed of
+   67.2 km/h is either the 11:28:59 burst (as Carve's demonstrably is) or the clean 11:01:11 peak
+   read +3.9% high. §5.1.2 has both cases and the evidence for each; neither may be asserted. **The
+   test is a session containing no multipath burst** — cheap, and every future recording is one.
 
 ---
 
