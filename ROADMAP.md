@@ -139,7 +139,8 @@ What S1 established:
 - Full competitive landscape mapped (`RESEARCH.md` §2).
 - **8 of Slopes' 10 premium features are free to build with no running cost** (§8).
 - **Trail maps are solved** — OpenSkiMap ships 6,992 ski areas / 96,693 runs as daily GeoJSON +
-  vector tiles under ODbL. That's ~140× Slopes' ~50 hand-crafted resorts.
+  vector tiles under ODbL. (The "~140× Slopes" comparison this line used to carry was
+  withdrawn in S5 — see `RESEARCH.md` §13, A2.)
 - **Live lift status is solved** — Liftie (BSD-3, actively maintained) with a public REST API. This
   was the feature I initially assessed as the expensive one; it isn't.
 - **The wedge is accuracy, not features** — the whole category has documented 5–10% vertical

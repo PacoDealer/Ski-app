@@ -40,7 +40,7 @@ GitHub (OpenSkiMap/openskidata-processor, Liftie, openskistats), the Slopes foun
 
 | App | Platform | Price | What it's for | Weakness |
 |---|---|---|---|---|
-| **Slopes** | iOS + Android + watchOS | Free tier; Premium ~$29.99/yr, ~$49.99 family, **$3.99 day pass** | The category leader. Auto lift/run detection, hand-made trail maps, 3D, social, leaderboards | Key features paywalled — incl. *run names on the map* **[S]**; Android lags iOS |
+| **Slopes** | iOS + Android + watchOS | Free tier; Premium **$34.99/yr, $59.99 family** (re-read 2026-09-01), plus in-app day and week passes | The category leader. Auto lift/run detection, hand-made trail maps, 3D, social, leaderboards | Key features paywalled — incl. *run names on the map* **[S]**; Android lags iOS |
 | **Ski Tracks** | iOS + Android | ~$1.99 one-time | The old guard. Speed/distance/vertical/altitude, GPX export, 3D replay, offline | No maps-as-navigation, no social, plain UI |
 | **Ski Tracker** (exatools) | Android-first | ~$1.99 / freemium | Stats + GPX export free | No trail maps, no social |
 | **We Ski & Snowboard** | iOS + Android | Freemium | 3D trail maps, ~2,000 resorts, lift wait times, leaderboards, live friend location | Less polished; smaller community |
@@ -379,8 +379,12 @@ This is the section that determines whether "all premium features, free" is actu
   runs + lifts layers, and **Mapbox Vector Tiles** (`.mbtiles`).
 - **Updated daily.**
 - Coverage: **6,992 downhill ski areas in 70 countries, 96,693 downhill runs** **[V]**.
-  Compare: Slopes' "hand-crafted" premium maps = ~50 resorts **[V]**; its general interactive maps =
-  2,000+ resorts **[S]**. **The free open dataset is 3× larger than Slopes' paid one.**
+  **Do not compare this to Slopes without a measured number** (S5, A2). The ~50 figure this doc
+  used to cite is from the founder's blog describing an *early season* of hand-crafted maps, and
+  the "50+" in Slopes' current marketing is **live lift & trail status in North America**, not map
+  coverage. Slopes' present-day map coverage is stated only as "thousands of resorts worldwide"
+  with no count. Open data is very likely broader — but "3× larger" was a claim we invented, and
+  it is withdrawn.
 - Features come pre-enriched with elevation, reverse-geocoded country/region/locality, VIIRS
   satellite snow cover, and multi-resort ski-pass membership.
 - **License: ODbL** (Open Database License, inherited from OSM).
@@ -503,6 +507,52 @@ S1 as a hard technical limit. It took one screenshot of a competitor to show the
 and the conclusion drawn from it was not. Look at what shipping apps actually do before believing
 a capability is out of reach.
 
+#### Amendment, S5 (2026-09-01): MapKit cannot do it, and the spike is already answered
+
+The S4 amendment closed by saying "verify MapKit's real elevation and overlay behaviour against
+Apple's docs before committing." Done, and **the answer is no.** From Apple's own WWDC22 session
+10035, *What's new in MapKit*:
+
+> "When adding an overlay to a map with realistic terrain, MapKit will automatically transition the
+> map to a flat representation. The map will automatically go back to realistic when you remove the
+> last overlay." … "One notable exception to this rule are overlays sourced through MapKit's
+> directions API. Those overlays automatically follow the terrain."
+
+A ski track is a custom `MKPolyline`. OpenSkiMap piste geometry is custom overlays. **Adding either
+one flattens the mountain.** `MKDirections` returns driving/walking routes on the road network and
+cannot be made to return a run down La Parva. So option 1 does not deliver the product — it
+delivers 3D terrain *or* our data, never both, and the whole point is our data on the terrain.
+
+Consequences, in order:
+
+- **Option 1 is dead for replay.** MapKit remains an excellent *2D* map (which is what Carve's
+  record screen uses, and what our own screenshot of it shows) and is still the right default for
+  every non-3D map surface. Nothing about the 2D case changed.
+- **Option 2 (MapLibre Native) is still not ready.** Terrain is in active development — named
+  contributors in the December 2025 newsletter, MLT 3D tile-format research in April 2026 — with no
+  shipped release (A11). Watchable, not plannable.
+- **Option 3 (SceneKit/RealityKit + DEM) becomes the front-runner by elimination,** and it got
+  cheaper: **Mapterhorn** now serves global Terrain-RGB tiles (Copernicus 30 m worldwide, national
+  LIDAR where it exists) in PMTiles, **data CC BY 4.0, code BSD-3** (A16). That is the elevation
+  mesh, free and attributable. The remaining unsolved piece is the **satellite imagery drape** —
+  Apple's imagery cannot be lifted out of MapKit into our own 3D scene, so that needs its own
+  licensed source. **That, not the terrain, is the real open question now.**
+- **Carve is doing something we have not identified.** Its listing promises "satellite imagery
+  draped over the actual mountain surface", "cinematic drone camera… free-fly", and a "speed
+  heatmap trail rendered in 3D" — MapKit does none of that with a custom overlay present. So it is
+  a hand-built 3D scene, and the S4 inference from an attribution string was wrong.
+
+**Recommendation: cut 3D from v1 entirely and say so out loud.** It was always Phase 3, it is now
+known-expensive rather than assumed-cheap, and nothing else in the project depends on it. Revisit
+when either MapLibre ships terrain or the accuracy work is finished and there is appetite for a
+Metal-shaped project.
+
+**Lesson, and it is the mirror of the S4 one:** S4 corrected an over-pessimistic conclusion by
+looking at a competitor, and then immediately drew an over-optimistic conclusion from the same
+screenshot. *"A shipping app does X, therefore X is easy with the framework I think it uses"* is
+not evidence — it is two inferences stacked, and both were wrong. The primary source settled in one
+lookup what the screenshot could not.
+
 ### 9.2 ARKit geo-tracking won't work on a mountain
 
 `ARGeoTrackingConfiguration` requires Apple's localisation imagery and only works in specific mapped
@@ -566,6 +616,61 @@ partnerships.
    ~3 months, southern is *right now*. This shapes the whole schedule. (Los Andes / Bariloche is in
    season through September–October.)
 7. **Name.** "Vertical" is a placeholder.
+
+---
+
+## 13. Assumption register (opened S5, 2026-09-01)
+
+Everything the plan rests on that had never actually been checked, with what it costs to be wrong.
+This section exists because S5 found three separate claims in this document that were repeated for
+five sessions and turned out to be false or unsupported — including one that was steering a whole
+phase of the roadmap.
+
+**Verdict key:** ✅ verified against a primary source · ❌ **wrong, corrected below** ·
+⚠️ unverified, and here is how to check it.
+
+### 13.1 Positioning and competitors
+
+| # | Assumption | Verdict | What actually holds |
+|---|---|---|---|
+| A1 | Ski apps overestimate vertical 5–10%, so accuracy is our wedge against Slopes | ❌ | **Slopes: 912 m vs our 905 m, 0.8%** (§5.1.1). The folklore is about Ski Tracks and Garmin. **Carve** does fit it (+10.1%). Accuracy is a wedge against Carve, a tie against Slopes. |
+| A2 | Slopes' hand-crafted premium maps cover ~50 resorts, vs 6,992 open — "3× larger" | ❌ | Two different numbers got welded together. The ~50 **[V]** is from the founder's blog about an *early season* of hand-crafted maps — years stale. The "50+" in current Slopes marketing is **live lift & trail status in North America**. Present-day map coverage is stated only as "thousands of resorts worldwide", uncounted. **"3× larger" was our own arithmetic on mismatched figures and is withdrawn.** Open data is probably broader; nobody has measured it. |
+| A3 | Slopes Premium is ~$29.99/yr, ~$49.99 family | ❌ | **$34.99/yr, $59.99 family** (getslopes.com/premium, read 2026-09-01), plus in-app day and week passes. Prices had drifted since S1. |
+| A4 | Carve's 3D replay is MapKit, so Apple gives us 3D free (the S4 finding that reopened D4) | ❌ | See A9. MapKit **cannot** do what Carve's listing describes, so the inference from the " Maps · Legal" attribution was wrong — that attribution is on Carve's 2D *record* screen (visible in `Data/comparisons/2026-09-01_carve.png`), not necessarily on the 3D replay. |
+| A5 | Carve is GPS-only and inherits the category error | ⚠️ | Its 996 m sits **between** our barometric-summed 944 m and GPS-summed 1,227 m, which suggests it *does* use the barometer but does not run-segment. Settle it: after a real ≥3 min Carve recording, check **Settings → Privacy & Security → Motion & Fitness** for Carve. Martin recorded 1 h 05 m on it on 2026-09-01, so the test is finally valid. |
+| A6 | Carve has no traction | ✅ | Still "not received enough ratings or reviews to display an overview" (App Store, 2026-09-01). |
+
+### 13.2 Data and licensing
+
+| # | Assumption | Verdict | What actually holds |
+|---|---|---|---|
+| A7 | OpenSkiMap's pipeline is alive and produces what we need | ✅ | `openskidata-processor` active, 561 commits, Docker pipeline, outputs GeoJSON + `openskidata.gpkg` + optional MVT. Elevation now comes from **Mapterhorn** terrain tiles; ski-pass data from The Storm Skiing Journal's chart; snow cover from VIIRS **with a mandatory citation** (`VNP10A1 v2`, Riggs & Hall 2023) if we enable it. |
+| A8 | The data is ODbL, attribution visible, derived DBs must be shared | ⚠️ | The processor README **does not state a license** — the ODbL conclusion comes from OSM upstream, which is sound but not read from this project's own terms. Skimap.org's terms and the Storm Skiing Journal spreadsheet's terms remain unread. **Before shipping data, read all three.** Cost of being wrong: a takedown after launch. |
+| A16 | Free global DEM tiles exist for 3D | ✅ | **Mapterhorn** — global Terrain-RGB in PMTiles, Copernicus 30 m worldwide plus national LIDAR where available, **data CC BY 4.0, code BSD-3**. This is the terrain source if we build 3D ourselves. |
+| A17 | Liftie solves live lift status, free | ✅ (mostly) | BSD-3, 2,235 commits, live CI, public API `GET https://liftie.info/api/resort/<resort>`, 65 s refresh. **No published rate limits or terms** — which is a reason to ask the maintainer, not a licence to hammer it. Self-hosting stays the honest default. |
+
+### 13.3 Apple platform (the section that changed the roadmap)
+
+| # | Assumption | Verdict | What actually holds |
+|---|---|---|---|
+| A10 | **MapKit gives us 3D terrain with our track drawn on it** | ❌ **This is the big one.** | Apple's own WWDC22 session 10035: *"When adding an overlay to a map with realistic terrain, MapKit will automatically transition the map to a flat representation."* Only routes from the **MKDirections** API follow terrain. **A ski track is a custom `MKPolyline`, so the instant we draw it the mountain goes flat.** MapKit can give us 3D terrain, or our track, never both. §9.1's amendment in S4 is withdrawn and **D4 is reopened**. |
+| A11 | MapLibre Native still has no iOS 3D terrain | ✅ (still true) | Terrain work is in progress (named contributors in the Dec 2025 MapLibre newsletter; MLT 3D tile-format research in April 2026). **No shipped release.** Do not plan on it landing. |
+| A12 | The barometer is the right primary altitude source | ✅ | Measured, repeatedly (§5.1.1, ROADMAP S3–S5). Additionally `CMAltimeter` offers **absolute** altitude (`CMAbsoluteAltitudeData`, iOS 15+, **iPhone 12 and later only**) — we already log it, and it is the drift check that `relativeAltitude` alone cannot provide. |
+| A13 | Background recording is correctly configured | ✅ on device, ⚠️ in design | It works (S3–S5). But Apple's current guidance is `CLBackgroundActivitySession` / `CLServiceSession`, and states plainly: **"If your app terminates, you must recreate the `CLServiceSession` immediately upon launch in the background"** and **"Don't start these services at launch time if your app's authorization status is undetermined."** Our S4 auto-resume must be re-read against both sentences. |
+| A14 | Free provisioning is a minor inconvenience | ❌ | Free accounts get **7-day profiles, 10 App IDs, 3 devices, and no TestFlight and no App Store at all**. The **$99/yr Apple Developer Program is not optional** for anything past personal testing — and it is *already* costing us: the build dies ~2026-09-07, mid-trip, and `mobile-mcp` can't drive the device for want of a wildcard App ID. |
+| A15 | Apple Watch is a liability, defer | ⚠️ | Unchanged from S1 and still untested. Left deferred deliberately, not by oversight. |
+
+### 13.4 What is still genuinely unknown
+
+1. **Everything rests on one 56-minute morning.** One clean speed peak, one glitch, four descents,
+   one mountain, one phone, one weather system. Every percentage in §5.1.1 is n=1.
+2. **No cold-weather or full-day battery data.** 5.5%/h was measured over 56 min at ~10 °C.
+   Lithium cells lose capacity in cold; a −10 °C day is a different test.
+3. **No competitor has been installed and driven by us** — S1 flagged this and it is still true.
+   Slopes' free tier and Carve are both installed on Martin's phone, which is as close as we get
+   without the paid account.
+4. **No App Store review exposure has been assessed at all** for background location and the
+   health/fitness framing.
 
 ---
 

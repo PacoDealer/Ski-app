@@ -12,8 +12,10 @@ disagreeing by 1,878 ft) and **nobody has fixed accuracy**. That's a pure engine
 no dataset and no payroll behind it, which is exactly the kind of thing one careful developer beats
 a 12-person company at. Free is the distribution strategy; accuracy is the product.
 
-Slopes' paywall protects GIS headcount and per-resort data labour, not hard technology. The open
-data is already **3× larger** than what Slopes sells (6,992 ski areas vs. ~50 hand-crafted).
+Slopes' paywall protects GIS headcount and per-resort data labour, not hard technology. Open trail-map data
+(OpenSkiMap, 6,992 ski areas) is free and worldwide — but **do not repeat the old "3× larger than
+Slopes" line**; S5 found it was built from two unrelated numbers and withdrew it (`RESEARCH.md`
+§13, A2).
 
 ## Project path
 
