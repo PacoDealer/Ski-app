@@ -77,6 +77,19 @@ diffed in one command; run it after touching either. Batch and streaming impleme
 same rule are not the same algorithm written twice — they are two algorithms that owe you the same
 answer. *(S6.)*
 
+**R12b — Compare against the record the user keeps, not the screen we happened to photograph.**
+Carve's live screen said 1,509 m at 13:39; its saved logbook entry for that same recording says
+**1,625 m**. We had built a competitor delta (+10.4%) on a number the app itself no longer reports.
+A live view is a work in progress and may be recomputed on save. Screenshot the *finished* record,
+and when only a live one exists, label it as such in the table. *(S7.)*
+
+**R12c — A metric that gets more correct can score worse against old ground truth. Check what the
+tag actually meant before believing the regression.** Trimming the wait at the top out of run
+durations dropped run-start scoring from 2/2 to 0/2, which reads as a broken change. It wasn't:
+Martin taps "Top" when he *arrives*, 37–66 s before he pushes off, so the improved number was being
+graded against an event nobody had labelled. Ask what the human was doing when they pressed the
+button. *(S7.)*
+
 **R13 — Never drop sensor data at capture time.** A discarded sample is gone forever; a filter can
 be changed any time. Log everything raw, including obviously-bad values, and filter in
 `Tools/analyze.py`. Every accuracy finding this project has made came from data an app with a
