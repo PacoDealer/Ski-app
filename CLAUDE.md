@@ -24,9 +24,24 @@ data is already **3× larger** than what Slopes sells (6,992 ski areas vs. ~50 h
 **➡️ Read `ROADMAP.md` → "⚡ START HERE" first. It has the handoff, the exact commands, and the
 one open question.**
 
-**S4 (2026-08-31, late): the app is installed, current, and now survives being killed mid-day.**
-Martin skis Portillo on **2026-09-01 — the first outdoor recording the project has ever had.**
-He is there until ~2026-09-07; the build expires ~2026-09-07 (free provisioning).
+**S5 (2026-09-01): the first outdoor day is recorded, and the three-app head-to-head is done.**
+GPS outdoors is green (1.00 Hz, Doppler valid on 3,342/3,342 fixes, hAcc median ±8 m, 5.5%/h
+battery). Martin is at Portillo until ~2026-09-07; the build expires ~2026-09-07 (free
+provisioning).
+
+**The thesis survived contact with reality, but not in the shape it was written above.** Over the
+whole morning **Slopes reported 912 m to our 905 m — 0.8%**, and matched us to ~2% on run-1
+vertical and top speed. Slopes is not the app with soft numbers, and we must stop implying it is:
+**against Slopes, accuracy is a tie.** **Carve** is the one that fits the pattern — **+10.1%** on
+vertical, and its published top speed for the day is *bit-for-bit a multipath glitch* visible in
+our own raw file. The real claim is that naive methods cannot reject a bad second, and one bad
+second owns the headline. `RESEARCH.md` §5.1.1 has the tables, `ROADMAP.md` → "What we can actually
+claim" has the positioning that follows.
+
+The same comparison caught **two bugs in our own analyzer** (ROADMAP S5): the speed gate used
+`speedAcc` when `hAcc` is the field that fails, and run segmentation was **silently deleting
+vertical** — a 4 m pressure blip split a run and the orphaned tail fell under the minimum-drop
+threshold. We reported 895 m for a 905 m day. Both fixed.
 
 A recording interrupted by a jetsam kill, a crash, or a cold-weather power cut is now reopened
 silently on next launch and appended to on the same timeline — verified on the device with a real
@@ -39,9 +54,9 @@ speed heatmaps and run comparison (`RESEARCH.md` §2.2). It says nothing about a
 the free one" as dead.
 
 Verified on real hardware: barometer is excellent (0.85 m drift over 3.2 min stationary; pressure
-matches Portillo's 2,880 m), location auth is Always, background recording is correctly entitled.
-**Unverified: GPS outdoors** — indoors it ran at 0.34 Hz with Doppler speed valid on only 8 of 68
-fixes. The first chairlift is the test; check the `DOPPLER` tile.
+matches Portillo's 2,880 m), location auth is Always, background recording is correctly entitled,
+and **GPS outdoors is fine** — the alarming indoor numbers (0.34 Hz, Doppler on 8 of 68 fixes) were
+the building.
 
 **Interaction model:** the app must **auto-detect** runs and lifts. Press START, pocket the phone.
 The tag buttons in the UI are temporary scaffolding for building the detector and get removed once
@@ -141,3 +156,19 @@ Learned here, S3:
 - **Make the app self-diagnosing.** The `DOPPLER` tile exists because the alternative was Martin
   skiing a full day and only then discovering the data was unusable. On-device readouts beat
   post-hoc file analysis when the user is somewhere you can't debug.
+
+Learned here, S5:
+
+- **Gate on the field that fails, not the field that correlates.** `speedAcc` rises with speed, so
+  a fixed `speedAcc` ceiling censors fast samples — the thing you are trying to measure — while
+  passing genuinely bad ones, because a receiver that has lost the sky still reports a confident
+  speed for a wrong position. `hAcc` is what actually degrades during multipath. Before shipping
+  any threshold, print the **distribution** of the field: ours sat at the median and silently
+  discarded 57% of a healthy track.
+- **Don't let category folklore stand in for the market leader.** "Ski apps overestimate 5–10%"
+  came from complaints about Ski Tracks and Garmin. Measured head-to-head, Slopes is within 2% of
+  us. A claim about "the category" must be re-checked against each competitor before it becomes a
+  pitch.
+- **Sanity-check a headline ratio against its own worst case.** "+136% vs. naive" is true and
+  nearly useless on its own — it compares our gated peak against a one-second GPS glitch. On clean
+  data the same comparison is +9%. Quote the mechanism, not the biggest number.

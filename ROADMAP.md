@@ -5,16 +5,34 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-08-31 late, S4)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S5)
 
-**Martin skis at Portillo on 2026-09-01 and this is the first outdoor recording.** The app is
-installed, current, and now survives being killed mid-day. The single open question is still
-whether GPS behaves outdoors.
+**The GPS question is answered green and the three-app head-to-head is done.** Read
+`RESEARCH.md` §5.1.1 first — it is now the most important page in the repo, because it is the only
+place where the thesis meets measured numbers instead of forum posts. The short version:
 
-### The first thing to do next session
+- **Slopes is accurate.** 912 m to our 905 m over the whole morning — **0.8%**. Run 1: 415 vs 407 m
+  (2.0%), 53.8 vs 52.6 km/h (2.3%). The "everyone overestimates 5–10%" folklore does not describe
+  Slopes. **Accuracy is a tie against Slopes, not a wedge.**
+- **Carve overstates vertical by +10.1%** (996 m vs 905 m over the same four descents), and its
+  headline top speed of **66.8 km/h is, to the decimal, a corrupted sample in our own file** — a
+  four-second multipath burst at 11:28:59 with hAcc at 22 m and a 42.5 m one-second position jump.
+  **Against Carve the accuracy gap is real and demonstrable.**
+- **Two bugs of our own** came out of the comparison, both now fixed: the speed gate used the wrong
+  field, and run segmentation was silently deleting vertical (see S5 below).
 
-**Pull the day's file and look at it.** Everything else is secondary — this is the first real
-data the project has ever had.
+### The three things to do next session
+
+1. **Record another day, ideally a full one.** Every number in §5.1.1 rests on a single 56-minute
+   morning with one clean speed peak and one glitch. One burst in one file is an anecdote; the same
+   signature on three days is a finding. This is the highest-value thing Martin can do while he is
+   still at Portillo (until ~2026-09-07), and it costs him nothing but pressing START.
+2. **Work the assumption register in `RESEARCH.md` §13** — everything the plan rests on that has
+   not actually been checked, ranked by what it would cost to be wrong.
+3. **Then Phase 1 auto-detection properly** — the detector already matched Martin's hand tags to
+   within 16 s at the top and 2 s at the bottom of run 1, so it is closer than expected.
+
+### Pulling and analysing a day (the routine, now that it works)
 
 ```sh
 xcrun devicectl device copy from --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6 \
@@ -27,6 +45,12 @@ Read, in this order: **the Doppler ratio** (the whole max-speed approach depends
 GPS fix rate, then vertical run-segmented vs. the naive methods, then the battery notes, then the
 hand-placed tags. If the report says the session auto-resumed, that means the app died and
 recovered — note the gap and why (battery? thermal? jetsam?).
+
+**Always look at the seconds around the reported max speed before believing it** (S5). The
+analyzer's headline number is now hAcc-gated, but the honest check is still by eye: a real peak is
+a smooth 10–20 s ramp with hAcc steady under 15 m, and position-differentiation agrees with Doppler
+to within about 10%. A glitch is a step change with hAcc degrading past 20 m and a position jump
+that implies a speed no skier reaches. On 2026-09-01 the day contained one of each.
 
 Two test files from the S4 verification are on the phone and will show up in the pull:
 `2026-08-31_230847_TESTRESU.jsonl` and `2026-08-31_231638_TESTRES2.jsonl`. **Both are synthetic —
@@ -63,25 +87,19 @@ Note the destination must be a **file path, not a directory**, when copying a si
 - Over the same stationary 3.2 min, **GPS altitude accumulated 10 m of phantom vertical.** That
   ratio, on real hardware, is the project thesis in miniature.
 
-### ⚠️ THE ONE OPEN QUESTION — GPS health outdoors
+### ✅ ANSWERED — GPS health outdoors (2026-09-01)
 
-The only smoke test so far was **indoors**, and it showed:
-- GPS at **0.34 Hz** (a fix every 5–6 s, suspiciously regular) instead of ~1 Hz
-- **Doppler speed valid on only 8 of 68 fixes** (`speed = -1` on the rest)
-- horizontal accuracy median ±12 m
+The indoor smoke test looked alarming (0.34 Hz, Doppler valid on 8 of 68 fixes, hAcc ±12 m). All
+of it was the building. Outdoors, on the first chairlift:
 
-Indoors this is all expected. But **Doppler speed is the single field the entire max-speed
-approach rests on**, and it has never been observed working on this device. Martin couldn't test
-outdoors (it's cold and Portillo has nowhere to walk), so **the first chairlift is the test.**
+- **GPS 1.00 Hz**, 3,342 fixes over 56 min, no gaps.
+- **Doppler valid on 3,342/3,342 fixes.** The field the entire max-speed approach rests on works.
+- hAcc **median ±8 m, p90 ±12.3 m**, 99.2% of fixes usable — with one four-second multipath burst
+  where it degraded past 30 m, which is exactly the kind of event the gate now catches.
+- Battery **5.5%/h** → ~38% over a seven-hour day.
 
-A live **`DOPPLER` tile** was added to the UI precisely for this — it shows valid/total, colour
-coded (green ≥80%, yellow ≥40%, orange below). Ask Martin what colour it showed.
-
-- **Green outdoors** → GPS is fine, proceed to Phase 1 analysis work.
-- **Still orange while moving outdoors** → the CoreLocation configuration is wrong, not the
-  environment. Investigate `activityType` (currently `.other`), `desiredAccuracy`
-  (`kCLLocationAccuracyBestForNavigation`), and whether iOS is throttling background updates.
-  **Do not let him record many days before resolving this.**
+The `DOPPLER` tile has served its purpose and can come out of the UI whenever the recording screen
+is next touched.
 
 ### Design correction from Martin (2026-08-31) — important
 
@@ -242,6 +260,78 @@ amendment), so the four-way exploration collapses to one question.
 ---
 
 ## Session log
+
+### S5 — 2026-09-01 · the three-app head-to-head, and the gate we had backwards
+
+Martin recorded the same Portillo morning on **Slopes, Carve and Vertical at once** and sent
+screenshots of the other two. Full write-up in `RESEARCH.md` §5.1.1; the parts that change what we
+do next are here.
+
+**The comparison is not what the pitch assumed.** Slopes' run 1 — the only one it shows for free —
+came in at **415 m vs our 407 m and 53.8 vs 52.6 km/h**. Two percent on both. Slopes is not
+overestimating anything; the §5.1 folklore is about Ski Tracks and Garmin, and we had quietly let
+it stand in for the whole category including the market leader. Carve is the one that fits the
+pattern: **996 m vs our 905 m, +10.1%**, on the same four descents. Over the whole morning Slopes
+lands at 912 m against our 905 m — **0.8%**.
+
+**The best single finding of the project so far.** Carve reports the day's top speed as
+**66.8 km/h**. Our file contains, at **11:28:59**, a Doppler sample of exactly 66.8 km/h — inside a
+four-second burst where hAcc degrades from 8 m to 31 m and one consecutive pair of fixes is
+**42.5 m apart in one second** (153.1 km/h, which is where our own "naive method" headline number
+came from). Carve published the glitch. We could only see that because we keep the raw fixes, which
+is the argument for the whole capture design in one example.
+
+**And the finding aimed at us.** Checking why we disagreed with Slopes on run-1 top speed exposed
+that `MAX_SPEED_ACC = 2.0` was the wrong knob:
+
+- The **median `speedAcc` for the day was 2.04**, so the gate threw away **57% of a healthy 1 Hz
+  track** — it was sitting on top of the distribution, not out in its tail.
+- `speedAcc` **rises with speed**, so the gate cut hardest exactly where it mattered. The day's
+  real peak is a textbook 15-second ramp from a standstill to **64.7 km/h**, hAcc steady at 8–13 m,
+  altitude falling 52 m, with position-differentiation independently agreeing at 70.6 km/h. The old
+  gate reported **58.7 km/h** — it clipped the peak mid-acceleration because one sample crossed
+  2.0.
+- Meanwhile it **passed the 11:28:59 multipath burst**, because a receiver that has lost the sky
+  still reports a confident speed for a wrong position.
+
+`hAcc` is the field that separates the two cases: the real peak stays under 15 m, the burst does
+not. Gating Doppler on **hAcc ≤ 15 m** keeps 94% of the day and lands on 64.7 km/h; every
+alternative tried (accel-plausibility at 2.5/4/6 m/s², relative `speedAcc`, hAcc ≤ 20) agrees, and
+hAcc ≤ 25 does not — it lets the burst back in. `analyze.py` now gates on hAcc and keeps a loose
+`speedAcc ≤ 3.0` as a sanity bound only.
+
+**The honest restatement of the thesis.** Our headline is now "+136.5% vs. position-differentiated"
+(64.7 vs 153.1 km/h), but that ratio is glitch-versus-gate and should never be quoted on its own.
+On the same clean acceleration, position-differentiation reads 70.6 vs Doppler's 64.7 — **about
++9%**. The real claim is not that naive methods are 100%+ wrong all day; it is that **naive methods
+have no way to reject a bad second, and one bad second is all it takes to own the day's headline
+number.** Carve is the proof.
+
+**Also measured:** our run detector matched Martin's hand tags to **16 s at the top and 2 s at the
+bottom** of run 1. Descent-only distance 5.58 km, against Slopes' 5.1 km and Carve's 5.69 km.
+Slopes' own run-1 fields don't reconcile (2.1 km in 5 m 26 s is 23.2 km/h, not the 31.0 it prints).
+
+**The 5-runs-vs-4 question, answered — and it caught a second bug of ours.** Martin confirmed he
+stopped at 11:30, so there were **four descents**. Slopes' fifth run is an artefact, and the cause
+is in our own file: at **11:28:57**, arriving at the base, the barometer jumped **+4.1 m in two
+seconds** at the same instant GPS scattered — one physical event (a building) corrupting both
+sensors at once. That blip splits the last descent. Slopes counted the tail as a run.
+
+**We did something worse with the same blip.** `segment_runs` split the run *and then dropped the
+orphaned 16 m tail on the floor*, because it fell under `MIN_RUN_DROP_M = 30`. The day was reported
+**895 m when it was 905 m** — we were losing vertical, the mirror image of the bug this project
+exists to fix, and we would have shipped it as the honest number. Fixed: descents separated by less
+than **15 m of re-ascent and less than 60 s** are merged *before* the minimum-drop filter, measured
+top-to-bottom. Both conditions are load-bearing — the height rule alone swallowed five minutes of
+shuffling around the base area into "run 2" and inflated descent distance by 0.5 km. The analyzer
+now also **prints what the threshold discarded** instead of letting it vanish.
+
+**The generalisable lesson:** a single physical event corrupts every sensor at once. Barometer and
+GPS disagreeing is a useful signal; barometer and GPS *agreeing* is not independent confirmation.
+
+**Corrected totals: Vertical 905 m / 5.58 km descent distance / 4 runs.**
+
+---
 
 ### S4 — 2026-08-31 (late) · made the app survive a full day, and found a real peer
 

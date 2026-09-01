@@ -23,10 +23,31 @@ from datetime import datetime
 BARO_HYSTERESIS_M = 3.0
 # A descent must drop at least this much to count as a run.
 MIN_RUN_DROP_M = 30.0
+# Two descents separated by less re-ascent than this, and by less time than MERGE_GAP_S, are one
+# run with a bump in it rather than two runs. Both conditions matter: the height rule alone also
+# swallows the several minutes of shuffling around the base area between real runs, which would
+# then be counted as descent time and descent distance.
+MERGE_ASCENT_M = 15.0
+MERGE_GAP_S = 60.0
 # Reject Doppler speed samples the receiver itself doesn't trust.
-MAX_SPEED_ACC = 2.0     # m/s
+#
+# S5: this was 2.0 m/s and it was the wrong knob. On the Portillo day the MEDIAN speedAcc was
+# 2.04, so the gate discarded 57% of a perfectly healthy 1 Hz track — and it still got the
+# answer wrong, because speedAcc rises with speed: it clipped the real peak (a smooth, clean
+# 15 s acceleration to 64.7 km/h that position-differentiation independently confirms at
+# 70.6 km/h) at 58.7 km/h, purely because that one sample's speedAcc crossed 2.0.
+# Meanwhile the day's actual bad data — a multipath burst with a 42 m one-second position
+# jump — sailed through, because a receiver that has lost the sky reports a confident
+# speed for a wrong position.
+#
+# hAcc is the field that separates them: the burst degrades to 22-31 m while the real run
+# stays under 15 m. Gating on hAcc <= 15 m keeps 94% of the day and lands on 64.7 km/h.
+# Keep a speedAcc ceiling only as a loose sanity bound, not as the primary filter.
+MAX_SPEED_ACC = 3.0     # m/s
 # Reject position fixes worse than this before using them for anything.
 MAX_H_ACC = 25.0        # m
+# Doppler speed is only trustworthy while the receiver still knows where it is.
+MAX_SPEED_H_ACC = 15.0  # m
 
 
 def load(path):
@@ -138,11 +159,42 @@ def segment_runs(times, alts, min_drop=MIN_RUN_DROP_M, threshold=BARO_HYSTERESIS
                 anchor_t, anchor_a = t, a
     turns.append((anchor_t, anchor_a))
 
-    runs = []
+    # Every descent, before any filtering.
+    descents = []
     for (t0, a0), (t1, a1) in zip(turns, turns[1:]):
-        drop = a0 - a1
+        if a0 - a1 > 0:
+            descents.append({"top_t": t0, "top_a": a0, "bot_t": t1, "bot_a": a1})
+
+    # S5: merge descents separated by only a small re-ascent, BEFORE applying min_drop.
+    #
+    # Without this the analyzer loses vertical, which is the opposite of the category bug but
+    # just as wrong. On the Portillo day a 4.1 m pressure blip at 11:28:57 — arriving at the
+    # base building, which spiked the barometer and scattered GPS in the same second — split
+    # run 4 into 284 m + a 16 m tail. The tail then fell under MIN_RUN_DROP_M and was silently
+    # deleted, so the day was reported 16 m short. A blip that survives 3 m of hysteresis is
+    # still nothing like a lift ride; only a real ascent separates two runs.
+    merged = []
+    for d in descents:
+        if (merged
+                and d["top_a"] - merged[-1]["bot_a"] < MERGE_ASCENT_M
+                and d["top_t"] - merged[-1]["bot_t"] < MERGE_GAP_S):
+            merged[-1]["bot_t"], merged[-1]["bot_a"] = d["bot_t"], d["bot_a"]
+        else:
+            merged.append(dict(d))
+
+    runs, dropped = [], []
+    for d in merged:
+        # Top-to-bottom, so a wiggle in the middle of a run can neither add nor remove vertical.
+        drop = d["top_a"] - d["bot_a"]
         if drop >= min_drop:
-            runs.append({"start": t0, "end": t1, "drop": drop, "dur": t1 - t0})
+            runs.append({"start": d["top_t"], "end": d["bot_t"], "drop": drop,
+                         "dur": d["bot_t"] - d["top_t"]})
+        elif drop > 0:
+            dropped.append(drop)
+    # Report what the threshold discarded rather than letting it vanish — a day that loses a lot
+    # here is a day where min_drop or the merge rules are wrong for that mountain.
+    if runs:
+        runs[0]["sub_threshold"] = dropped
     return runs
 
 
@@ -238,7 +290,8 @@ def main(path):
     print(f"\n  --- MAX SPEED: how you measure it changes the answer ---")
 
     doppler = [l["speed"] for l in locs
-               if l["speed"] >= 0 and 0 <= l["speedAcc"] <= MAX_SPEED_ACC]
+               if l["speed"] >= 0 and 0 <= l["speedAcc"] <= MAX_SPEED_ACC
+               and 0 <= l["hAcc"] <= MAX_SPEED_H_ACC]
     doppler_ungated = [l["speed"] for l in locs if l["speed"] >= 0]
 
     # The naive method every other app uses: differentiate successive positions.
@@ -264,6 +317,29 @@ def main(path):
             err = kmh(derived_max) - kmh(max(doppler))
             print(f"  >>> naive method overstates by {err:+.1f} km/h ({err/1.609:+.1f} mph), "
                   f"{pct(derived_max - max(doppler), max(doppler))}")
+
+    # ---- SPEED PEAK CONTEXT -----------------------------------------------------------------
+    # S5: never trust a headline max speed without looking at the seconds around it. A real peak
+    # is a smooth ramp with steady hAcc; a multipath burst is a step change with hAcc falling
+    # apart. Carve published a 66.8 km/h glitch as its top speed for exactly this day.
+    if doppler:
+        peak = max((l for l in locs if l["speed"] >= 0
+                    and 0 <= l["speedAcc"] <= MAX_SPEED_ACC
+                    and 0 <= l["hAcc"] <= MAX_SPEED_H_ACC), key=lambda l: l["speed"])
+        print(f"\n  --- THE 10 s AROUND THE REPORTED MAX (sanity-check it by eye) ---")
+        near = [l for l in locs if abs(l["dt"] - peak["dt"]) <= 5]
+        prev = None
+        for l in near:
+            step = ""
+            if prev:
+                gap = l["dt"] - prev["dt"]
+                if gap > 0:
+                    d = haversine(prev["lat"], prev["lon"], l["lat"], l["lon"])
+                    step = f"  pos-diff {kmh(d/gap):5.1f} km/h"
+            flag = "  <-- MAX" if l is peak else ""
+            print(f"  {l['dt']-peak['dt']:+5.1f}s  {kmh(max(l['speed'],0)):5.1f} km/h"
+                  f"   hAcc ±{l['hAcc']:5.1f} m   alt {l['alt']:6.0f} m{step}{flag}")
+            prev = l
 
     # ---- VERTICAL: four methods ------------------------------------------------------------
     print(f"\n  --- VERTICAL DESCENT: four ways of counting the same day ---")
@@ -310,6 +386,11 @@ def main(path):
         drops = [r["drop"] for r in runs]
         print(f"\n  longest drop {max(drops):.0f} m   shortest {min(drops):.0f} m"
               f"   total {sum(drops):.0f} m")
+        # Never let a threshold discard vertical silently — that is how we lost 16 m in S5.
+        sub = [d for r in runs for d in r.get("sub_threshold", [])]
+        if sub:
+            print(f"  not counted: {len(sub)} descent(s) under {MIN_RUN_DROP_M:.0f} m, "
+                  f"{sum(sub):.0f} m in total")
 
     # ---- markers: the ground truth ---------------------------------------------------------
     if recs["mark"]:

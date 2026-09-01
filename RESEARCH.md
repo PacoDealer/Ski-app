@@ -235,6 +235,75 @@ Concretely, the fixes are known **[A]**:
 - Higher sample rate on descent than on lift (fixes "faster skiing loses vertical" *and* saves battery).
 - Average speed computed over **descent time only**, excluding lifts and lift lines.
 
+### 5.1.1 The head-to-head, finally measured (S5, 2026-09-01, Portillo)
+
+Everything above §5.1 is forum posts and star ratings. This is the first time the claim has been
+tested: Martin recorded **the same morning simultaneously on Slopes, Carve, and Vertical**, and
+Vertical's raw JSONL (`Data/fixtures/2026-09-01_portillo_day1.jsonl`, 3,342 fixes at 1.00 Hz,
+hAcc median ±8 m) is the referee — because unlike the other two, we can open it.
+
+**Windows are not identical.** Vertical recorded 10:35:07–11:30:39 local and **Martin confirmed he
+stopped skiing at 11:30** — nothing was missed after that. Slopes was still recording at 11:46
+(1 h 11 m elapsed) and Carve was paused at 1:05:43, so both had ~16 minutes of standing around
+inside their totals. Timestamps line up where they can be checked: Slopes' Run 1 is stamped
+**10:38** and ours starts 10:39:15 (Martin's hand tag "Top" is 10:38:59); Slopes' Run 2 is stamped
+**10:57** and our Run 2 starts **10:56:57**.
+
+| Whole morning (4 real descents) | Slopes | Carve | Vertical |
+|---|---|---|---|
+| Runs reported | 5 | 4 | 4 |
+| Vertical | 912 m | 996 m | **905 m** |
+| Distance | 5.1 km | 5.69 km | 5.58 km (descents only) |
+| Top speed | 53.8 km/h (run 1 only, free tier) | 66.8 km/h | **64.7 km/h** |
+| Elapsed | 1 h 11 m | 1 h 05 m | 55 m |
+
+**Run 1, the only run Slopes shows without paying:**
+
+| Run 1 | Slopes | Vertical | Δ |
+|---|---|---|---|
+| Vertical | 415 m | 407 m | +2.0% |
+| Distance | 2.1 km | 2.17 km | −3.2% |
+| Top speed | 53.8 km/h | 52.6 km/h | +2.3% |
+| Duration | 5 m 26 s | 6 m 18 s (hand tags: 6 m 36 s) | — |
+
+Five findings, in order of how much they change the plan:
+
+1. **Slopes is good, and the "5–10% high" folklore does not describe it.** Over the whole morning
+   it is **912 m to our 905 m — 0.8%**. On run 1 it agrees to 2.0% on vertical and 2.3% on top
+   speed. Any marketing that says Slopes' numbers are wrong is not supported by this day's data.
+   What we can still say is narrower and true: we produce the same numbers *from a file the user
+   can inspect*, and we do it for free.
+
+2. **Carve overstates vertical by +10.1%** on the same four descents (996 m vs 905 m), which is the
+   §5.1 category error showing up in a shipping 2026 app.
+
+3. **Carve's 66.8 km/h top speed is, to the decimal, a corrupt sample in our own file.** At
+   11:28:59 our receiver reported Doppler 66.8 km/h with hAcc degraded to 22.3 m, in the middle of
+   a four-second burst that also contains a **42.5 m one-second position jump** (=153.1 km/h, and
+   the source of this project's own "naive method" headline). Carve reported the glitch as the
+   day's top speed. That is the most concrete accuracy failure the project has found in a
+   competitor, and it was found by having the raw data.
+
+4. **Slopes' fifth run does not exist, and we know exactly where it came from.** Martin skied four
+   descents. At **11:28:57**, arriving at the base, the barometer jumped **+4.1 m in two seconds**
+   and GPS scattered in the same instant — one physical event (a building) hitting both sensors.
+   That blip splits the last descent into 296 m + a short tail. Slopes counted the tail as run 5.
+   Our own analyzer did the same thing and was *worse*: it split the run **and then silently
+   deleted the orphan tail** for being under the 30 m run threshold, reporting the day 16 m short
+   (895 m instead of 905 m). Both are now fixed — see ROADMAP S5. The lesson generalises: **a
+   single physical event corrupts every sensor at once, so cross-sensor agreement is not
+   independent confirmation.**
+
+5. **Slopes' printed run-1 fields do not reconcile with each other.** 2.1 km in 5 m 26 s is
+   23.2 km/h, but it prints 31.0 km/h average — so its average is over some unstated moving-time
+   subset (our own moving-average for that run, gated at >1 m/s, is 24.0 km/h). Minor, but it's the
+   kind of thing "show your work" can beat.
+
+**Where this leaves the positioning.** Against Slopes, accuracy is a *tie*, not a wedge — the
+honest claims are price, an inspectable file, and 6,992 resorts against ~50. Against Carve, which
+is the free competitor, accuracy is a real and demonstrable gap. See ROADMAP → "What we can
+actually claim".
+
 ### 5.2 Recording reliability
 
 - **"Recording stops prematurely 50% of attempts after starting"** — 2★ App Store review **[V]**
