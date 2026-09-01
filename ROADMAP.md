@@ -34,8 +34,8 @@ before repeating any number about a competitor, and R1–R4 before writing a new
    nothing but pressing START, and no amount of analysis substitutes for it.
 2. **Answer the five questions in "Asks for Martin" below.** They are batched deliberately; three of
    them take under a minute each and two of them are decisions only he can make.
-3. **Watch the build expiry (~2026-09-07).** If D5 lands as "buy the $99 program", this stops being
-   a recurring emergency.
+3. **Reinstall the build before the last ski day** — the 7-day profile expires ~2026-09-07 and D5
+   is deferred, so this is now a scheduled chore, not a contingency. See the box below.
 
 **Next, at the desk:**
 
@@ -50,18 +50,33 @@ before repeating any number about a competitor, and R1–R4 before writing a new
 
 **Deferred with a reason, not by drift:** 3D (Phase 3, cut — see below), Apple Watch, social.
 
-### Asks for Martin — batched, per `WORKFLOW.md` §4
+### Decisions — answered by Martin 2026-09-01, end of S5
 
-1. **Check Settings → Privacy & Security → Motion & Fitness for Carve.** He recorded 1 h 05 m on it
-   on 2026-09-01, so `CMAltimeter` will have started if it uses the barometer at all — the test
-   that was void in S4 is now valid. Answers whether Carve's +10.1% is a GPS problem or a
-   segmentation problem. Ten seconds.
-2. **D5: buy the $99 Apple Developer Program?** Unblocks TestFlight, kills the 7-day reinstall
-   treadmill, and would have let tooling drive the device directly.
-3. **D4: confirm cutting 3D from v1.** Recommended, but he likes Strava's 3D, so it's his call.
-4. **D1/D2/D3** are still formally open (iOS-only, backend, where we test next) — though the first
-   two have been settled in practice for four sessions.
-5. **A name.** "Vertical" is still a placeholder and the repo is still `Ski-app`.
+| # | Decision | Answer |
+|---|---|---|
+| **D1** | Platform | **iOS only.** Settled, not provisional. |
+| **D4** | 3D in v1 | **Postponed.** Not killed — revisit when MapLibre ships iOS terrain, or when there's appetite for a Metal-shaped project. Phase 3 stays written down so the option is costed rather than forgotten. |
+| **D5** | $99 Apple Developer Program | **Not yet** — "I will eventually get it done." See the standing cost below; plan around a free account until then. |
+| **D6** | Name | **"Vertical" stays a placeholder.** Don't spend cycles on naming; revisit before anything is published. |
+| **A5** | Does Carve use the barometer? | **No** — absent from Motion & Fitness after a real 1 h 05 m recording. Its pipeline is now fully characterised (`RESEARCH.md` §2.2). |
+
+D2 (backend/social) and D3 (where we test next) are still open, but neither blocks current work:
+everything in Phase 1 and Phase 2 is on-device, and the test site is Portillo until ~2026-09-07.
+
+### ⚠️ The standing cost of deferring D5 — read this before the trip ends
+
+A free account issues **7-day provisioning profiles**. The current build was installed
+**2026-08-31 23:24**, so it **stops launching around 2026-09-07** — which is the same week Martin
+stops skiing. Consequences to manage rather than discover:
+
+- **Reinstall before the trip's last ski day, not after the app dies.** A rebuild + `devicectl
+  install` resets the clock for another 7 days and takes minutes *when the phone is at the Mac*. It
+  is not something that can be fixed from a chairlift.
+- **Every future recording session has this same 7-day fuse.** Northern season starts in ~3 months;
+  by then D5 needs an answer or every ski day begins with a reinstall.
+- **TestFlight and the App Store are unavailable**, so "ship it" is not reachable on a free account
+  at all — this is a ceiling, not a friction.
+- `mobile-mcp` stays unusable on the device for the same reason (`RESEARCH.md` §13, A14).
 
 ### Pulling and analysing a day (the routine, now that it works)
 
@@ -187,13 +202,16 @@ What S1 established:
 
 These are in `RESEARCH.md` §11 in full. The three that actually gate work:
 
-| # | Decision | Why it blocks |
-|---|---|---|
-| D1 | **iOS-only first?** | Everything. (iOS plays to Yomi experience; Android is where Slopes is measurably weakest.) |
-| D2 | **Social/backend in scope?** | Determines whether this is a zero-cost on-device app or a service with hosting, accounts, and a bill. |
-| D3 | **Where + when is the first real snow test?** | It's late August. Northern season is ~3 months out; southern (Bariloche / Los Andes) is in season *now* through Sept–Oct. This sets the whole schedule. |
+**Updated S5 (2026-09-01) — D1, D4, D5 and D6 are answered; see "Decisions" in START HERE.**
 
-D4 (the 3D renderer) does **not** block Phase 1 — it's a Phase 3 spike.
+| # | Decision | Status |
+|---|---|---|
+| D1 | iOS-only first? | ✅ **Decided: iOS only.** |
+| D2 | Social/backend in scope? | ⏳ Open, but not blocking — all of Phase 1 and Phase 2 is on-device. |
+| D3 | Where + when is the first real snow test? | ✅ Answered by events: Portillo, and it already happened (2026-09-01). Where the *next* one is remains open. |
+| D4 | 3D renderer | ✅ **Postponed out of v1.** |
+| D5 | $99 Apple Developer Program | ⏳ **Deferred by Martin** — "eventually". Carries a standing cost; see START HERE. |
+| D6 | Name | ⏳ "Vertical" stays a placeholder by choice. |
 
 ---
 
@@ -401,6 +419,25 @@ now also **prints what the threshold discarded** instead of letting it vanish.
 GPS disagreeing is a useful signal; barometer and GPS *agreeing* is not independent confirmation.
 
 **Corrected totals: Vertical 905 m / 5.58 km descent distance / 4 runs.**
+
+**End of S5 — Martin's answers, and the finding they unlocked.** iOS only (D1). 3D postponed, not
+killed (D4). The $99 program deferred (D5) — so the 7-day provisioning fuse is now a scheduled
+chore rather than a contingency, and "ship it" is out of reach until that changes. "Vertical" stays
+a placeholder (D6).
+
+And the one that mattered: **Carve is absent from Motion & Fitness even after a real 1 h 05 m
+recording**, so it never started `CMAltimeter` and its altitude is GPS-only. Replaying our own GPS
+altitude with 3 m hysteresis and summing gives **992 m against its printed 996 m** — 0.4%. The
+run-segmented variants give 928–933 and do not match. So Carve smooths GPS altitude and sums it,
+uses no barometer, and never measures a run top-to-bottom; its +10.1% is exactly what those two
+choices cost. Three independent confirmations now agree: the permission list, the numeric
+reproduction, and its top speed being a multipath sample we can point at second by second.
+Written up in `RESEARCH.md` §2.2.
+
+**Worth noticing about our own reasoning:** in the first pass I read "996 sits between our
+baro-summed 944 and GPS-summed 1,227" as evidence Carve *did* use the barometer. It was evidence of
+smoothing, not of a sensor. A number landing between two of your own numbers constrains almost
+nothing — `WORKFLOW.md` R2 again, in a quieter register.
 
 ---
 

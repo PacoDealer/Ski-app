@@ -87,16 +87,33 @@ price. §2.1's "genuinely unoccupied position" was written before it existed and
 stated. Being wrong here is worth more than being early: it says the *feature* framing of this
 project was never the defensible part.
 
-**Does it use the barometer? Still unknown — test unfinished.** Carve is **absent** from
-Settings → Privacy & Security → Motion & Fitness on Martin's phone (2026-08-31), which would mean
-GPS-only altitude and the whole category error inherited. But the only session it had recorded was
-**00:00 long with Peak Alt 0 m**, so `CMAltimeter` was never started and the permission prompt
-could not have fired. The check is void, not negative.
+**Does it use the barometer? ANSWERED, S5 (2026-09-01): no.** After Carve recorded a real **1 h
+05 m** session at Portillo, it is **still absent** from Settings → Privacy & Security →
+Motion & Fitness on Martin's phone. iOS lists an app there once it requests motion access, and
+`CMAltimeter` cannot deliver a sample without it — so Carve never started the altimeter. **Its
+altitude is GPS-only.** (S4's version of this check was void: Carve's only session then was 00:00
+long, so the prompt could not have fired. **Slopes is present in that same list**, which is what
+validates the method.)
 
-**Slopes is present in that same list**, which is the useful part: the method does detect a ski app
-using the barometer, so a real ≥3 min Carve recording will give a trustworthy answer. Finish this
-before drawing any conclusion about Carve's accuracy — and note that iOS raises that prompt only
-when altitude updates actually start, never at install or launch.
+**And we can reproduce its number.** Replaying our own raw fixture from the same morning with the
+barometer switched off:
+
+| Method, on our GPS altitude | Result |
+|---|---|
+| Summed deltas, unfiltered | 1,227 m |
+| **3 m hysteresis, summed** | **992 m** |
+| 5 m hysteresis, summed | 974 m |
+| Run-segmented (any hysteresis) | 928–933 m |
+| *Carve reported* | *996 m* |
+
+**GPS altitude + ~3 m hysteresis, summed, lands within 0.4% of what Carve printed** — and the
+run-segmented variants do not. So Carve smooths GPS altitude and sums it; it neither uses the
+barometer nor measures runs top-to-bottom. Its **+10.1%** against our 905 m is precisely the cost of
+those two choices, and this is now corroborated three independent ways: the permission list, the
+numeric reproduction, and its top speed being a multipath sample we can point at (§5.1.1).
+
+**This is the clearest result the project has produced.** We characterised a competitor's entire
+altitude pipeline from the outside, using nothing but our own raw capture and one settings screen.
 
 **What it does not claim, anywhere:** accuracy. No barometric fusion, no Doppler-gated speed, no
 error bars, no statement about vertical being measured rather than integrated. It reports the same
@@ -275,7 +292,10 @@ Five findings, in order of how much they change the plan:
    can inspect*, and we do it for free.
 
 2. **Carve overstates vertical by +10.1%** on the same four descents (996 m vs 905 m), which is the
-   §5.1 category error showing up in a shipping 2026 app.
+   §5.1 category error showing up in a shipping 2026 app — **and we know exactly why.** It is
+   GPS-only (absent from Motion & Fitness after a real 1 h 05 m recording) and does not
+   run-segment: replaying our own GPS altitude with 3 m hysteresis and summing gives **992 m**
+   against its printed 996 m. See §2.2.
 
 3. **Carve's 66.8 km/h top speed is, to the decimal, a corrupt sample in our own file.** At
    11:28:59 our receiver reported Doppler 66.8 km/h with hAcc degraded to 22.3 m, in the middle of
@@ -637,7 +657,7 @@ phase of the roadmap.
 | A2 | Slopes' hand-crafted premium maps cover ~50 resorts, vs 6,992 open — "3× larger" | ❌ | Two different numbers got welded together. The ~50 **[V]** is from the founder's blog about an *early season* of hand-crafted maps — years stale. The "50+" in current Slopes marketing is **live lift & trail status in North America**. Present-day map coverage is stated only as "thousands of resorts worldwide", uncounted. **"3× larger" was our own arithmetic on mismatched figures and is withdrawn.** Open data is probably broader; nobody has measured it. |
 | A3 | Slopes Premium is ~$29.99/yr, ~$49.99 family | ❌ | **$34.99/yr, $59.99 family** (getslopes.com/premium, read 2026-09-01), plus in-app day and week passes. Prices had drifted since S1. |
 | A4 | Carve's 3D replay is MapKit, so Apple gives us 3D free (the S4 finding that reopened D4) | ❌ | See A9. MapKit **cannot** do what Carve's listing describes, so the inference from the " Maps · Legal" attribution was wrong — that attribution is on Carve's 2D *record* screen (visible in `Data/comparisons/2026-09-01_carve.png`), not necessarily on the 3D replay. |
-| A5 | Carve is GPS-only and inherits the category error | ⚠️ | Its 996 m sits **between** our barometric-summed 944 m and GPS-summed 1,227 m, which suggests it *does* use the barometer but does not run-segment. Settle it: after a real ≥3 min Carve recording, check **Settings → Privacy & Security → Motion & Fitness** for Carve. Martin recorded 1 h 05 m on it on 2026-09-01, so the test is finally valid. |
+| A5 | Carve is GPS-only and inherits the category error | ✅ **confirmed** | Still absent from **Motion & Fitness** after a real 1 h 05 m recording (2026-09-01) — it never started `CMAltimeter`, so altitude is GPS-only. Our own GPS altitude with 3 m hysteresis, summed, gives **992 m** against its printed **996 m** (0.4%). My earlier reading — that 996 sitting between our baro-summed 944 and GPS-summed 1,227 implied barometer use — was wrong: it implied *smoothing*, not a barometer. See §2.2. |
 | A6 | Carve has no traction | ✅ | Still "not received enough ratings or reviews to display an overview" (App Store, 2026-09-01). |
 
 ### 13.2 Data and licensing
