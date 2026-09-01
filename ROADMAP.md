@@ -5,6 +5,93 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
+## ⚡ START HERE — handoff for the next session (written 2026-08-31, S3)
+
+**Martin is at Ski Portillo, Chile, until ~2026-09-07. The app is installed and working on his
+iPhone 17. The single open question is whether GPS behaves outdoors.**
+
+### First actions, in order
+
+1. **Check whether the build has expired.** Free provisioning lasts 7 days; installed
+   **2026-08-31**, so it dies around **2026-09-07**. If the app won't launch, rebuild + reinstall:
+   ```sh
+   cd ~/Desktop/Projects/Vertical/iOS
+   xcodebuild -project Vertical.xcodeproj -scheme Vertical -configuration Debug \
+     -destination 'generic/platform=iOS' -allowProvisioningUpdates build
+   xcrun devicectl device install app --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6 \
+     ~/Library/Developer/Xcode/DerivedData/Vertical-hhltzbilrpjrdxgsdbemtrfnvlhq/Build/Products/Debug-iphoneos/Vertical.app
+   ```
+2. **Pull any recordings off the phone** (works over the cable, no AirDrop needed):
+   ```sh
+   xcrun devicectl device copy from --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6 \
+     --domain-type appDataContainer --domain-identifier com.gamberg.vertical \
+     --source Documents/Sessions --destination <local-dir>
+   ```
+3. **Analyse:** `~/Desktop/Projects/Vertical/Tools/analyze.py <file>.jsonl`
+4. **Look at the Doppler ratio first.** Everything else depends on it — see below.
+
+### Verified working (measured on Martin's iPhone 17, not assumed)
+
+- Recording, clean session close, files on disk, `devicectl` pull path.
+- Location authorization is **Always** (`auth=3` in the log).
+- **The barometer is excellent.** 184 samples at ~0.9 Hz, **zero gaps > 5 s**.
+  **Noise floor: 0.85 m total drift over 3.2 min stationary.** With 3 m hysteresis the analyzer
+  reports exactly 0 m of phantom descent.
+- Barometric pressure read 72.359 kPa ≈ **2,880 m, which matches Portillo's base elevation** — so
+  the sensor is not just stable but correct.
+- Over the same stationary 3.2 min, **GPS altitude accumulated 10 m of phantom vertical.** That
+  ratio, on real hardware, is the project thesis in miniature.
+
+### ⚠️ THE ONE OPEN QUESTION — GPS health outdoors
+
+The only smoke test so far was **indoors**, and it showed:
+- GPS at **0.34 Hz** (a fix every 5–6 s, suspiciously regular) instead of ~1 Hz
+- **Doppler speed valid on only 8 of 68 fixes** (`speed = -1` on the rest)
+- horizontal accuracy median ±12 m
+
+Indoors this is all expected. But **Doppler speed is the single field the entire max-speed
+approach rests on**, and it has never been observed working on this device. Martin couldn't test
+outdoors (it's cold and Portillo has nowhere to walk), so **the first chairlift is the test.**
+
+A live **`DOPPLER` tile** was added to the UI precisely for this — it shows valid/total, colour
+coded (green ≥80%, yellow ≥40%, orange below). Ask Martin what colour it showed.
+
+- **Green outdoors** → GPS is fine, proceed to Phase 1 analysis work.
+- **Still orange while moving outdoors** → the CoreLocation configuration is wrong, not the
+  environment. Investigate `activityType` (currently `.other`), `desiredAccuracy`
+  (`kCLLocationAccuracyBestForNavigation`), and whether iOS is throttling background updates.
+  **Do not let him record many days before resolving this.**
+
+### Design correction from Martin (2026-08-31) — important
+
+> "on slope, you do not need to press 'top' and 'bottom' or lift. it identifies them
+> automatically. You only press start."
+
+He is right, and the shipped app must work that way. **The tag buttons are temporary scaffolding,
+not the product** — they exist only to produce hand-labelled ground truth for building and
+validating the auto-detector. Tags are **optional** for him and must never interfere with skiing.
+Once run/lift detection is accurate, remove the buttons from the UI.
+
+This was my framing error, not his misunderstanding — worth not repeating.
+
+### Also from Martin: Strava's 3D map is a design reference
+
+He likes Strava's map and specifically its 3D. Relevant to the §9.1 renderer spike — and note
+Strava absorbed FATMAP's technology (see `RESEARCH.md` §3.3). Worth looking at directly before
+choosing an approach.
+
+### Device facts
+
+| | |
+|---|---|
+| Device | iPhone 17 (`iPhone18,3`), iOS 26.5.2 — dual-band L1+L5 GNSS + barometer |
+| devicectl id | `270B9EDA-7298-5206-9E67-71C0E8F60CF6` |
+| Team | `F9R33MN82P` (Personal Team, tintin@gamberg.com.ar) |
+| Bundle | `com.gamberg.vertical` |
+| Repo | https://github.com/PacoDealer/Ski-app |
+
+---
+
 ## Current state — S1 (2026-08-31)
 
 **Research only. No code, no repo, no Xcode project yet.**
@@ -51,6 +138,15 @@ D4 (the 3D renderer) does **not** block Phase 1 — it's a Phase 3 spike.
 
 This is not the boring part. This is the product.
 
+**Done as of S2–S3:** background recording with correct entitlements, crash-safe append-only
+store, raw capture of every CoreLocation + barometer field, live diagnostics, on-device install.
+**Not started:** everything below that isn't ticked — all the actual maths.
+
+> **Auto-detection is a hard requirement, not a nice-to-have.** The user presses START and pockets
+> the phone; the app works out lifts and runs by itself. Slopes does this and it is the baseline
+> expectation for the category. The tag buttons currently in the UI are scaffolding for building
+> that detector and must be removed once it works.
+
 - [ ] `CoreLocation` background recording, correct entitlements + privacy manifest.
 - [ ] **Crash-safe append-only track store.** Every sample hits disk as it arrives. A kill, crash,
       or dead battery loses one sample, and recovery on next launch is silent — never a "resume or
@@ -59,7 +155,10 @@ This is not the boring part. This is the product.
       weather pressure change doesn't inflate vertical.
 - [ ] **Doppler max speed** from `CLLocation.speed` with `speedAccuracy` gating. Never differentiate
       positions. (Targets the "+10 mph" bug.)
-- [ ] **Lift vs. run segmentation** — sustained ascent + proximity to `aerialway` geometry.
+- [ ] **Automatic lift vs. run segmentation** — sustained ascent + proximity to `aerialway`
+      geometry. Zero user interaction. Validate against the hand-placed tags in recorded sessions.
+      Portillo's *va-et-vient* slingshot platter lifts are an unusual edge case worth checking:
+      they won't look like a chairlift to a naive detector.
 - [ ] **Adaptive sampling** — high rate on descent, low on lift. Fixes both battery *and* the
       "faster skiing records less vertical" artefact at once.
 - [ ] Per-run stats; average speed over **descent time only**, excluding lifts and lift lines.
@@ -116,6 +215,33 @@ against a known reference, with the error quantified.
 ---
 
 ## Session log
+
+### S3 — 2026-08-31 · shipped to the device, first real data, two bugs found
+Signing sorted: Xcode had **no Apple ID signed in at all** (which is why Yomi has never run on a
+device — simulator only). After Martin signed in, the real team ID turned out to be `F9R33MN82P`,
+read from the certificate's `organizationalUnitName` — my earlier guess of `8RNGM77QFU` was the
+certificate's own ID, not the team. Xcode's GUI handled DDI mount + device registration after
+`xcodebuild` couldn't.
+
+**Crash on START, root-caused and fixed.** `INFOPLIST_KEY_UIBackgroundModes` is **silently ignored
+by Xcode's Info.plist generator** — no warning, the key just never reaches the build. Without the
+`location` background mode, `allowsBackgroundLocationUpdates = true` raises an uncatchable ObjC
+exception. Checking the built binary the same way found `INFOPLIST_KEY_UIFileSharingEnabled` had
+vanished too. Both now come from a real base plist (`Vertical-Info.plist`) merged under
+`GENERATE_INFOPLIST_FILE`. Added a runtime guard so a missing background mode degrades to
+foreground-only with a visible warning rather than crashing.
+
+**Lesson, generalised:** verify Info.plist keys by reading them out of the *built product*, never
+by trusting that a build setting was honoured. Same family as Yomi's S118 build-settings trap.
+
+**First real recording** (3.2 min, indoors, stationary) gave the numbers in the handoff above:
+barometer excellent and correct, GPS unproven. Three follow-up fixes shipped: live `DOPPLER`
+health tile, visible tag confirmation (the log showed three "Top" taps in three seconds because
+nothing acknowledged the first), and analyzer exclusion of pre-start cached fixes.
+
+Martin corrected the interaction model — auto-detection, not manual tagging. Captured above.
+
+---
 
 ### S2 — 2026-08-31 · decisions settled, recorder built
 **Martin is at Ski Portillo, Chile, for the week.** That inverts the plan: raw capture is now

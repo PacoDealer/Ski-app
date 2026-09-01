@@ -27,14 +27,26 @@ certificate**, then grant location as **Always**.
 1. Location permission is **Always**, not "While Using". While-Using dies when the phone locks in
    a pocket, which is where it spends the entire day. The app shows a yellow warning if this is
    wrong — don't start a day with that banner up.
-2. Press **START** before the first lift.
-3. Tag moments with the four buttons. **These are worth more than they look** — they're the ground
-   truth that run/lift segmentation gets validated against, and they can't be reconstructed later.
-   Even a handful per day is plenty.
+2. Press **START** before the first lift. That's the only required interaction.
+3. **On the first chairlift, glance at the `DOPPLER` tile.** Green is good. Orange means GPS isn't
+   giving us usable speed data and the config needs fixing — worth knowing on run one rather than
+   at the end of the day.
 4. Leave the phone in a pocket. The blue location pill in the status bar means it's alive.
 5. Press **STOP** at the end of the day. If you forget, or the phone dies, or the app crashes —
    the file on disk is still valid and complete up to that moment. Nothing is lost and nothing
    will ask you a question about it.
+
+### About the tag buttons
+
+They are **optional**, and they are **not** how the finished app will work. The shipped app
+auto-detects lifts and runs from the sensor data — press START and forget it, like Slopes.
+
+The buttons exist right now only to produce hand-labelled ground truth for *building* that
+detector: knowing exactly when a real run started lets the segmentation be checked against
+reality instead of against a guess. If you happen to remember at the top of a run, one tap is
+genuinely valuable. If you don't, nothing is lost. Never let them interfere with skiing.
+
+They get deleted from the UI once auto-detection is accurate.
 
 ## Getting the data off
 

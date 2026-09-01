@@ -21,8 +21,20 @@ data is already **3× larger** than what Slopes sells (6,992 ski areas vs. ~50 h
 
 ## Status
 
-**S1 (2026-08-31): research only.** No repo, no Xcode project, no code. Three decisions are blocked
-on Martin — see `ROADMAP.md` → "Blocked on Martin".
+**➡️ Read `ROADMAP.md` → "⚡ START HERE" first. It has the handoff, the exact commands, and the
+one open question.**
+
+**S3 (2026-08-31): the app is built, signed, installed and recording on Martin's iPhone 17.**
+He is at Ski Portillo, Chile until ~2026-09-07. The build expires ~2026-09-07 (free provisioning).
+
+Verified on real hardware: barometer is excellent (0.85 m drift over 3.2 min stationary; pressure
+matches Portillo's 2,880 m), location auth is Always, background recording is correctly entitled.
+**Unverified: GPS outdoors** — indoors it ran at 0.34 Hz with Doppler speed valid on only 8 of 68
+fixes. The first chairlift is the test; check the `DOPPLER` tile.
+
+**Interaction model:** the app must **auto-detect** runs and lifts. Press START, pocket the phone.
+The tag buttons in the UI are temporary scaffolding for building the detector and get removed once
+it works — Martin flagged this and he's right.
 
 ## Key docs
 
@@ -105,3 +117,16 @@ These cost real sessions to learn there. They apply here unchanged:
   three before concluding. `mobile-mcp`'s swipe `distance` parameter is ignored entirely.
 - **Check `project.pbxproj` build settings before asserting a violation.** Every false positive in
   Yomi's S118 audit came from reasoning about Swift source without reading build settings.
+
+Learned here, S3:
+
+- **Verify Info.plist keys by reading the built product, not the build settings.** Xcode's
+  generator silently ignores some `INFOPLIST_KEY_*` settings — `UIBackgroundModes` and
+  `UIFileSharingEnabled` both vanished with no warning, and the first caused an instant crash.
+  `plutil -p <built>.app/Info.plist` is the source of truth.
+- **Never drop sensor data at capture time.** A discarded sample is gone forever; a filter can be
+  changed at any point. Log everything raw (including obviously-bad values like pre-start cached
+  fixes) and filter in `Tools/analyze.py`.
+- **Make the app self-diagnosing.** The `DOPPLER` tile exists because the alternative was Martin
+  skiing a full day and only then discovering the data was unusable. On-device readouts beat
+  post-hoc file analysis when the user is somewhere you can't debug.
