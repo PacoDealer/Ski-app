@@ -415,11 +415,29 @@ def main(path):
         span = batt[-1]["dt"] - batt[0]["dt"]
         if first is not None and last is not None and span > 0 and first >= 0 and last >= 0:
             drain = (first - last) * 100
+            hours = span / 3600
+            # UIDevice.batteryLevel is quantised to 5% — every reading in every file so far is a
+            # multiple of 0.05. So the rate is only as good as the number of *steps* observed, and
+            # over a one-hour session there is exactly one. S5 and S6 published 5.5 %/h and
+            # 6.7 %/h as if they were different measurements; both are one 5-point step over a
+            # slightly different span, and the true rate could be anywhere from ~0 to ~11 %/h.
+            # Print the uncertainty rather than a decimal the instrument cannot support (R7).
+            steps = round(drain / 5)
             print(f"\n  --- BATTERY ---")
-            print(f"  {first*100:.0f}% -> {last*100:.0f}% over {span/3600:.2f} h"
-                  f"   = {drain/(span/3600):.1f} %/h")
+            print(f"  {first*100:.0f}% -> {last*100:.0f}% over {hours:.2f} h"
+                  f"   = {drain/hours:.1f} %/h nominal")
+            if steps <= 2:
+                lo = max(0.0, drain - 5) / hours
+                hi = (drain + 5) / hours
+                print(f"  ONLY {steps} x 5% STEP(S) OBSERVED — batteryLevel is quantised to 5%,")
+                print(f"  so the honest range is {lo:.1f}-{hi:.1f} %/h. Do not quote the nominal")
+                print(f"  figure. A usable battery number needs a session of 3 h or more.")
+            elif drain > 0:
+                print(f"  {steps} x 5% steps observed — the rate is meaningful at "
+                      f"+/-{5/hours:.1f} %/h.")
             if drain > 0:
-                print(f"  projected full-day (7 h) cost: {drain/(span/3600)*7:.0f}%")
+                print(f"  projected full-day (7 h): {drain/hours*7:.0f}% "
+                      f"({max(0.0, drain-5)/hours*7:.0f}-{(drain+5)/hours*7:.0f}%)")
 
     print()
 

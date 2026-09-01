@@ -27,8 +27,9 @@ Slopes" line**; S5 found it was built from two unrelated numbers and withdrew it
 one open question.**
 
 **S5 (2026-09-01): the first outdoor day is recorded, and the three-app head-to-head is done.**
-GPS outdoors is green (1.00 Hz, Doppler valid on 3,342/3,342 fixes, hAcc median ±8 m, 5.5%/h
-battery). Martin is at Portillo until ~2026-09-07; the build expires ~2026-09-07 (free
+GPS outdoors is green (1.00 Hz, Doppler valid on 3,342/3,342 fixes, hAcc median ±8 m) and
+replicated on a second session in S6. **Battery is still unmeasured** — `batteryLevel` moves in 5%
+steps and no session has been long enough to see more than one. Martin is at Portillo until ~2026-09-07; the build expires ~2026-09-07 (free
 provisioning).
 
 **The thesis survived contact with reality, but not in the shape it was written above.** Over the

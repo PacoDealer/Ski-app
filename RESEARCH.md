@@ -360,9 +360,12 @@ headline claim — **on a clean session the naive method costs ~9%; the +136.5% 
 bad second does to it.** Two sessions now agree on the ~9% figure (§5.1.1 finding 3 measured +9% on
 the clean acceleration).
 
-Battery was **6.7 %/h**, against 5.5 %/h on session 1 — same phone, same day, colder/shorter
-session. Projected full-day cost 47%. Not a concern yet, but the spread is worth watching before
-any battery claim goes into a doc.
+**Battery: there is no measurement here, and there never was.** Session 2 reads 6.7 %/h against
+session 1's 5.5 %/h, but `UIDevice.batteryLevel` is quantised to 5% and **each session saw exactly
+one step** (65→60 over 0.92 h; 85→80 over 0.75 h). The same single observation, divided by two
+different spans. The honest range from either is **0–11 %/h**, and no battery claim should be made
+until a session runs long enough to accumulate three or more steps — about 3 h. `Tools/analyze.py`
+now prints the step count and refuses the decimal below that.
 
 #### The open question this raised: where does Slopes' 67.2 km/h come from?
 
@@ -757,9 +760,10 @@ phase of the roadmap.
    (`_s2.jsonl`, 48 min) replicates the fix-quality result and both competitor deltas — Slopes
    +1.2%, Carve +10.4% on the day total. Still one mountain, one phone, one weather system, and
    still **n=1 for the multipath glitch**, which is the single sample the top-speed claim rests on.
-2. **No cold-weather or full-day battery data.** 5.5%/h (session 1) and 6.7%/h (session 2) were
-   measured over 56 and 48 min at ~10 °C. Lithium cells lose capacity in cold; a −10 °C day is a
-   different test. The 1.2 pt spread between two sessions of the same day is itself unexplained.
+2. **No battery data at all, cold or otherwise.** The 5.5%/h and 6.7%/h figures are one 5%
+   quantisation step each and mean nothing (§5.1.2); the real bound from both days is 0–11 %/h.
+   Needs a 3 h+ recording, and then a cold one — lithium cells lose capacity below freezing and
+   Portillo at ~10 °C is not that test either.
 3. **No competitor has been installed and driven by us** — S1 flagged this and it is still true.
    Slopes' free tier and Carve are both installed on Martin's phone, which is as close as we get
    without the paid account.

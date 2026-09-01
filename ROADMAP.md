@@ -5,7 +5,7 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S5)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S6)
 
 **The GPS question is answered green and the three-app head-to-head is done.** Read
 `RESEARCH.md` §5.1.1 first — it is now the most important page in the repo, because it is the only
@@ -42,11 +42,34 @@ on our number, then it published the glitch and the top-speed wedge applies to *
 not just Carve. This costs nothing but recording — see §5.1.2. Compare afterwards with:
 `Tools/analyze.py <file>` → the "MAX SPEED" block, against Slopes' Today's Stats top speed.
 
+**⚡ THE MOMENT THE PHONE IS NEXT PLUGGED IN — one command, two problems solved.**
+
+```sh
+cd ~/Desktop/Projects/Vertical/iOS
+xcodebuild -project Vertical.xcodeproj -scheme Vertical -configuration Debug \
+  -destination 'generic/platform=iOS' -allowProvisioningUpdates build
+xcrun devicectl device install app --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6 \
+  ~/Library/Developer/Xcode/DerivedData/Vertical-hhltzbilrpjrdxgsdbemtrfnvlhq/Build/Products/Debug-iphoneos/Vertical.app
+```
+
+It **resets the 7-day provisioning fuse** (currently dying ~2026-09-07, the same week the trip
+ends) *and* ships the S6 screen, which shows accuracy-gated top speed and run-segmented vertical
+live — the three numbers that get compared against Slopes on the mountain, without a file pull.
+
+**Then smoke-test it before skiing with it** (R16 — it has never run on the device): launch, press
+START, confirm no yellow background-mode warning, walk ~2 minutes, watch GPS FIXES climb, press
+STOP, and check the session appears in Sessions. `LiveMetrics` is additive and off the write path —
+it only reads samples already written — so the worst realistic failure is a wrong number on screen,
+not a lost recording. But that is an argument, not a test.
+
 **Then, while Martin is still at Portillo (until ~2026-09-07) — this window does not come back:**
 
-1. **Record more days.** Every number we have is n=1: one 56-minute morning, one clean speed peak,
-   one glitch. The same signature across three days is a finding; one day is an anecdote. Costs
-   nothing but pressing START, and no amount of analysis substitutes for it.
+1. **Record more days, and record a long one.** S6 made the competitor deltas n=2, but the
+   multipath glitch is still a single sample and **battery is still entirely unmeasured** —
+   `batteryLevel` moves in 5% steps and no session has been long enough to see more than one, so
+   the "5.5 %/h" that has been in these docs since S5 was never a measurement. **A single 3 h+
+   recording fixes that**, and it is the only outstanding question that just needs time on the
+   mountain rather than thought at the desk.
 2. **Answer the five questions in "Asks for Martin" below.** They are batched deliberately; three of
    them take under a minute each and two of them are decisions only he can make.
 3. **Reinstall the build before the last ski day** — the 7-day profile expires ~2026-09-07 and D5
@@ -161,7 +184,9 @@ of it was the building. Outdoors, on the first chairlift:
 - **Doppler valid on 3,342/3,342 fixes.** The field the entire max-speed approach rests on works.
 - hAcc **median ±8 m, p90 ±12.3 m**, 99.2% of fixes usable — with one four-second multipath burst
   where it degraded past 30 m, which is exactly the kind of event the gate now catches.
-- Battery **5.5%/h** → ~38% over a seven-hour day.
+- Battery: one 5-point step in 55 min. **`batteryLevel` is quantised to 5%**, so the honest
+  reading is **0–11 %/h** and the "5.5%/h → 38% a day" this once said is not a measurement
+  (S6). A battery number needs a session of 3 h or more.
 
 The `DOPPLER` tile has served its purpose and can come out of the UI whenever the recording screen
 is next touched.
@@ -405,8 +430,39 @@ stamp of 10:57 containing the clean peak leans (b). The Premium blur over Run 2'
 heavy to recover — tried. **Neither version goes in a doc until a burst-free session settles it**
 (R1). Full argument in `RESEARCH.md` §5.1.2.
 
-Also noted: battery **6.7 %/h** this session against 5.5 %/h on session 1, same phone, same day.
-Unexplained; logged in §13.4 rather than averaged away.
+**And one number we had been quoting is not a number.** Session 2 looked like 6.7 %/h against
+session 1's 5.5 %/h, which invited an explanation — cold, thermal, signal. There is nothing to
+explain: `UIDevice.batteryLevel` is **quantised to 5%**, every reading in both files is a multiple
+of 0.05, and each session observed exactly **one step**. 65→60 over 0.92 h and 85→80 over 0.75 h
+are the same observation. The true rate is somewhere in **0–11 %/h** and both published figures
+were decimals the instrument cannot produce. `analyze.py` now prints the step count and the range,
+and refuses the precise figure under three steps — R7, applied to our own instrument this time.
+
+**The app now shows the honest numbers instead of the naive ones (plan item 5, done).** Its live
+display had both category bugs in it: `roughDescent` sums every negative barometric delta — the
+method that puts Carve +10.4% over the truth — and the speed tile showed raw ungated Doppler, the
+field that made a multipath burst Carve's day. `iOS/Vertical/Recorder/LiveMetrics.swift` is the
+streaming port of the two S5 rules (hAcc ≤ 15 m gate; run segmentation with the merge applied
+before the min-drop filter), and the main screen leads with **VERTICAL / TOP SPEED / RUNS**, each
+carrying its naive counterpart underneath in small type. The gap between the two lines is the
+product, and it should be readable on a chairlift.
+
+**A port is a claim, so `Tools/replay.sh` proves it.** It compiles the app's *own*
+`LiveMetrics.swift`, unmodified, against the fixtures. It matches `analyze.py` exactly on both —
+64.7 / 69.6 km/h, 4 runs, 905 m, 12 m sub-threshold; and 43.9, 3 runs, 462 m, 24 m. Batch and
+streaming are two different algorithms that owe the same answer, and this is what keeps a threshold
+from being changed in only one of the two places (new rule R12a).
+
+**The replay found a real hole while proving it.** CoreLocation hands over its cached last-known
+fix the instant updates begin, so every session's first sample predates the session. `analyze.py`
+had always excluded those; `LiveMetrics` was counting them — meaning **a fix cached in the car on
+the drive up would have been published as the day's top speed before the first run.** Both exclude
+them now. Finding it took one run of a harness that did not exist an hour earlier.
+
+**Cost of the day: one self-inflicted wound worth writing down.** Verifying the built product's
+`UIBackgroundModes` with `plutil -extract … Info.plist` **overwrote that Info.plist** with the
+extracted array — `plutil -extract` edits in place without `-o -`. It hit DerivedData, so a rebuild
+fixed it, but the same command aimed at `Vertical-Info.plist` destroys source. Now R14a.
 
 ### S5 — 2026-09-01 · the three-app head-to-head, and the gate we had backwards
 
