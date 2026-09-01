@@ -157,3 +157,9 @@ Martin corrected this once already; don't make him do it twice. *(S4.)*
 Against Slopes we are within 1% — that is a tie, not a wedge, and marketing it as a win would be
 the same sin we caught Carve committing. Against Carve the gap is real and demonstrable. Say the
 true thing in each case. *(S5.)*
+
+**R21 — Read the file before ranking the work.** S8 put a `ShareLink` in `SessionsView` at the top
+of the no-snow list as urgent and unbuilt. It had shipped in the very first recorder commit, per
+row *and* in the toolbar. A plan written about remembered code is a plan about the wrong codebase,
+and the cost is not a wasted hour — it is a real item displaced from the top of a ranked list.
+Open the file, then rank. *(S9.)*

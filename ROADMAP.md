@@ -5,7 +5,17 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S8)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S9)
+
+### 🟡 S9 built the session detail screen. It is committed and it is NOT on the phone.
+
+`SessionDetailView` + `SessionReplay` (`c8960fd`) turn a saved recording into runs, vertical, top
+speed and a recording-quality block, on the phone, with no cable. It builds clean for the device
+and matches `analyze.py` exactly on both fixtures, but **installing it would replace the build
+Martin skis with tomorrow morning, so it was left uninstalled pending his call.** The change cannot
+touch a recording — `SessionReplay` only ever reads files that are already closed, and the only
+edit outside new files is marking `LiveMetrics` `nonisolated` so it can run off the main thread.
+Installing also resets the provisioning fuse. Command in "If the build has expired" below.
 
 ### 🔴 The two things outstanding right now, before anything else
 
@@ -54,24 +64,26 @@ IMU axis, or stop. The plan below quietly assumes "product". Nobody has actually
 Martin asked what else there is besides location, speed and measurement. This is the list, ranked.
 All of it is desk work; none of it depends on the weather or on what the project turns out to be.
 
-**1. Get a session off the phone without a Mac. ⬅ do this first, it is urgent and small.**
-Today the *only* route out is `devicectl` over a cable. Martin is at Portillo with limited time at
-the Mac, and **if he skis and doesn't plug in, we cannot see the day at all.** A `ShareLink` per row
-in `SessionsView` — AirDrop, WhatsApp, email, Files — removes that dependency permanently and lets
-him send a recording from a chairlift. Perhaps twenty lines, and it unblocks every other thing on
-this list for the rest of the trip. **The IMU files are ~5.7 MB/hour, so a 3 h day is ~20 MB** —
-fine for AirDrop, worth knowing before trying to email one.
+**1. ~~Get a session off the phone without a Mac.~~ ✅ It was already built — S9 read the file and
+found it.** `SessionsView` has shipped a per-row `ShareLink` **and** a "Share all" toolbar item
+since the S1–S2 commit (`5b1aacc`), so AirDrop / WhatsApp / Files have never actually required a
+cable. S8 ranked this urgent from memory of the screen rather than from the source, and lost an
+item to it. **R21:** before ranking work, open the file — this list is written about code, not
+about recollection of code. Still true and worth knowing: **IMU files are ~5.7 MB/hour, so a 3 h
+day is ~20 MB** — fine for AirDrop, painful for email.
 
-**2. A session detail screen — the biggest gap between "capture rig" and "app".**
-After a ski day the app shows *filenames and byte counts*. Every interesting number — runs,
-vertical, top speed, how the day was split — requires a Mac and Python. Meanwhile `LiveMetrics`
-computes exactly those live and then **throws them away at STOP**. Replaying the file back through
-that same struct on open would give a per-run list on the phone, reusing the identical code path
-`Tools/replay.sh` already validates against `analyze.py` (R12a — one rule, one implementation).
-It is also precisely the thing the S8 audit says people pay Slopes for: **their free tier gives a
-daily summary only, and per-run detail is Premium.** Parse off the main thread; a 3 h file is big.
+**2. ~~A session detail screen.~~ ✅ Done in S9 — `SessionDetailView` + `SessionReplay`.**
+Tapping a row replays the file through the same `LiveMetrics` that ran live and shows the three
+headline numbers, a per-run list (drop, elapsed window, vertical rate), and a **RECORDING QUALITY**
+block — Doppler ratio, median hAcc, fixes the speed gate rejected, pre-start cached fixes, IMU
+coverage and longest motion gap. The quality block is the part that matters most: it is what makes
+a bad day read as a bad day rather than as a plausible number. Parsing runs on a detached task; a
+3 h file is ~35,000 lines. `Tools/replay.swift` now calls `SessionReplay` instead of keeping its
+own parse loop, so the harness checks the phone's actual path (R12a). Verified identical to
+`analyze.py` on both fixtures — 3342/2773 fixes, ±8.0/±7.9 m, 905/462 m, 4/3 runs, 12/24 m
+sub-threshold. **Not yet seen on a phone.**
 
-**3. There is not a single automated test in the project.**
+**3. There is not a single automated test in the project. ⬅ now the top of the list.**
 For an app whose entire value proposition is *not losing a ski day*, that is the gap that should be
 most uncomfortable. `LiveMetrics` is pure logic with two real fixtures sitting next to it, so the
 segmentation and gating rules are trivially testable. So are the two bugs that already bit us and
@@ -555,6 +567,51 @@ when MapLibre ships terrain, or when there is appetite for a Metal-shaped projec
 ---
 
 ## Session log
+
+### S9 — 2026-09-01 · the app stops throwing the day away
+
+**The gap that closed.** `LiveMetrics` computed runs, vertical and top speed live and then
+discarded all of it at STOP. After a ski day the app showed a filename and a byte count, so every
+number that mattered needed a Mac, a cable and Python — and the S8 audit had just established that
+per-run detail is exactly what Slopes charges for. Two new files fix it:
+
+- **`SessionReplay.swift`** (app, pure Foundation, `nonisolated`) — reads a JSONL session back and
+  drives the same `LiveMetrics` the recorder used, returning a `Summary`. It adds nothing
+  analytical; every number in it comes from that struct or from counting records.
+- **`SessionDetailView.swift`** — three headline stats, a per-run list (drop, elapsed window,
+  vertical rate), and a **RECORDING QUALITY** section: Doppler ratio, median hAcc, fixes the speed
+  gate rejected, pre-start cached fixes excluded, barometer count, IMU coverage and longest motion
+  gap, format version. Replay runs on a detached task and the screen says what it is replaying —
+  a 3 h day is ~20 MB and ~35,000 lines.
+
+**Why the quality block, and why it is the important half.** Every other app in the category prints
+a number and stops. Ours is the one that can say *how much to believe it*: 3342 of 3342 fixes with
+valid Doppler and a median of ±8.0 m is a day worth arguing about; 40 minutes of motion inside a
+3-hour recording is a ruined one that looks fine by every other measure — which is precisely why
+coverage and max gap are on the screen rather than just the sample rate.
+
+**The harness got stricter, not looser.** `Tools/replay.swift` no longer parses anything itself; it
+calls `SessionReplay` and prints. So `replay.sh` now validates the *whole* path the phone takes —
+including what counts as a resume seam — against `analyze.py`, instead of a lookalike of it (R12a).
+Both fixtures agree exactly: **3342 / 2773 fixes, 0 / 5 without valid Doppler, median ±8.0 m /
+±7.9 m, 905 m / 462 m, 4 / 3 runs, 12 m / 24 m sub-threshold, ski time 19.9 + 23.8 = 43.7 min.**
+Adding the stale-fix exclusion to the replay (negative `dt`, a cached fix carrying the car's speed)
+is what closed the last one-fix discrepancy against the analyzer.
+
+**One build-system fact, found the hard way.** The app target defaults to **main-actor isolation**,
+so `LiveMetrics` was implicitly `@MainActor` — invisible until something tried to use it off the
+main thread, which is exactly what replaying a 20 MB file must do. It is now `nonisolated`, like
+everything else in `Recorder/`. `swiftc` in `replay.sh` never had that default, which is why the
+harness had compiled it happily for two sessions.
+
+**A ranked item was already built.** S8's #1 "urgent, ~20 lines" `ShareLink` has shipped since
+`5b1aacc` — per row *and* a Share-all toolbar item. It was ranked from memory of the screen rather
+than from the file. **R21** now says to open the file before ranking work on it. Automated tests
+(#3, still zero of them) inherit the top of that list.
+
+**Left deliberately undone:** the build is **not installed**. It would replace what Martin skis
+with tomorrow morning, and that is his call, not mine — even though the change cannot reach a
+recording (`SessionReplay` only reads closed files).
 
 ### S7 — 2026-09-01 · the build ships to the phone, and the saved day tells a different story
 
