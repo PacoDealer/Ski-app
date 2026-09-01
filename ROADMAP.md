@@ -5,15 +5,37 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (written 2026-08-31, S3)
+## ⚡ START HERE — handoff for the next session (updated 2026-08-31 late, S4)
 
-**Martin is at Ski Portillo, Chile, until ~2026-09-07. The app is installed and working on his
-iPhone 17. The single open question is whether GPS behaves outdoors.**
+**Martin skis at Portillo on 2026-09-01 and this is the first outdoor recording.** The app is
+installed, current, and now survives being killed mid-day. The single open question is still
+whether GPS behaves outdoors.
 
-### First actions, in order
+### The first thing to do next session
 
-1. **Check whether the build has expired.** Free provisioning lasts 7 days; installed
-   **2026-08-31**, so it dies around **2026-09-07**. If the app won't launch, rebuild + reinstall:
+**Pull the day's file and look at it.** Everything else is secondary — this is the first real
+data the project has ever had.
+
+```sh
+xcrun devicectl device copy from --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6 \
+  --domain-type appDataContainer --domain-identifier com.gamberg.vertical \
+  --source Documents/Sessions --destination ~/Desktop/Projects/Vertical/Data/pull-$(date +%Y%m%d)
+~/Desktop/Projects/Vertical/Tools/analyze.py <the new file>.jsonl
+```
+
+Read, in this order: **the Doppler ratio** (the whole max-speed approach depends on it), then the
+GPS fix rate, then vertical run-segmented vs. the naive methods, then the battery notes, then the
+hand-placed tags. If the report says the session auto-resumed, that means the app died and
+recovered — note the gap and why (battery? thermal? jetsam?).
+
+Two test files from the S4 verification are on the phone and will show up in the pull:
+`2026-08-31_230847_TESTRESU.jsonl` and `2026-08-31_231638_TESTRES2.jsonl`. **Both are synthetic —
+delete them.** They are closed with an `end` record so they cannot auto-resume.
+
+### If the build has expired
+
+Free provisioning lasts 7 days; reinstalled **2026-08-31 23:24**, so it dies around
+**2026-09-07**. If the app won't launch, rebuild + reinstall:
    ```sh
    cd ~/Desktop/Projects/Vertical/iOS
    xcodebuild -project Vertical.xcodeproj -scheme Vertical -configuration Debug \
@@ -21,16 +43,15 @@ iPhone 17. The single open question is whether GPS behaves outdoors.**
    xcrun devicectl device install app --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6 \
      ~/Library/Developer/Xcode/DerivedData/Vertical-hhltzbilrpjrdxgsdbemtrfnvlhq/Build/Products/Debug-iphoneos/Vertical.app
    ```
-2. **Pull any recordings off the phone** (works over the cable, no AirDrop needed):
-   ```sh
-   xcrun devicectl device copy from --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6 \
-     --domain-type appDataContainer --domain-identifier com.gamberg.vertical \
-     --source Documents/Sessions --destination <local-dir>
-   ```
-3. **Analyse:** `~/Desktop/Projects/Vertical/Tools/analyze.py <file>.jsonl`
-4. **Look at the Doppler ratio first.** Everything else depends on it — see below.
+Note the destination must be a **file path, not a directory**, when copying a single file —
+`copy from ... --destination somedir/` fails with a bare "Is a directory" I/O error.
 
 ### Verified working (measured on Martin's iPhone 17, not assumed)
+
+- **Auto-resume after the app is killed mid-session** (S4). Verified by planting an interrupted
+  session with a torn final line, `SIGKILL`ing the process and relaunching: it reopened the same
+  file on the same `dt` timeline, reported a 301 s gap, and restored the sample counts. A
+  cleanly-closed session is correctly left alone.
 
 - Recording, clean session close, files on disk, `devicectl` pull path.
 - Location authorization is **Always** (`auth=3` in the log).
@@ -204,6 +225,8 @@ against a known reference, with the error quantified.
 - Trail/lift **closures**, not just openings
 - Turn/edge-change count from the gyroscope — genuinely novel
 - **Show error bars on stats.** A category first, and it makes the accuracy work legible to users
+- **GPX import from other ski apps** — stolen from Carve (`RESEARCH.md` §2.2). Cheap, and it means
+  a switcher arrives with their history instead of an empty season total
 
 ## Explicitly out of scope for v1
 
@@ -215,6 +238,53 @@ against a known reference, with the error quantified.
 ---
 
 ## Session log
+
+### S4 — 2026-08-31 (late) · made the app survive a full day, and found a real peer
+
+Purpose of the session: **tomorrow is the first outdoor recording, so make the thing that would
+waste it impossible.** The pulled recordings confirmed no outdoor data existed yet — the newest
+file was 20:38, indoors and stationary — so the GPS question is still open and untouched.
+
+**The gap that mattered.** `SampleWriter`'s own documentation promised that an interrupted file
+"can be picked up silently on next launch". Nothing implemented it. A jetsam kill in a pocket or
+a cold-weather cut-off would have brought the app back **IDLE** while Martin kept skiing. Built
+`SessionRecovery` + `TrackRecorder.resumeIfInterrupted()`: on every launch, foreground or
+background, an `end`-less session that stopped within six hours is silently reopened and appended
+to on the same timeline. No prompt — a "resume or finish?" question tapped wrong on a chairlift is
+what triples other apps' totals — just a green banner saying it happened. Significant-location-
+change monitoring is registered while recording solely because it is the only API that asks iOS
+to relaunch a terminated app.
+
+Two correctness bugs fell out of building it:
+
+- `SampleWriter` called `createFile` unconditionally, and `createFile` **truncates**. Reopening a
+  recording would have erased the recording. It now creates only when absent, and closes off a
+  torn final line so a power cut costs one record rather than two.
+- **`CMAltimeter.relativeAltitude` restarts from zero at every resume.** Summing deltas across
+  that seam invents vertical. Demonstrated with a synthetic day where the phone dies at the top of
+  a lift: the analyzer reported **800 m for a 400 m descent**, a 100 % overstatement — the exact
+  category bug this project exists to fix, reproduced in our own code. The analyzer now marks
+  resume seams and measures each stretch separately; 400 m exactly. Vertical skied while the app
+  was dead is reported as unknown, never guessed.
+
+**Verified on hardware, not just compiled** — planted an interrupted session, `SIGKILL`ed the
+process, relaunched, watched it recover; then confirmed a closed session is left alone. The first
+attempt at that second check *falsely passed as a failure*: the probe searched for the literal
+`"t":"end"`, and the Python-written fixture had `"t": "end"` with a space. `JSONEncoder` never
+emits that space, so real files were always fine — but a recovery check that silently decides a
+finished session is still running is not something to leave resting on byte-exact formatting. The
+field reader is now whitespace-tolerant. **The lesson is the older one restated: a test fixture
+that isn't byte-identical to production output tests the fixture.**
+
+**Carve.** Martin asked about an ad for "Carver". It is
+[Carve: Ski & Snowboard](https://apps.apple.com/gb/app/carve-ski-snowboard/id6758206264) — a
+solo-dev, free, no-paywall, donation-funded ski tracker that already ships auto lift detection,
+3D terrain replay with satellite drape, speed heatmaps, run comparison and GPX import. Written up
+in `RESEARCH.md` §2.2. It makes §2.1's "unoccupied position" claim wrong as written, and it makes
+the accuracy thesis the only load-bearing part of this project — it claims nothing about accuracy
+anywhere. It also proves 3D terrain on iOS is solo-dev-reachable, which de-risks §9.1 / D4.
+
+---
 
 ### S3 — 2026-08-31 · shipped to the device, first real data, two bugs found
 Signing sorted: Xcode had **no Apple ID signed in at all** (which is why Yomi has never run on a

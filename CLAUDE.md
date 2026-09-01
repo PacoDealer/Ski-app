@@ -24,8 +24,19 @@ data is already **3× larger** than what Slopes sells (6,992 ski areas vs. ~50 h
 **➡️ Read `ROADMAP.md` → "⚡ START HERE" first. It has the handoff, the exact commands, and the
 one open question.**
 
-**S3 (2026-08-31): the app is built, signed, installed and recording on Martin's iPhone 17.**
-He is at Ski Portillo, Chile until ~2026-09-07. The build expires ~2026-09-07 (free provisioning).
+**S4 (2026-08-31, late): the app is installed, current, and now survives being killed mid-day.**
+Martin skis Portillo on **2026-09-01 — the first outdoor recording the project has ever had.**
+He is there until ~2026-09-07; the build expires ~2026-09-07 (free provisioning).
+
+A recording interrupted by a jetsam kill, a crash, or a cold-weather power cut is now reopened
+silently on next launch and appended to on the same timeline — verified on the device with a real
+`SIGKILL`, not just compiled. See `ROADMAP.md` S4.
+
+**A real peer exists.** [Carve](https://apps.apple.com/gb/app/carve-ski-snowboard/id6758206264) is
+a free, no-paywall, solo-dev tracker already shipping auto lift detection, 3D terrain replay,
+speed heatmaps and run comparison (`RESEARCH.md` §2.2). It says nothing about accuracy anywhere.
+**The accuracy thesis above is now the only load-bearing part of this project** — treat "we'll be
+the free one" as dead.
 
 Verified on real hardware: barometer is excellent (0.85 m drift over 3.2 min stationary; pressure
 matches Portillo's 2,880 m), location auth is Always, background recording is correctly entitled.

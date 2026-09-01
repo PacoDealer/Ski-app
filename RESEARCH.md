@@ -62,6 +62,59 @@ The market splits three ways and **nobody owns the middle**:
 
 A free app that does both well is a genuinely unoccupied position.
 
+### 2.2 Carve — the position is no longer unoccupied (found S4, 2026-08-31)
+
+Martin saw an ad for something he read as "Carver". It resolves to two different products, and
+only one of them matters to us.
+
+**[Carve: Ski & Snowboard](https://apps.apple.com/gb/app/carve-ski-snowboard/id6758206264)**
+(App Store id `6758206264`, developer **Angel Terziev**, ©2026, iOS 17+, also Mac/visionOS) is a
+solo-developer ski tracker that is **free with no paywall at all** — monetised entirely by
+optional donation IAPs (£1.99 "buy me a coffee" up to £19.99 "buy me a ski pass"). Its shipped
+feature list:
+
+- automatic lift detection
+- real-time speed / altitude / distance / vertical
+- **3D replay over real terrain elevation with satellite imagery draped on it**, cinematic drone
+  camera and free-fly
+- speed heatmaps — colour-coded GPS traces showing where top speed happened
+- run-by-run comparison with synchronised altitude and speed profile charts
+- **GPX import from other ski apps**
+- local-first storage, optional iCloud backup
+
+That is a large fraction of Phases 1, 2, 3 and 5 of this roadmap, already shipping, at the same
+price. §2.1's "genuinely unoccupied position" was written before it existed and is now wrong as
+stated. Being wrong here is worth more than being early: it says the *feature* framing of this
+project was never the defensible part.
+
+**What it does not claim, anywhere:** accuracy. No barometric fusion, no Doppler-gated speed, no
+error bars, no statement about vertical being measured rather than integrated. It reports the same
+GPS-derived numbers as everyone else, and §5.1's category-wide 5–10 % overestimate is presumably
+inherited whole. **The thesis in `CLAUDE.md` survives this intact and is now the *only* thing
+holding the project up** — which is clarifying, not fatal.
+
+Also relevant: it has **too few ratings for the App Store to show an overview**. It is brand new
+and has no traction or community. This is a peer, not an incumbent.
+
+**Three things worth taking from it:**
+
+1. **It is an existence proof for §9.1.** A solo developer shipped 3D terrain with satellite drape
+   on iOS. Whatever MapLibre Native can't do, the feature is clearly reachable — which materially
+   de-risks D4 and means the Phase 3 spike should start by working out *how* Carve does it.
+2. **GPX import** is a cheap, high-leverage switching-cost lever we hadn't considered: it lets
+   someone bring their history over instead of starting from zero. Add to the backlog.
+3. **Donation-tier IAPs** are a proven-enough monetisation shape for a genuinely free app, and
+   consistent with "free is the distribution strategy" — no paywall decisions needed.
+
+**Not the same product:** [Carv](https://getcarv.com/products/carv) (no "e") is a ~£200 in-boot
+pressure-sensor hardware coach that scores technique. Different category, different price, not a
+competitor — though its content marketing ranks for every "best ski app" query, which is likely
+where the ad came from.
+
+**Snowduck**, surfaced alongside, advertises **~1 % battery per hour**. Unverified, and probably a
+low sample rate rather than cleverness, but it's a public number to measure ourselves against —
+see §9.4.
+
 ---
 
 ## 3. Slopes — the actual target
