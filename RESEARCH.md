@@ -98,9 +98,11 @@ and has no traction or community. This is a peer, not an incumbent.
 
 **Three things worth taking from it:**
 
-1. **It is an existence proof for §9.1.** A solo developer shipped 3D terrain with satellite drape
-   on iOS. Whatever MapLibre Native can't do, the feature is clearly reachable — which materially
-   de-risks D4 and means the Phase 3 spike should start by working out *how* Carve does it.
+1. **It answers §9.1 outright — it is built on MapKit.** Its replay screen carries the
+   " Maps · Legal" attribution (observed on Martin's phone, 2026-08-31). So the solo developer
+   did not solve the 3D-terrain problem: **he sidestepped it, because Apple ships it.** §9.1
+   framed MapLibre's missing iOS terrain as *the* blocker; the framing was wrong, and D4 is
+   much closer to decided than the roadmap says. See the amendment in §9.1.
 2. **GPX import** is a cheap, high-leverage switching-cost lever we hadn't considered: it lets
    someone bring their history over instead of starting from zero. Add to the backlog.
 3. **Donation-tier IAPs** are a proven-enough monetisation shape for a genuinely free app, and
@@ -398,6 +400,28 @@ This is the most important technical finding in the whole sweep, and it contradi
    isn't heresy — but for a map you pan continuously in gloves, it's a real UX risk.
 
 **This decision needs a spike before the roadmap can commit to it.** Don't pick from the armchair.
+
+#### Amendment, S4 (2026-08-31): a shipping app already answered this — option 1
+
+Carve's replay screen carries the " Maps · Legal" attribution (§2.2, observed on Martin's
+phone). **Its 3D terrain with satellite drape is MapKit.** The "most important technical finding
+in the whole sweep" above was real about MapLibre but wrong about the *problem*: 3D terrain on
+iOS was never gated on MapLibre shipping it, because Apple already gives it away — with no tile
+hosting, no bandwidth bill, and no ODbL obligation on the base map.
+
+That reshapes the option list rather than closing it. The open question is no longer "can we get
+3D terrain?" but **"how well does arbitrary OSM piste geometry overlay onto `MKMapView`?"** — the
+one weakness listed under option 1. A hybrid is now the obvious front-runner: **MapKit for the
+3D/satellite base, our own OpenSkiMap runs and lifts as overlays on top.**
+
+Still a spike, and still not settled from the armchair — but it is now a small, well-aimed spike
+against `MKMapView` + `MKOverlay`, not a four-way exploration. **Verify MapKit's real elevation
+and overlay behaviour against Apple's docs (`apple-docs` MCP) before committing.**
+
+**Lesson, and it's the Keiyoushi one again:** the blocker had been sitting in this document since
+S1 as a hard technical limit. It took one screenshot of a competitor to show the limit was real
+and the conclusion drawn from it was not. Look at what shipping apps actually do before believing
+a capability is out of reach.
 
 ### 9.2 ARKit geo-tracking won't work on a mountain
 

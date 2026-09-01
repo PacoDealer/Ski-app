@@ -199,9 +199,13 @@ against a known reference, with the error quantified.
 
 ## Phase 3 — 3D (spike first, commit second)
 
-- [ ] **Spike all four options** from `RESEARCH.md` §9.1 — MapKit, MapLibre-2D-now-3D-later,
-      SceneKit/RealityKit from DEM, MapLibre GL JS in `WKWebView`. Then decide. Do not pick from
-      the armchair.
+**Narrowed at S4.** Carve ships 3D terrain with satellite drape on **MapKit** (`RESEARCH.md` §9.1
+amendment), so the four-way exploration collapses to one question.
+
+- [ ] **Spike `MKMapView` + `MKOverlay` with real OpenSkiMap piste geometry.** The base map and 3D
+      terrain are free from Apple; the only real unknown is how well arbitrary OSM run/lift
+      geometry draws and styles on top of it. Check Apple's docs first via the `apple-docs` MCP.
+- [ ] Fall back to the other three options from §9.1 only if that overlay story genuinely fails.
 
 ## Phase 4 — Lift status
 
