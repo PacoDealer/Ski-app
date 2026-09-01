@@ -7,6 +7,31 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S8)
 
+### 🔴 The two things outstanding right now, before anything else
+
+**1. The walk test has not been done.** The build on the phone (`494d537`) records device motion at
+25 Hz and **has never been run**. Martin will do it later. Ask him for it, then verify from the
+data, not from his description:
+
+```sh
+xcrun devicectl device copy from --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6 \
+  --domain-type appDataContainer --domain-identifier com.gamberg.vertical \
+  --source Documents/Sessions --destination ~/Desktop/Projects/Vertical/Data/pull-$(date +%Y%m%d)
+./Tools/analyze.py <newest>.jsonl     # read the "--- MOTION (IMU) ---" block
+```
+
+The test: START, check the **MOTION** tile is green and climbing, **lock the phone and pocket it
+for ~2 min** (this is the part that matters — it tests background delivery for device motion, which
+is inferred from `CMAltimeter` behaving that way, not yet observed), unlock, STOP. What to look for:
+effective rate near 25 Hz, coverage near 100%, **no gap spanning the locked stretch**.
+
+**2. Whether to ski with it tomorrow is Martin's call, and he has not made it.** For: one more day
+out of ~5 before three months without snow. Against: new code on the last data days, and it makes
+the 3 h battery number "app + IMU" rather than "app". Worst realistic case is a crash, which
+`SessionRecovery` silently reopens and appends to (proven against a real `SIGKILL` in S4) — seconds
+lost and a baro seam, not a day. **If the walk test is clean, recommend skiing with it. If not, the
+previous build is two minutes away:** `git checkout 7ebef4e -- iOS/` then rebuild and reinstall.
+
 ### ⚠️ S8 was a full audit, and it changes the framing. Read `RESEARCH.md` §13.5 first.
 
 Short version: **the accuracy thesis is half falsified by our own data** (Slopes ties us three
@@ -23,6 +48,52 @@ record without it. See §13.5 for the sequencing that doesn't risk tomorrow's bu
 
 **Open decision D7 — what is this project for?** Personal tool, narrow data-ownership product, the
 IMU axis, or stop. The plan below quietly assumes "product". Nobody has actually decided.
+
+### 🛠 Work that needs no snow, no sensors, and no answer to D7
+
+Martin asked what else there is besides location, speed and measurement. This is the list, ranked.
+All of it is desk work; none of it depends on the weather or on what the project turns out to be.
+
+**1. Get a session off the phone without a Mac. ⬅ do this first, it is urgent and small.**
+Today the *only* route out is `devicectl` over a cable. Martin is at Portillo with limited time at
+the Mac, and **if he skis and doesn't plug in, we cannot see the day at all.** A `ShareLink` per row
+in `SessionsView` — AirDrop, WhatsApp, email, Files — removes that dependency permanently and lets
+him send a recording from a chairlift. Perhaps twenty lines, and it unblocks every other thing on
+this list for the rest of the trip. **The IMU files are ~5.7 MB/hour, so a 3 h day is ~20 MB** —
+fine for AirDrop, worth knowing before trying to email one.
+
+**2. A session detail screen — the biggest gap between "capture rig" and "app".**
+After a ski day the app shows *filenames and byte counts*. Every interesting number — runs,
+vertical, top speed, how the day was split — requires a Mac and Python. Meanwhile `LiveMetrics`
+computes exactly those live and then **throws them away at STOP**. Replaying the file back through
+that same struct on open would give a per-run list on the phone, reusing the identical code path
+`Tools/replay.sh` already validates against `analyze.py` (R12a — one rule, one implementation).
+It is also precisely the thing the S8 audit says people pay Slopes for: **their free tier gives a
+daily summary only, and per-run detail is Premium.** Parse off the main thread; a 3 h file is big.
+
+**3. There is not a single automated test in the project.**
+For an app whose entire value proposition is *not losing a ski day*, that is the gap that should be
+most uncomfortable. `LiveMetrics` is pure logic with two real fixtures sitting next to it, so the
+segmentation and gating rules are trivially testable. So are the two bugs that already bit us and
+would bite again silently: `SampleWriter` reopening a file with a truncated final line (S4), and
+`SessionRecovery`'s 6-hour window. `replay.sh` is a harness, not a test — nothing fails a build.
+
+**4. Port the detector into the app** (`Tools/detect.py` → Swift). This is what makes the app
+behave like Slopes — press START, pocket the phone, get runs and lifts with no input. It is also
+the precondition for **R19**: the four tag buttons come out of the UI once detection works, and
+Martin flagged them as scaffolding back in S4.
+
+**5. GPX export.** Named in `RESEARCH.md` §2.2 as the switching-cost lever, but it is worth more
+than that here: it makes a recording usable in Strava, Slopes, or anything else, which is the whole
+"your data is a file you own" claim made real rather than asserted.
+
+**6. A design pass.** `ContentView` says "deliberately ugly" at the top and it is right to have
+waited. But sunlight readability and glove-sized targets are *functional* requirements on a
+mountain, not polish, and the `design` skill is installed.
+
+**Deliberately not on this list:** maps (cut by the audit — Slopes gives trail maps away free), 3D
+(cut S5), naming (D6, don't spend cycles), and the $99 program (D5, deferred — and pointless until
+D7 says whether anything ships).
 
 ### S7 in four lines
 
