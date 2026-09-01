@@ -177,8 +177,10 @@ def structure(lifts, runs, clock):
     It is a smell, not a verdict. Skiing to a different base, or walking to lunch, breaks the
     alternation legitimately — so it prints what it saw and names the suspicion.
     """
+    # Runs are placed at their turning point, not at the moment skiing starts, so the timeline
+    # butts up against the end of the ride that delivered the skier there.
     timeline = ([("lift", l["start"], l["end"], l["gain"]) for l in lifts]
-                + [("run", r["start"], r["end"], -r["drop"]) for r in runs])
+                + [("run", r["top_t"], r["end"], -r["drop"]) for r in runs])
     timeline.sort(key=lambda e: e[1])
 
     print("\n  --- THE DAY, IN ORDER ---")
@@ -250,8 +252,10 @@ def main(path):
 
     print(f"\n  --- {len(runs)} RUNS DETECTED ---")
     for i, r in enumerate(runs, 1):
+        waited = r["start"] - r["top_t"]
+        held = f"   (stood {waited:.0f} s at the top first)" if waited >= 10 else ""
         print(f"  {i:2d}. {clock(r['start'])} → {clock(r['end'])}   "
-              f"-{r['drop']:5.0f} m over {r['dur']/60:4.1f} min")
+              f"-{r['drop']:5.0f} m over {r['dur']/60:4.1f} min{held}")
 
     structure(lifts, runs, clock)
 
@@ -266,7 +270,11 @@ def main(path):
     checks = [
         ("lift start", [l["start"] for l in lifts], tags("Lift on")),
         ("lift end", [l["end"] for l in lifts], tags("Lift off")),
-        ("run start", [r["start"] for r in runs], tags("Top")),
+        # Score the *turning point*, not the moment skiing starts. Martin taps "Top" when he
+        # arrives at the top, before standing around — on session 1 the two differ by 37-66 s
+        # (S7's `descent_start` trim), so scoring the skiing start against this tag would be
+        # grading the detector on a question the tag never answered.
+        ("run start", [r["top_t"] for r in runs], tags("Top")),
         ("run end", [r["end"] for r in runs], tags("Bottom")),
     ]
     for name, detected, truth in checks:

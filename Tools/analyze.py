@@ -130,6 +130,44 @@ def hysteresis_descent(series, threshold=BARO_HYSTERESIS_M):
     return total
 
 
+def descent_start(times, alts, top_t, bot_t, threshold=BARO_HYSTERESIS_M):
+    """When the skiing actually starts, as opposed to when the altitude stopped going up.
+
+    S7: a run is cut between altitude turning points, so a skier standing at the top of a run is
+    still inside the run. Slopes books **41 min** of ski time for 2026-09-01; the same seven
+    descents measured turning-point to turning-point come to **54.5 min**, +33%. Session 2's last
+    run is the clearest case — 10.6 min of which the first 4.4 are spent stationary at 94 m before
+    the first turn. Vertical is measured top-to-bottom and is untouched by this, but duration,
+    vertical rate and average speed are all wrong by about a third, and those are numbers we print.
+
+    The fix is the mirror of the lift-start trim in `detect.py`: walk forward from the top through
+    the *leading* plateau — while the altitude is still within `threshold` of the ceiling — and
+    stop at the first departure. Trimming only the leading plateau matters twice over. It is
+    streamable, so `LiveMetrics` can compute the identical thing one sample at a time (R12a), and
+    it deliberately leaves the flat runout at the *bottom* of a run inside the run: coasting out is
+    skiing, standing at the top is not. Trimming both ends instead undershoots Slopes by 13%.
+
+    Calibrated against the two external numbers we have, and they agree: the day goes 54.5 -> 43.7
+    min against Slopes' 41 (+6.6%, was +33%), and session 1's run 1 goes 378 -> 341 s against the
+    5 m 26 s Slopes itemises for it (+4.6%, was +16%). We stay slightly generous in both, which is
+    the expected direction — we keep the whole runout.
+    """
+    ceiling = None
+    started = top_t
+    for t, a in zip(times, alts):
+        if t < top_t:
+            continue
+        if t > bot_t:
+            break
+        if ceiling is None:
+            ceiling = a
+        elif a < ceiling - threshold:
+            break
+        ceiling = max(ceiling, a)
+        started = t
+    return started
+
+
 def segment_runs(times, alts, min_drop=MIN_RUN_DROP_M, threshold=BARO_HYSTERESIS_M):
     """Split into descents by finding turning points, then keep only the meaningful drops.
     Vertical is then measured top-to-bottom per run — never by summing deltas."""
@@ -187,8 +225,10 @@ def segment_runs(times, alts, min_drop=MIN_RUN_DROP_M, threshold=BARO_HYSTERESIS
         # Top-to-bottom, so a wiggle in the middle of a run can neither add nor remove vertical.
         drop = d["top_a"] - d["bot_a"]
         if drop >= min_drop:
-            runs.append({"start": d["top_t"], "end": d["bot_t"], "drop": drop,
-                         "dur": d["bot_t"] - d["top_t"]})
+            skiing_from = descent_start(times, alts, d["top_t"], d["bot_t"], threshold)
+            runs.append({"start": skiing_from, "end": d["bot_t"], "drop": drop,
+                         "dur": d["bot_t"] - skiing_from,
+                         "top_t": d["top_t"]})
         elif drop > 0:
             dropped.append(drop)
     # Report what the threshold discarded rather than letting it vanish — a day that loses a lot

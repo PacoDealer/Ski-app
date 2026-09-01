@@ -43,9 +43,14 @@ struct LiveMetrics {
     // MARK: - Output
 
     struct Run {
+        /// When the skiing starts — the turning point plus however long the skier stood there.
         let startTime: TimeInterval
+        /// The altitude turning point itself. `startTime - topTime` is time spent at the top.
+        let topTime: TimeInterval
         let endTime: TimeInterval
         let drop: Double
+        /// Time actually descending. See `descent_start` in `analyze.py` for why this excludes the
+        /// wait at the top but keeps the runout at the bottom.
         var duration: TimeInterval { endTime - startTime }
     }
 
@@ -71,6 +76,7 @@ struct LiveMetrics {
     /// The descent that is closed but may still be extended by the merge rule.
     private var pendingTopAlt: Double?
     private var pendingTopTime: TimeInterval = 0
+    private var pendingSkiFrom: TimeInterval = 0
     private var pendingBotAlt: Double = 0
     private var pendingBotTime: TimeInterval = 0
     private var pendingDrop: Double { pendingTopAlt.map { max(0, $0 - pendingBotAlt) } ?? 0 }
@@ -81,6 +87,19 @@ struct LiveMetrics {
     private var direction = 0          // -1 descending, +1 ascending, 0 undecided
     private var legTopAlt: Double?     // altitude the current descending leg started from
     private var legTopTime: TimeInterval = 0
+    private var legSkiStartTime: TimeInterval = 0
+
+    /// Tracks the plateau at the top of a climb, so a run can start when the skier does.
+    ///
+    /// The batch version in `analyze.py` walks forward from the turning point through every sample
+    /// still within `baroHysteresisM` of the ceiling and stops at the first departure. Streaming
+    /// cannot walk forward — by the time a descent is *declared*, the samples spent standing at the
+    /// top have already gone past, consumed by the ascending branch below. So the plateau is tracked
+    /// as it happens and read off when the descent begins. The first departure is exactly the sample
+    /// that triggers the transition, which is what makes the two implementations the same rule and
+    /// not merely similar ones (R12a); `Tools/replay.sh` is what proves it.
+    private var plateauCeiling: Double?
+    private var plateauEnd: TimeInterval = 0
     /// Drop accumulated by the descending leg still in progress.
     private var liveDrop: Double {
         guard direction == -1, let legTopAlt, let anchorAlt else { return 0 }
@@ -112,16 +131,26 @@ struct LiveMetrics {
         guard let anchor = anchorAlt else {
             anchorAlt = altitude
             anchorTime = time
+            resetPlateau(altitude, time)
             return
         }
+
+        // Advance the top-of-climb plateau before the branches, but only while not already
+        // descending: once the skier is going down, the plateau is settled and must stay frozen.
+        if direction != -1 { trackPlateau(altitude, time) }
 
         switch direction {
         case 0:
             if abs(altitude - anchor) >= Self.baroHysteresisM {
                 direction = altitude < anchor ? -1 : 1
-                if direction == -1 { legTopAlt = anchor; legTopTime = anchorTime }
+                if direction == -1 {
+                    legTopAlt = anchor
+                    legTopTime = anchorTime
+                    legSkiStartTime = plateauEnd
+                }
                 anchorAlt = altitude
                 anchorTime = time
+                resetPlateau(altitude, time)
             }
         case -1:
             if altitude < anchor {
@@ -130,25 +159,45 @@ struct LiveMetrics {
             } else if altitude - anchor >= Self.baroHysteresisM {
                 // The descent bottomed out at the anchor; it is now a closed descent.
                 closeDescent(topAlt: legTopAlt ?? anchor, topTime: legTopTime,
-                             botAlt: anchor, botTime: anchorTime)
+                             skiFrom: legSkiStartTime, botAlt: anchor, botTime: anchorTime)
                 legTopAlt = nil
                 direction = 1
                 anchorAlt = altitude
                 anchorTime = time
+                resetPlateau(altitude, time)
             }
         default:
             if altitude > anchor {
                 anchorAlt = altitude
                 anchorTime = time
             } else if anchor - altitude >= Self.baroHysteresisM {
-                // Peak of the ascent — a new descent starts here.
+                // Peak of the ascent — a new descent starts here. `plateauEnd` is the last moment
+                // the skier was still up at that peak; this sample is the first departure from it.
                 legTopAlt = anchor
                 legTopTime = anchorTime
+                legSkiStartTime = plateauEnd
                 direction = -1
                 anchorAlt = altitude
                 anchorTime = time
+                resetPlateau(altitude, time)
             }
         }
+    }
+
+    private mutating func resetPlateau(_ altitude: Double, _ time: TimeInterval) {
+        plateauCeiling = altitude
+        plateauEnd = time
+    }
+
+    private mutating func trackPlateau(_ altitude: Double, _ time: TimeInterval) {
+        guard let ceiling = plateauCeiling else { return resetPlateau(altitude, time) }
+        if altitude >= ceiling {
+            plateauCeiling = altitude
+            plateauEnd = time
+        } else if altitude >= ceiling - Self.baroHysteresisM {
+            plateauEnd = time
+        }
+        // Below the band: the skier has left the top. Freeze `plateauEnd` where it is.
     }
 
     /// Call when the altitude baseline is about to jump — `CMAltimeter.relativeAltitude` restarts
@@ -161,12 +210,14 @@ struct LiveMetrics {
         anchorAlt = nil
         direction = 0
         legTopAlt = nil
+        plateauCeiling = nil   // the altitudes either side of a seam are not comparable
     }
 
     /// Close out the session. The descent in progress ends wherever the last sample left it.
     mutating func finish() {
         if direction == -1, let top = legTopAlt, let anchor = anchorAlt {
-            closeDescent(topAlt: top, topTime: legTopTime, botAlt: anchor, botTime: anchorTime)
+            closeDescent(topAlt: top, topTime: legTopTime, skiFrom: legSkiStartTime,
+                         botAlt: anchor, botTime: anchorTime)
             legTopAlt = nil
         }
         finalizePending()
@@ -175,10 +226,13 @@ struct LiveMetrics {
     // MARK: - Segmenting
 
     private mutating func closeDescent(topAlt: Double, topTime: TimeInterval,
+                                       skiFrom: TimeInterval,
                                        botAlt: Double, botTime: TimeInterval) {
         guard topAlt - botAlt > 0 else { return }
 
         // The merge rule, applied *before* the min-drop filter — the order is the whole point.
+        // A merged run keeps the *first* descent's top and ski start: the blip that split it was
+        // never a stop at the top, so the second half contributes only its bottom.
         if let prevTop = pendingTopAlt,
            topAlt - pendingBotAlt < Self.mergeAscentM,
            topTime - pendingBotTime < Self.mergeGapS {
@@ -191,6 +245,7 @@ struct LiveMetrics {
         finalizePending()
         pendingTopAlt = topAlt
         pendingTopTime = topTime
+        pendingSkiFrom = skiFrom
         pendingBotAlt = botAlt
         pendingBotTime = botTime
     }
@@ -199,7 +254,8 @@ struct LiveMetrics {
         guard let top = pendingTopAlt else { return }
         let drop = top - pendingBotAlt
         if drop >= Self.minRunDropM {
-            runs.append(Run(startTime: pendingTopTime, endTime: pendingBotTime, drop: drop))
+            runs.append(Run(startTime: pendingSkiFrom, topTime: pendingTopTime,
+                            endTime: pendingBotTime, drop: drop))
         } else if drop > 0 {
             subThresholdDropM += drop
         }
