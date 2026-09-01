@@ -87,6 +87,17 @@ price. §2.1's "genuinely unoccupied position" was written before it existed and
 stated. Being wrong here is worth more than being early: it says the *feature* framing of this
 project was never the defensible part.
 
+**Does it use the barometer? Still unknown — test unfinished.** Carve is **absent** from
+Settings → Privacy & Security → Motion & Fitness on Martin's phone (2026-08-31), which would mean
+GPS-only altitude and the whole category error inherited. But the only session it had recorded was
+**00:00 long with Peak Alt 0 m**, so `CMAltimeter` was never started and the permission prompt
+could not have fired. The check is void, not negative.
+
+**Slopes is present in that same list**, which is the useful part: the method does detect a ski app
+using the barometer, so a real ≥3 min Carve recording will give a trustworthy answer. Finish this
+before drawing any conclusion about Carve's accuracy — and note that iOS raises that prompt only
+when altitude updates actually start, never at install or launch.
+
 **What it does not claim, anywhere:** accuracy. No barometric fusion, no Doppler-gated speed, no
 error bars, no statement about vertical being measured rather than integrated. It reports the same
 GPS-derived numbers as everyone else, and §5.1's category-wide 5–10 % overestimate is presumably
