@@ -69,6 +69,14 @@ and misleading: it compares our gated peak against a one-second glitch, and on c
 comparison is +9%. Lead with what goes wrong and why, not with the largest number the data will
 support. *(S5.)*
 
+**R12a — One rule, one implementation, and a harness that proves it.** The hAcc gate and the
+descent-merge rule now exist twice: in `Tools/analyze.py` and in the app's `LiveMetrics`. Two copies
+of a threshold drift the moment one is tuned, and the drift is invisible because both look right on
+their own. `Tools/replay.sh` runs the **app's own source** over the fixtures so the two can be
+diffed in one command; run it after touching either. Batch and streaming implementations of the
+same rule are not the same algorithm written twice — they are two algorithms that owe you the same
+answer. *(S6.)*
+
 **R13 — Never drop sensor data at capture time.** A discarded sample is gone forever; a filter can
 be changed any time. Log everything raw, including obviously-bad values, and filter in
 `Tools/analyze.py`. Every accuracy finding this project has made came from data an app with a
@@ -81,6 +89,13 @@ tidier pipeline would have thrown away. *(S3, vindicated S5.)*
 **R14 — Verify the built product, not the build settings.** Xcode's Info.plist generator silently
 ignores some `INFOPLIST_KEY_*` settings; a missing `UIBackgroundModes` crashed the app on START
 with no warning anywhere. `plutil -p <built>.app/Info.plist`. *(S3.)*
+
+**R14a — `plutil -extract` rewrites the file in place unless you pass `-o -`.** Checking
+`UIBackgroundModes` in the built app with `plutil -extract UIBackgroundModes json <app>/Info.plist`
+**replaced that Info.plist with the extracted array** — a 12-byte bundle-breaking file, produced by
+the very command that was supposed to verify the bundle. It cost only a rebuild here because
+DerivedData is disposable, but the same command aimed at `Vertical-Info.plist` destroys source.
+Use `plutil -p` to look, and `-o -` whenever extracting. *(S6.)*
 
 **R15 — A test fixture that isn't byte-identical to production output tests the fixture.** A
 Python-written `"t": "end"` with a space made a Swift probe silently miss. Generate fixtures with

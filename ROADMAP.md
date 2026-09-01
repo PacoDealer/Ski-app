@@ -58,8 +58,12 @@ not just Carve. This costs nothing but recording — see §5.1.2. Compare afterw
    at the bottom of run 1 — closer than expected. The work is lift detection (Portillo's
    *va-et-vient* platters are the hard case) and validating against every day we have, not just the
    first.
-5. **Fold the S5 analyzer fixes into the app itself.** The hAcc speed gate and the descent-merge
-   rule live only in `Tools/analyze.py`; the app still reports its own live numbers.
+5. ~~**Fold the S5 analyzer fixes into the app itself.**~~ **Done S6** —
+   `iOS/Vertical/Recorder/LiveMetrics.swift` is the streaming port of the hAcc speed gate and
+   run segmentation with the descent merge, wired into `TrackRecorder` and shown on the main
+   screen as VERTICAL / TOP SPEED / RUNS with the naive figure under each. `Tools/replay.sh` runs
+   that exact source over the fixtures and it agrees with `analyze.py` to the metre and the decimal
+   on both. **Built, replay-verified, not yet run on the device** — needs an install (below).
 6. **Phase 2 maps.** Unchanged and unblocked — MapKit in 2D is fine, OpenSkiMap data is alive
    (§13, A7). Read the three licences in A8 before shipping any data.
 

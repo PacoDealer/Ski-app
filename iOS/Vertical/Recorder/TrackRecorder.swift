@@ -40,9 +40,15 @@ final class TrackRecorder {
 
     /// Naive running descent, summed from barometric deltas. **This is not the real vertical
     /// metric** — summing every negative delta is precisely the bug that gives the whole category
-    /// its 5–10% overestimate. It's here only as a liveness indicator.
+    /// its 5–10% overestimate. Kept deliberately, and shown next to the honest number: on
+    /// 2026-09-01 the gap between these two *is* Carve's +10.4% error, live, on our own screen.
     private(set) var roughDescent: Double = 0
     private var lastRelForDescent: Double?
+
+    /// The honest live numbers — accuracy-gated top speed and run-segmented vertical, computed by
+    /// the same rules `Tools/analyze.py` uses (see `LiveMetrics`). Read-only from the recording
+    /// path's point of view: samples are written to disk first, then handed here.
+    private(set) var metrics = LiveMetrics()
 
     var failedWrites: Int { SampleWriter.failedWrites.current }
     var fileSize: Int { writer?.fileSize ?? 0 }
@@ -120,6 +126,7 @@ final class TrackRecorder {
         lastMarkAt = nil
         roughDescent = 0
         lastRelForDescent = nil
+        metrics = LiveMetrics()
         lastError = nil
         resumedAfterInterruption = nil
         isRecording = true
@@ -162,6 +169,11 @@ final class TrackRecorder {
         lastMarkAt = nil
         roughDescent = 0
         lastRelForDescent = nil
+        // Live metrics count from here too. Everything skied before the interruption is in the
+        // file and will be in the evening's analysis; showing it live would mean re-deriving it
+        // from a scan of the partial file, and a wrong live number is worse than an honest
+        // partial one. The banner already tells Martin this session was resumed.
+        metrics = LiveMetrics()
         lastError = nil
         resumedAfterInterruption = (at: found.lastSampleAt, gap: found.gap)
         isRecording = true
@@ -220,6 +232,10 @@ final class TrackRecorder {
         batteryTimer?.invalidate()
         batteryTimer = nil
 
+        // Close the descent in progress so the final screen counts the run Martin just finished
+        // rather than stopping at the last completed one.
+        metrics.finish()
+
         logBattery()
         writer?.write(EndSample(dt: elapsed, locCount: locCount, baroCount: baroCount))
         writer?.close()
@@ -271,6 +287,10 @@ final class TrackRecorder {
             )
             writer?.write(s)
             locCount += 1
+            metrics.ingestFix(speed: l.speed,
+                              horizontalAccuracy: l.horizontalAccuracy,
+                              speedAccuracy: l.speedAccuracy,
+                              at: s.dt)
             if l.speed >= 0 && l.speedAccuracy >= 0 { dopplerValidCount += 1 }
             lastSpeed = l.speed
             lastGPSAltitude = l.altitude
@@ -280,9 +300,11 @@ final class TrackRecorder {
 
     private func ingestBaro(relAlt: Double, pressure: Double) {
         guard isRecording else { return }
-        writer?.write(BaroSample(dt: elapsed, relAlt: relAlt, pressure: pressure))
+        let dt = elapsed
+        writer?.write(BaroSample(dt: dt, relAlt: relAlt, pressure: pressure))
         baroCount += 1
         lastRelativeAltitude = relAlt
+        metrics.ingestAltitude(relAlt, at: dt)
 
         if let prev = lastRelForDescent, relAlt < prev {
             roughDescent += (prev - relAlt)

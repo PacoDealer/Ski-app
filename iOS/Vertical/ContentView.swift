@@ -20,6 +20,7 @@ struct ContentView: View {
                     statusBanner
                     warnings
                     elapsedDisplay
+                    headline
                     statsGrid
                     if recorder.isRecording { markButtons }
                     primaryButton
@@ -105,6 +106,62 @@ struct ContentView: View {
             .font(.system(size: 64, weight: .bold, design: .monospaced))
             .foregroundStyle(.white)
             .contentTransition(.numericText())
+    }
+
+    /// The three numbers a competitor's screen shows, computed our way.
+    ///
+    /// These exist so the app can be read **against Slopes and Carve on the mountain**, without a
+    /// file pull — which is how the whole S5/S6 comparison was done, and how assumption A18 gets
+    /// settled. Each one carries the naive alternative underneath in small type, because the gap
+    /// between the two lines is the entire product thesis, and on 2026-09-01 it was live on this
+    /// screen without anyone being able to see it.
+    private var headline: some View {
+        let m = recorder.metrics
+        return HStack(spacing: 10) {
+            headlineStat("VERTICAL",
+                         String(format: "%.0f m", m.provisionalDescentM),
+                         naive: String(format: "naive %.0f m", recorder.roughDescent))
+            headlineStat("TOP SPEED",
+                         m.maxSpeed >= 0 ? String(format: "%.0f", m.maxSpeed * 3.6) : "—",
+                         unit: m.maxSpeed >= 0 ? "km/h" : nil,
+                         // Ungated is what an app without an accuracy gate would print. When these
+                         // differ, the difference is a bad second, and it is worth looking at that
+                         // evening — this is the only warning we get on the mountain.
+                         naive: m.maxSpeedUngated > m.maxSpeed
+                             ? String(format: "ungated %.0f", m.maxSpeedUngated * 3.6) : "gate clean")
+            headlineStat("RUNS", "\(m.runCount)",
+                         naive: m.subThresholdDropM > 0
+                             ? String(format: "+%.0f m sub", m.subThresholdDropM) : "—")
+        }
+    }
+
+    private func headlineStat(_ label: String, _ value: String,
+                              unit: String? = nil, naive: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(value)
+                    .font(.system(size: 34, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+                if let unit {
+                    Text(unit)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+            Text(naive)
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(.orange)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 14))
     }
 
     private var statsGrid: some View {
