@@ -32,9 +32,17 @@ certificate**, then grant location as **Always**.
    giving us usable speed data and the config needs fixing — worth knowing on run one rather than
    at the end of the day.
 4. Leave the phone in a pocket. The blue location pill in the status bar means it's alive.
-5. Press **STOP** at the end of the day. If you forget, or the phone dies, or the app crashes —
-   the file on disk is still valid and complete up to that moment. Nothing is lost and nothing
-   will ask you a question about it.
+5. **If the phone dies or the app disappears, just open it again.** It reopens the same session
+   and carries on recording by itself, and shows a green "Recording resumed automatically"
+   banner so you know it happened. **Do not press START again** — you don't need to, and the
+   banner tells you so. (If the phone rebooted, unlock it; iOS won't relaunch anything until
+   the first unlock.)
+6. Press **STOP** at the end of the day. If you forget, the file on disk is still valid and
+   complete up to that moment. Nothing is lost and nothing will ask you a question about it.
+7. **Bring a battery pack, and keep the phone in an inside pocket.** All-day GPS at full rate is
+   the heaviest thing a phone can do, and a cold lithium cell can read 20 % and then cut out.
+   The app logs battery level and thermal state every 5 minutes, so a shortened day still tells
+   us something useful.
 
 ### About the tag buttons
 

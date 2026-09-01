@@ -34,6 +34,9 @@ final class TrackRecorder {
     /// True when the bundle can't legally record in the background, so the UI can say so plainly.
     private(set) var backgroundUpdatesUnavailable = false
     private(set) var lastError: String?
+    /// Set when this recording was picked back up after a crash, jetsam, or dead battery rather
+    /// than started by hand. Drives a banner, never a prompt.
+    private(set) var resumedAfterInterruption: (at: Date, gap: TimeInterval)?
 
     /// Naive running descent, summed from barometric deltas. **This is not the real vertical
     /// metric** — summing every negative delta is precisely the bug that gives the whole category
@@ -118,11 +121,71 @@ final class TrackRecorder {
         roughDescent = 0
         lastRelForDescent = nil
         lastError = nil
+        resumedAfterInterruption = nil
         isRecording = true
 
+        beginSensors()
+        note("session started; auth=\(manager.authorizationStatus.rawValue)")
+        logBattery()
+    }
+
+    /// Silently picks a recording back up after the app died mid-session.
+    ///
+    /// Called on every launch, foreground or background. If the newest session file has no `end`
+    /// record and stopped recently, we reopen it and keep appending to the same timeline — no
+    /// prompt, no second file, no lost afternoon. Returns `true` if it resumed something.
+    ///
+    /// The one thing analysis must know about a resume is that the **barometer's relative
+    /// altitude restarts from zero**: `CMAltimeter` measures from when updates began, so
+    /// `relAlt` is discontinuous across the seam. The note written here marks the seam, and
+    /// absolute `pressure` — logged on every baro sample — is what carries altitude across it.
+    @discardableResult
+    func resumeIfInterrupted() -> Bool {
+        guard !isRecording else { return false }
+        guard let found = SessionRecovery.findInterrupted(in: Self.sessionsDirectory) else {
+            return false
+        }
+
+        do {
+            writer = try SampleWriter(url: found.url)
+        } catch {
+            lastError = "Couldn't reopen interrupted session: \(error.localizedDescription)"
+            return false
+        }
+
+        startedAt = found.startedAt
+        locCount = found.locCount
+        baroCount = found.baroCount
+        markCount = found.markCount
+        dopplerValidCount = 0     // not recoverable from the scan; counts from here on
+        lastMarkLabel = nil
+        lastMarkAt = nil
+        roughDescent = 0
+        lastRelForDescent = nil
+        lastError = nil
+        resumedAfterInterruption = (at: found.lastSampleAt, gap: found.gap)
+        isRecording = true
+
+        beginSensors()
+        note(String(format: "resumed after interruption; gap %.1fs; baro relAlt baseline resets here",
+                    found.gap))
+        logBattery()
+        return true
+    }
+
+    /// Everything that has to happen for samples to start arriving. Shared by `start()` and
+    /// `resumeIfInterrupted()` so a resumed session is configured identically to a fresh one —
+    /// a resumed recording that quietly lacked background permission would be worse than useless.
+    private func beginSensors() {
         enableBackgroundUpdatesIfPossible()
         manager.showsBackgroundLocationIndicator = true
         manager.startUpdatingLocation()
+
+        // Not for the positions — those are far too coarse to ski with. This is the only API that
+        // asks iOS to **relaunch a terminated app**, which is what makes the resume above reachable
+        // after a jetsam kill in a pocket. Without it, recovery would only ever happen if Martin
+        // noticed and opened the app himself.
+        manager.startMonitoringSignificantLocationChanges()
 
         if CMAltimeter.isRelativeAltitudeAvailable() {
             altimeter.startRelativeAltitudeUpdates(to: .main) { [weak self] data, _ in
@@ -139,8 +202,7 @@ final class TrackRecorder {
             }
         }
 
-        note("session started; auth=\(manager.authorizationStatus.rawValue)")
-        logBattery()
+        batteryTimer?.invalidate()
         batteryTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.logBattery() }
         }
@@ -151,6 +213,7 @@ final class TrackRecorder {
         isRecording = false
 
         manager.stopUpdatingLocation()
+        manager.stopMonitoringSignificantLocationChanges()
         manager.allowsBackgroundLocationUpdates = false
         altimeter.stopRelativeAltitudeUpdates()
         altimeter.stopAbsoluteAltitudeUpdates()

@@ -2,8 +2,20 @@ import SwiftUI
 
 @main
 struct VerticalApp: App {
-    @State private var recorder = TrackRecorder()
+    @State private var recorder: TrackRecorder
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        // Runs before anything is on screen, and on a background relaunch there may never *be* a
+        // screen — iOS can wake the app for a location event with the UI never appearing. So the
+        // recovery check lives here rather than in `onAppear`: if the app died mid-day, recording
+        // restarts the moment the process does.
+        _recorder = State(initialValue: {
+            let r = TrackRecorder()
+            r.resumeIfInterrupted()
+            return r
+        }())
+    }
 
     var body: some Scene {
         WindowGroup {

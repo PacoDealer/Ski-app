@@ -29,11 +29,30 @@ nonisolated final class SampleWriter: @unchecked Sendable {
     /// worst-case loss on abrupt power failure to a handful of samples.
     private let syncEvery = 20
 
+    /// Opens `url` for appending, creating it only if it isn't already there.
+    ///
+    /// The "only if absent" part is load-bearing: `createFile` truncates an existing file, so
+    /// creating unconditionally would erase the very recording that crash recovery is reopening.
     init(url: URL) throws {
         self.url = url
-        FileManager.default.createFile(atPath: url.path, contents: nil)
+        if !FileManager.default.fileExists(atPath: url.path) {
+            FileManager.default.createFile(atPath: url.path, contents: nil)
+        }
         self.handle = try FileHandle(forWritingTo: url)
-        try self.handle.seekToEnd()
+        let end = try self.handle.seekToEnd()
+
+        // A power failure mid-write leaves a truncated final line. Appending straight onto it
+        // would glue two records together and cost us the good one as well as the bad one, so
+        // close the ragged line off first. The truncated remnant stays in the file as one
+        // unparseable line, which the analyzer skips.
+        if end > 0 {
+            try? self.handle.seek(toOffset: end - 1)
+            let last = try? self.handle.read(upToCount: 1)
+            _ = try? self.handle.seekToEnd()
+            if last != Data([0x0A]) {
+                try? self.handle.write(contentsOf: Data([0x0A]))
+            }
+        }
 
         let enc = JSONEncoder()
         enc.dateEncodingStrategy = .iso8601

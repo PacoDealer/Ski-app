@@ -150,6 +150,35 @@ def pct(part, whole):
     return f"{100.0 * part / whole:+.1f}%" if whole else "n/a"
 
 
+RESUME_MARKER = "resumed after interruption"
+
+
+def resume_seams(notes):
+    """Times (dt) where the app was relaunched after a crash, jetsam, or dead battery.
+
+    These matter more than they look. CMAltimeter's relativeAltitude is measured from the moment
+    updates *start*, so every resume silently resets it to zero. Summing deltas straight across
+    that seam invents a descent the size of the whole mountain. Absolute `pressure` is logged on
+    every baro sample precisely so altitude can be carried across the gap later; for now we simply
+    refuse to measure through it."""
+    return sorted(n["dt"] for n in notes if RESUME_MARKER in n.get("text", ""))
+
+
+def split_at_seams(times, alts, seams):
+    """Break a baro series into stretches that share one altimeter baseline."""
+    if not seams:
+        return [(times, alts)]
+    segments, start = [], 0
+    for seam in seams:
+        cut = next((i for i, t in enumerate(times) if t >= seam), len(times))
+        if cut > start:
+            segments.append((times[start:cut], alts[start:cut]))
+        start = cut
+    if start < len(times):
+        segments.append((times[start:], alts[start:]))
+    return [s for s in segments if len(s[1]) >= 2]
+
+
 def main(path):
     recs, bad_lines = load(path)
     meta, locs, baros = recs["meta"], recs["loc"], recs["baro"]
@@ -162,6 +191,12 @@ def main(path):
         print(f"  device      {meta.get('device')}  iOS {meta.get('osVersion')}")
         print(f"  started     {meta.get('startedAt')}")
     print(f"  closed      {'cleanly' if recs['end'] else 'INTERRUPTED (data still valid)'}")
+    seams_preview = resume_seams(recs["note"])
+    if seams_preview:
+        print(f"  resumed     {len(seams_preview)} auto-resume(s) after the app died — "
+              f"at {', '.join(f'{s/60:.0f} min' for s in seams_preview)}")
+        print(f"              baro metrics are summed per stretch; vertical skied while the app "
+              f"was dead is unknown and excluded")
     if bad_lines:
         print(f"  unparseable {bad_lines} line(s) — expected if killed mid-write")
 
@@ -237,14 +272,21 @@ def main(path):
     baro_alts = [b["relAlt"] for b in baros]
     baro_times = [b["dt"] for b in baros]
 
+    # Every baro metric is computed per unbroken stretch and then summed, so an altimeter baseline
+    # reset at a resume can never be mistaken for vertical. Vertical skied while the app was dead
+    # is genuinely unknown, and an unknown is reported as missing, never as zero and never guessed.
+    seams = resume_seams(recs["note"])
+    segments = split_at_seams(baro_times, baro_alts, seams) if baro_alts else []
+
     results = {}
     if gps_alts:
         results["GPS altitude, summed deltas"] = naive_descent(gps_alts)
-    if baro_alts:
-        results["barometric, summed deltas"] = naive_descent(baro_alts)
-        results[f"barometric, {BARO_HYSTERESIS_M:.0f} m hysteresis"] = hysteresis_descent(baro_alts)
+    if segments:
+        results["barometric, summed deltas"] = sum(naive_descent(a) for _, a in segments)
+        results[f"barometric, {BARO_HYSTERESIS_M:.0f} m hysteresis"] = \
+            sum(hysteresis_descent(a) for _, a in segments)
 
-    runs = segment_runs(baro_times, baro_alts) if baro_alts else []
+    runs = [r for t, a in segments for r in segment_runs(t, a)]
     if runs:
         results["barometric, run-segmented"] = sum(r["drop"] for r in runs)
 

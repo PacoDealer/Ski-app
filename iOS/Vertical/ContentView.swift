@@ -59,6 +59,18 @@ struct ContentView: View {
     @ViewBuilder
     private var warnings: some View {
         VStack(spacing: 8) {
+            // Good news rather than a warning, but it belongs in the same place: if the phone died
+            // and came back, Martin should be able to see at a glance that nothing was lost — and
+            // that he does *not* need to press START again.
+            if let resumed = recorder.resumedAfterInterruption {
+                Label("Recording resumed automatically — the app stopped for \(Int(resumed.gap / 60)) min and picked the same session back up. Nothing to do.",
+                      systemImage: "arrow.clockwise.circle.fill")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(.green, in: RoundedRectangle(cornerRadius: 12))
+            }
             // Without Always authorization the recording dies the moment the phone locks in a
             // pocket — which is where it will spend the entire day.
             if recorder.authStatus != .authorizedAlways {
