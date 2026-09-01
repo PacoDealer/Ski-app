@@ -32,8 +32,21 @@ SMOOTH_S = 20.0
 ASCENT_RATE = 0.25
 DESCENT_RATE = 0.30
 # A candidate segment must last this long and move this much to be believed.
-MIN_LIFT_S = 60.0
-MIN_LIFT_GAIN_M = 30.0
+#
+# S7: these were 60 s / 30 m, and that threshold excluded an entire class of lift. Session 2
+# contains a surface tow at 13:14:24 — 38 s, +36 m barometric — which the 60 s gate threw away,
+# leaving two descents with no ride between them. It is a real lift and not a pressure artifact:
+# GPS independently shows 130 m of travel at a rock-steady 3.0 m/s on a constant 70-78 degree
+# course while climbing, with hAcc flat at 8-9 m throughout (R10 — the barometer and GPS agree
+# here for *different* reasons, which is what makes it confirmation rather than one event hitting
+# two sensors). A skier does not ascend at constant speed on a constant heading; only a tow does.
+#
+# The numbers below are not a compromise. Printing every raw ascent candidate on both days (R7)
+# shows a wide empty gap: real rides are >=42.6 m over >=44.6 s, and the largest thing that is not
+# a ride is 5.1 m over 17 s. 30 s / 20 m sits in the middle of that gap, recovers the tow, and
+# leaves session 1's four rides bit-for-bit unchanged.
+MIN_LIFT_S = 30.0
+MIN_LIFT_GAIN_M = 20.0
 # Tolerance when scoring against a hand tag. Martin taps the button while skiing, with gloves on,
 # so the tag itself is worth about this much precision — scoring tighter would be measuring his
 # thumb, not the detector.
@@ -151,6 +164,45 @@ def detect_lifts(times, alts):
     return merged
 
 
+def structure(lifts, runs, clock):
+    """Interleave the rides and the descents, and complain when the day doesn't make sense.
+
+    A ski day alternates: you go up, you come down, you go up again. That is not a heuristic, it
+    is gravity — so any descent with no ride in front of it means a lift was missed, and two rides
+    in a row mean a descent was. This check needs no hand tags, which matters because Martin has
+    stopped tagging: session 2 carried exactly one tag, and the missed surface tow at 13:14 was
+    invisible to the tag scoring below while being obvious here. It is the self-diagnosis (R17)
+    for a detector whose ground truth is drying up.
+
+    It is a smell, not a verdict. Skiing to a different base, or walking to lunch, breaks the
+    alternation legitimately — so it prints what it saw and names the suspicion.
+    """
+    timeline = ([("lift", l["start"], l["end"], l["gain"]) for l in lifts]
+                + [("run", r["start"], r["end"], -r["drop"]) for r in runs])
+    timeline.sort(key=lambda e: e[1])
+
+    print("\n  --- THE DAY, IN ORDER ---")
+    complaints = []
+    for i, (kind, t0, t1, dv) in enumerate(timeline):
+        flag = ""
+        if kind == "run" and (i == 0 or timeline[i - 1][0] != "lift"):
+            flag = "  ⚠ descent with no ride before it — a lift may have been missed"
+        elif kind == "lift" and i and timeline[i - 1][0] == "lift":
+            flag = "  ⚠ two rides in a row — a descent may have been missed"
+        if flag:
+            complaints.append(flag)
+        print(f"  {kind:<4} {clock(t0)} → {clock(t1)}  {dv:+6.0f} m{flag}")
+
+    up = sum(e[3] for e in timeline if e[0] == "lift")
+    down = -sum(e[3] for e in timeline if e[0] == "run")
+    # Ridden vertical and skied vertical should roughly agree over a whole day, because the only
+    # other ways to change altitude are walking and driving. A large gap is the same signal as a
+    # broken alternation, seen from a different angle.
+    print(f"\n  ridden {up:.0f} m vs skied {down:.0f} m  ({up - down:+.0f} m unaccounted)")
+    if not complaints:
+        print("  Structure is clean: every descent is preceded by a ride.")
+
+
 def score(detected, truth, tolerance=TAG_TOLERANCE_S):
     """Match detected boundaries to hand tags, nearest-first, one to one."""
     matches, unmatched_truth = [], []
@@ -200,6 +252,8 @@ def main(path):
     for i, r in enumerate(runs, 1):
         print(f"  {i:2d}. {clock(r['start'])} → {clock(r['end'])}   "
               f"-{r['drop']:5.0f} m over {r['dur']/60:4.1f} min")
+
+    structure(lifts, runs, clock)
 
     if not marks:
         print("\n  No hand tags in this file — detection is unscored.")
