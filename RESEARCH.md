@@ -466,8 +466,9 @@ needs (§13.4).
   and it is ours. Runs are segmented between altitude turning points, so **standing still at the
   top of a run counts as run time** — session 2's third run is 10.6 min of which 4.5 min is
   stationary at 94 m before the first turn. **Vertical is unaffected** (measured top-to-bottom), but
-  every duration, vertical rate and average speed we print is wrong by about a third. The fix is the
-  mirror of the trim `detect.py` already applies to lift *starts*. Tracked as **A19**.
+  every duration, vertical rate and average speed we print is wrong by about a third. **Fixed the
+  same session** — see **A19** in §13.4 for the result and the calibration; the day is now 43.7 min
+  against Slopes' 41.
 
 ### 5.2 Recording reliability
 
@@ -848,12 +849,15 @@ phase of the roadmap.
    **Still open after S7:** the finished day records add nothing — Slopes' saved top speed is the
    same 67.2, Carve's saved 67 km/h is its 66.8 rounded. Both readings come from the day that
    contains the burst, so only a new burst-free day can separate the cases.
-6. **A19 — our run durations include standing still, by about a third.** Slopes books 41 min of ski
-   time for the day; our detected run durations sum to 54.6 min, because a run is segmented between
-   altitude turning points and a skier stopped at the top is still at the top (§5.1.3). Vertical is
-   unaffected; duration, vertical rate and average speed are not. The fix is the mirror of the
-   lift-start trim already in `detect.py`, and it needs the same care: trimming the start of a
-   descent to the last moment at the ceiling must not eat a slow traversing start.
+6. **~~A19 — our run durations include standing still, by about a third.~~ ✅ Fixed same session.**
+   A run now starts at the end of the leading plateau at the top, not at the altitude turning
+   point. The day goes **54.5 → 43.7 min against Slopes' 41** (+33% → +6.6%), and session 1's run 1
+   **378 → 341 s against the 5 m 26 s** Slopes itemises (+16% → +4.6%) — two independent checks,
+   both landing slightly generous, which is what keeping the runout predicts. Only the *leading*
+   plateau is trimmed: trimming the bottom too undershoots Slopes by 13%, because coasting out is
+   skiing and standing at the top is not. Ported to `LiveMetrics` as the same rule and proved by
+   `Tools/replay.sh` (R12a). **Vertical was never affected** — it is measured top-to-bottom — so no
+   accuracy claim in this document changes.
 7. **A20 — why did Carve's day vertical move 116 m between its live screen and its saved logbook
    entry, on a recording that gained no runs and at most 47 s?** (§5.1.3.) Our GPS-hysteresis model
    of its pipeline matches the **saved** number, which makes the live 1,509 the odd one out. We

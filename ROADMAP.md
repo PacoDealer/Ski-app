@@ -21,7 +21,10 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
    `detect.py` now prints the day as an alternating lift/run timeline that complains when gravity
    is violated — a check that works with no hand tags, which is what we now have.
 4. **Slopes handed us a free grade on our own detector:** lift time 40 min vs our 37.4 (good), ski
-   time 41 min vs our 54.6 (**bad — A19**, our runs count standing at the top as run time).
+   time 41 min vs our 54.5 (bad — our runs counted standing at the top as run time). **Fixed, and
+   the build on the phone has the fix**: runs now start when the skier does, the day is 43.7 min,
+   and `replay.sh` proves the app's `LiveMetrics` and `analyze.py` agree to the decimal. Vertical
+   never moved (905 and 462 unchanged) — it is measured top-to-bottom.
 
 ### ⬅ Asks for Martin — batched, all small
 
@@ -469,10 +472,22 @@ decomposed (~221 m pipeline, ~37 m lunch break, the rest unexplained), and opene
 **Slopes graded our detector for free.** Its day card breaks the time down: 41 min skiing, 40 min on
 lifts, 1 h 28 m at rest. Our lift detection sums to **37.4 min against its 40** — a −6.5% agreement
 from a source that has never heard of us, with no hand tags involved. Our run durations sum to
-**54.6 min against its 41** — a +33% error, because runs are segmented between altitude turning
-points and standing at the top of a run is still being counted as run time. Vertical is unaffected;
-every duration and rate we print is not. That is **A19**, and the fix is the mirror of the trim
-already applied to lift starts.
+**54.5 min against its 41** — a +33% error, because runs were segmented between altitude turning
+points and standing at the top of a run was still counted as run time. Vertical is unaffected;
+every duration and rate we printed was not.
+
+**A19 fixed the same session.** A run now starts at the end of the leading plateau at the top —
+the mirror of the trim already applied to lift starts, and *only* the leading plateau, since
+trimming the runout at the bottom too undershoots Slopes by 13%. Both external checks agree: the
+day 54.5 → 43.7 min against Slopes' 41, and session 1's run 1 378 → 341 s against the 5 m 26 s
+Slopes itemises for it. Ported to `LiveMetrics` as one rule rather than two — streaming cannot walk
+forward from the turning point, because those samples are consumed by the ascending branch before
+the descent is declared, so the plateau is tracked live and read off at the transition. `replay.sh`
+runs the app's own source over both fixtures and every duration matches to the decimal (R12a). One
+trap worth recording: scoring the *new* run start against the old "Top" hand tags dropped run
+starts from 2/2 to 0/2, which looks like a regression and isn't — Martin taps on arrival, 37–66 s
+before pushing off, so `detect.py` now scores the turning point against that tag and the skiing
+start is simply a different event the tags never labelled.
 
 ### S6 — 2026-09-01 · the second session, and the first result that isn't n=1
 
