@@ -33,21 +33,36 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ### ⬅ Asks for Martin — batched, all small
 
-**Tomorrow morning (2026-09-02) Martin skis again.** Everything below fits in that one session.
+**Tomorrow morning (2026-09-02) Martin skis again, and will add Strava** — a third app, and the
+first with a large user base and a published elevation methodology (see A21 before comparing: check
+whether it barometer-measures or DEM-corrects an iOS ski activity, and do not assume).
 
-1. **Press START once, at the very beginning, and do not press STOP until you are done for the
-   day** — including any break, coffee, or lunch. This single habit answers three open questions at
-   once and costs nothing:
+**How he actually uses the competitors, learned S7:** Slopes and Carve both have **pause**, and
+pause is what you press for a break — **stop** means done for the day. On 2026-09-01 he paused
+through the 11:30–12:39 break and stopped after lunch. Vertical has no pause and does not need one:
+it writes raw samples and segments offline, so a recorded break costs nothing and is worth having.
+
+**⭐ The one high-value new test — it costs two screenshots.** When pausing Carve for a break,
+screenshot its vertical **immediately before pausing** and **immediately after, before resuming**.
+If the number grew while the app was paused, that is the mechanism behind A20 measured directly,
+and "its pause accumulates vertical" is a far stronger finding than any total-vs-total delta.
+Same pair for Slopes if it is no trouble — we expect Slopes not to move, which is the control.
+
+1. **On Vertical: press START once, at the very beginning, and do not press STOP until you are done
+   for the day** — through every break. This single habit answers three open questions at once and
+   costs nothing:
    - **Battery (open since S5).** `batteryLevel` moves in 5% steps and no session has been long
      enough to see more than one, so every %/h figure in these docs has been retracted. A 3 h+
      continuous recording is the only thing that fixes it.
-   - **A20 / Carve's lunch accrual.** Carve recorded 2026-09-01's 69-minute lunch and Slopes booked
-     it as rest with no vertical. We have never recorded a break at all, so the ~37 m we attribute
-     to it is a residual, not a measurement. One recorded break makes it a measurement.
+   - **A20 / what a break costs.** Slopes booked 2026-09-01's break as rest with no vertical; what
+     Carve did with it is the open question above. We have never recorded a break at all, so the
+     ~37 m we attribute to it is a residual, not a measurement. One recorded break — on our side,
+     raw — makes it a measurement and gives the pause test something to be compared against.
    - **The auto-detector's hardest case.** A long stationary break is exactly what a lift/run
      detector must *not* mistake for anything, and we have no example of one.
-2. **Screenshot Slopes and Carve at the end of the day, from the saved day record** — the Logbook
-   entry, not the live Record screen. R12b exists because the two disagreed by 7.7%.
+2. **Screenshot Slopes, Carve and Strava at the end of the day, from the saved day record** — the
+   Logbook entry, not the live Record screen. R12b exists because the two disagreed by 7.7%. Press
+   **stop** before screenshotting so what is captured is the finished record.
 3. **A18 still needs a burst-free day.** Nothing special to do; if the day happens to contain no
    multipath burst, the top-speed question settles itself from the screenshot in #2.
 4. **Optional, two minutes:** open the app before skiing and check the new VERTICAL / TOP SPEED /

@@ -428,6 +428,28 @@ from our own notes). And the remaining loophole is closed by testimony rather th
 is not a last steep pitch hiding inside a rounded minute. Whatever produces the 116 m, it is not
 more skiing.
 
+**The pause button changes the leading hypothesis for the 116 m, and it is a better one.** Martin
+paused during the morning break and pressed **stop** only after lunch — so the 13:39 screenshot
+(paused, 1,509 m) and the saved entry are separated by a *paused* lunch, not by nothing. Across that
+window Carve's **elapsed time did not move** (3:01:43 → "3h 2m", the same figure rounded) while
+**distance grew 320 m and vertical grew 116 m**. One mechanism explains all three at once:
+**pause may freeze the clock but not the track**, leaving GPS to be processed while the phone sits
+still on a lunch table — 116 m of vertical and 320 m of wander in about an hour is the same order as
+the 10 m per 3.2 min of phantom vertical measured stationary in S3. **[A]**, and it must stay [A]:
+we cannot see inside the app.
+
+**One thing does not fit, and it is the thing to check.** If pause froze the clock, the 11:30–12:39
+break should have been excluded from elapsed too — and it was not: 13:39 minus 3:01:43 puts Carve's
+start at **~10:37**, which is when Martin actually started, so that elapsed *includes* the paused
+break. Either the clock behaves differently across the two pauses, or Carve was stopped very soon
+after 13:39 and lunch followed the stop. **The discriminating fact is simply what time Martin
+pressed stop** — asked, not yet answered.
+
+**The decisive test costs one screenshot pair.** On the next ski day, screenshot Carve's vertical
+**immediately before pausing** for a break and **immediately after, before resuming**. If the number
+grew while the app was paused, the mechanism is measured rather than modelled, and it is a far
+stronger finding than a total-vs-total delta: an app whose *pause* accumulates vertical.
+
 **Which of the two numbers is the pipeline we characterised?** Replaying our own GPS altitude with
 hysteresis over both sessions — the model that reproduced Carve's session-1 figure to 0.4% in S6 —
 gives, for the day: **1,588 m at 3 m, 1,645 m at 2 m, 1,541 m at 4 m.** Carve's **saved** 1,625
@@ -439,11 +461,11 @@ is the better match to the pipeline S6 characterised, and **1,509 now looks like
 
 - **~221 m of it is Carve's pipeline** on data we both recorded — no barometer, smoothed GPS
   altitude, summed rather than measured top-to-bottom. That is the S6 finding, unchanged.
-- **~37 m of it is the lunch break.** Carve started at ~10:37 (13:39 minus 3:01:43) and ran
-  **continuously through the 69 minutes we were not recording at all** — our two sessions bracket
-  that gap. Slopes recorded the same gap and booked it as **1 h 28 m of "rest", adding no
-  vertical.** An app that sums altitude accrues vertical while its owner eats lunch; an app that
-  measures runs does not.
+- **~37 m of it is the 11:30–12:39 break**, which our two sessions bracket and did not record.
+  **Correction (Martin, S7): both competitors have a pause button, and he used it** — pause for a
+  break, stop only at the end of the day. So Carve was *paused* through that 69 minutes, not
+  running freely. Slopes was paused through the same 69 minutes and booked it as **1 h 28 m of
+  "rest", adding no vertical.** Whatever Carve does while paused, Slopes' answer is the right one.
 - The remainder is the live-vs-saved gap above, which we cannot explain.
 
 **What must change in our own claims (R6):** §5.1.2's "Carve +10.4% on the day" was computed
@@ -453,11 +475,12 @@ which is which — the first is what its pipeline costs while skiing, the second
 with a lunch break costs. Slopes over the same day is **+1.0%**, which is the third independent
 measurement of a tie (0.8%, 1.2%, 1.0%) and R20 still applies.
 
-**A cheap experiment this suggests, for the next ski day:** leave Vertical recording *through
-lunch*. We have never recorded a break, so the ~37 m above is inferred from a residual rather than
-measured, and it is the one part of Carve's error we have not reproduced directly. It costs
-nothing but leaving the app running, and it doubles as the 3 h+ recording the battery question
-needs (§13.4).
+**A cheap experiment this suggests, for the next ski day:** leave Vertical recording *through the
+break*. Vertical has no pause and does not need one — it writes raw samples and segments offline,
+so a recorded break costs nothing and is worth having. We have never recorded one, so the ~37 m
+above is a residual rather than a measurement, and it is the one part of Carve's error we have not
+reproduced directly. It doubles as the 3 h+ recording the battery question needs (§13.4), and
+paired with the pause-screenshot test above it turns A20 from an anomaly into a mechanism.
 
 **Two things the Slopes screen gave us for free, about our own detector:**
 
@@ -862,10 +885,19 @@ phase of the roadmap.
    accuracy claim in this document changes.
 7. **A20 — why did Carve's day vertical move 116 m between its live screen and its saved logbook
    entry, on a recording that gained no runs and, per Martin, no further skiing at all?** (§5.1.3.)
-   The "he skied one more pitch" explanation is ruled out by testimony. Our GPS-hysteresis model
-   of its pipeline matches the **saved** number, which makes the live 1,509 the odd one out. We
-   cannot see inside the app, so this may stay a documented observation rather than an answer — but
-   it must be quoted as one reading superseding another, never as "Carve says 1,509".
+   The "he skied one more pitch" explanation is ruled out by testimony. **Leading hypothesis after
+   Martin explained the pause button: pause freezes the elapsed clock but not the track**, so an
+   hour paused on a lunch table adds distance and vertical without adding time — which is exactly
+   the shape of the observation (elapsed unchanged, distance +320 m, vertical +116 m). Our
+   GPS-hysteresis model of its pipeline matches the **saved** number, making the live 1,509 the odd
+   one out. Two things settle it, both cheap: **what time Martin pressed stop**, and a **screenshot
+   of Carve's vertical immediately before and after a pause**. Until then it is quoted as one
+   reading superseding another, never as a mechanism and never as "Carve says 1,509".
+8. **A21 — Strava enters the comparison 2026-09-02.** A third app, and the first with a large user
+   base and a published elevation methodology to check against. Note before comparing: Strava
+   corrects elevation against a DEM for some activity types and uses the device barometer for
+   others, so **establish which it did before treating its number as a sensor measurement** (R3 —
+   primary source, and read it for the iOS ski/snowboard activity specifically, not in general).
 
 ---
 
