@@ -88,12 +88,14 @@ own parse loop, so the harness checks the phone's actual path (R12a). Verified i
 `analyze.py` on both fixtures — 3342/2773 fixes, ±8.0/±7.9 m, 905/462 m, 4/3 runs, 12/24 m
 sub-threshold. **Not yet seen on a phone.**
 
-**3. There is not a single automated test in the project. ⬅ now the top of the list.**
-For an app whose entire value proposition is *not losing a ski day*, that is the gap that should be
-most uncomfortable. `LiveMetrics` is pure logic with two real fixtures sitting next to it, so the
-segmentation and gating rules are trivially testable. So are the two bugs that already bit us and
-would bite again silently: `SampleWriter` reopening a file with a truncated final line (S4), and
-`SessionRecovery`'s 6-hour window. `replay.sh` is a harness, not a test — nothing fails a build.
+**3. ~~There is not a single automated test in the project.~~ ✅ Done in S9 — 19 tests, `VerticalTests`.**
+Run them with **`Tools/test.sh`** (simulator; ~30 s cold, 5 s warm). Three suites: the segmentation
+and gating rules each named after the session that earned them, the two Portillo days as golden
+numbers, and the crash path — `SessionRecovery`'s 6-hour window and `SampleWriter` reopening a file
+with a truncated final line. Synthetic session files are written **through the real `SampleWriter`
+and the real sample structs**, because a fixture that isn't byte-identical to production output
+only tests the fixture (S4). **The suite was mutation-checked, not just run**: setting
+`mergeAscentM` to 1.0 re-introduces the exact S5 bug and fails three tests, including the day total.
 
 **4. Port the detector into the app** (`Tools/detect.py` → Swift). This is what makes the app
 behave like Slopes — press START, pocket the phone, get runs and lifts with no input. It is also
@@ -611,8 +613,31 @@ harness had compiled it happily for two sessions.
 
 **A ranked item was already built.** S8's #1 "urgent, ~20 lines" `ShareLink` has shipped since
 `5b1aacc` — per row *and* a Share-all toolbar item. It was ranked from memory of the screen rather
-than from the file. **R21** now says to open the file before ranking work on it. Automated tests
-(#3, still zero of them) inherit the top of that list.
+than from the file. **R21** now says to open the file before ranking work on it.
+
+**Then the tests, which were #3 and are now done — 19 of them, `Tools/test.sh`.** A `VerticalTests`
+unit-test target (hand-written into the `.pbxproj`, which is small and hand-authored, so this was
+~90 lines rather than a fight). Three suites:
+
+- **The rules that were paid for.** The hAcc speed gate rejecting a ±31 m fix; the pre-start cached
+  fix never becoming the day's top speed; the descent-merge rule keeping the 16 m tail a pressure
+  blip used to delete; the merge *not* firing across a long gap, with the sub-threshold metres
+  reported rather than dropped; the A19 leading-plateau trim moving the clock but never the
+  vertical; a descent straddling a resume seam being abandoned instead of measured across it.
+- **The Portillo days as golden numbers** — 3342/2773 fixes, 905/462 m, 4/3 runs, 64.7 and 43.9
+  km/h, ski time 19.9 + 23.8 = 43.7 min, and the 1,367 m day total the head-to-head was run on.
+  A failure here is not automatically a bug; it means the day's number changed, and that is a
+  claim needing a session-log entry.
+- **Not losing the day** — the 6-hour resume window at both edges, an old crash staying buried
+  under a newer clean session, the deliberately-forgiving `"t": "end"` probe, and the two
+  `SampleWriter` failures that have already happened once each: reopening truncating the file, and
+  a torn final line gluing itself onto the next record.
+
+**The suite was mutation-checked before being believed.** Nineteen tests passing on the first run
+is evidence of nothing on its own, so `mergeAscentM` was set to 1.0 to re-introduce the S5 bug: it
+failed `descentMergeKeepsTheTail`, `portilloS1` and `dayTotal`, and the threshold was put back.
+**R22.** Synthetic session files are written through the real `SampleWriter` and the real sample
+structs — a fixture that isn't byte-identical to production output tests the fixture (S4).
 
 **Installed 2026-09-01 20:03**, fuse reset to ~2026-09-08. Martin was asked whether to replace
 tomorrow's build and answered "do what you think is best"; installed on the grounds that

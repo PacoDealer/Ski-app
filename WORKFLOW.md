@@ -163,3 +163,9 @@ of the no-snow list as urgent and unbuilt. It had shipped in the very first reco
 row *and* in the toolbar. A plan written about remembered code is a plan about the wrong codebase,
 and the cost is not a wasted hour — it is a real item displaced from the top of a ranked list.
 Open the file, then rank. *(S9.)*
+
+**R22 — A test suite that has never failed has not been tested.** Nineteen green tests on the first
+run is evidence about the tests, not about the code. Break the rule on purpose — move the threshold,
+delete the guard — confirm the suite goes red in the place you expect, then put it back. S9 set
+`mergeAscentM` to 1.0, watched the exact S5 bug fail three tests including the day total, and only
+then believed the suite. *(S9.)*

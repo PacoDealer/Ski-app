@@ -8,14 +8,23 @@
 
 /* Begin PBXFileReference section */
 		A100000000000000000001 /* Vertical.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vertical.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A100000000000000000002 /* VerticalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VerticalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A100000000000000000010 /* Vertical */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Vertical; sourceTree = "<group>"; };
+		A100000000000000000011 /* VerticalTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = VerticalTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A100000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A100000000000000000023 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -29,6 +38,7 @@
 			isa = PBXGroup;
 			children = (
 				A100000000000000000010 /* Vertical */,
+				A100000000000000000011 /* VerticalTests */,
 				A100000000000000000031 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -37,6 +47,7 @@
 			isa = PBXGroup;
 			children = (
 				A100000000000000000001 /* Vertical.app */,
+				A100000000000000000002 /* VerticalTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -66,7 +77,48 @@
 			productReference = A100000000000000000001 /* Vertical.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A100000000000000000041 /* VerticalTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A100000000000000000051 /* Build configuration list for PBXNativeTarget "VerticalTests" */;
+			buildPhases = (
+				A100000000000000000024 /* Sources */,
+				A100000000000000000023 /* Frameworks */,
+				A100000000000000000025 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A100000000000000000092 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A100000000000000000011 /* VerticalTests */,
+			);
+			name = VerticalTests;
+			packageProductDependencies = (
+			);
+			productName = VerticalTests;
+			productReference = A100000000000000000002 /* VerticalTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		A100000000000000000091 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A100000000000000000060 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A100000000000000000040;
+			remoteInfo = Vertical;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A100000000000000000092 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A100000000000000000040 /* Vertical */;
+			targetProxy = A100000000000000000091 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		A100000000000000000060 /* Project object */ = {
@@ -78,6 +130,10 @@
 				TargetAttributes = {
 					A100000000000000000040 = {
 						CreatedOnToolsVersion = 26.6;
+					};
+					A100000000000000000041 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = A100000000000000000040;
 					};
 				};
 			};
@@ -96,6 +152,7 @@
 			projectRoot = "";
 			targets = (
 				A100000000000000000040 /* Vertical */,
+				A100000000000000000041 /* VerticalTests */,
 			);
 		};
 /* End PBXProject section */
@@ -108,10 +165,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A100000000000000000025 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A100000000000000000021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A100000000000000000024 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -244,6 +315,46 @@
 			};
 			name = Release;
 		};
+		A100000000000000000082 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = F9R33MN82P;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamberg.verticalTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Vertical.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Vertical";
+			};
+			name = Debug;
+		};
+		A100000000000000000083 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = F9R33MN82P;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamberg.verticalTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Vertical.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Vertical";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -252,6 +363,15 @@
 			buildConfigurations = (
 				A100000000000000000080 /* Debug */,
 				A100000000000000000081 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A100000000000000000051 /* Build configuration list for PBXNativeTarget "VerticalTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100000000000000000082 /* Debug */,
+				A100000000000000000083 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
