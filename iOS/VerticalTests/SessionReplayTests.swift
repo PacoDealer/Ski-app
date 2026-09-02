@@ -71,6 +71,24 @@ struct SessionReplayTests {
         #expect(abs((s1.skiTime + s2.skiTime) / 60 - 43.7) < 0.2)
     }
 
+    @Test("The negative control: 81 stationary minutes produce no runs and no vertical")
+    func stationaryDinnerInventsNothing() throws {
+        // Recorded over dinner on 2026-09-01 to test background motion capture, and it turned into
+        // the control the project had never run: every accuracy claim until now was "our number is
+        // close to Slopes'", never "our number is zero when nothing happened".
+        let s = try summarize(Fixtures.portilloStationary)
+        #expect(s.runs.isEmpty)
+        #expect(s.descentM == 0)
+        #expect(s.metrics.subThresholdDropM == 0, "not even a sub-threshold descent")
+        #expect(s.maxSpeedMS * 3.6 < 5, "a phone on a table is not moving")
+
+        // The same data through the GPS-summing method every other app uses gives 674 m — see
+        // ROADMAP S10. This assertion is the whole product in one line.
+        #expect(s.imuCount == 122_358)
+        #expect(s.imuCoverage > 0.99, "background device motion, observed rather than inferred")
+        #expect(s.imuMaxGapS < 2, "no gap while the phone was locked in a pocket")
+    }
+
     @Test("v1 files still parse after the format-2 motion records were added")
     func formatVersionOneStillReads() throws {
         let s = try summarize(Fixtures.portilloS1)

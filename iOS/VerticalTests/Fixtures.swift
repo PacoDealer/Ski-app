@@ -30,6 +30,9 @@ enum Fixtures {
 
     static let portilloS1 = day("2026-09-01_portillo_s1")
     static let portilloS2 = day("2026-09-01_portillo_s2")
+    /// 81 minutes of a phone sitting still through dinner, with motion capture running. The
+    /// negative control the project never had: whatever the rules do here, they do to *nothing*.
+    static let portilloStationary = day("2026-09-01_portillo_stationary")
 
     // MARK: - Synthetic sessions, written the way the app writes them
 

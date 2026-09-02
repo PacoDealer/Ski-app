@@ -22,30 +22,22 @@ a locked phone cannot be launched into remotely.) **Still unseen: the screen its
 looked at a screenshot of it, and the numbers on it have only ever been checked as text from
 `replay.sh` — worth one screenshot when he next opens a real day (R13, screenshot beyond the math).
 
-### 🔴 The two things outstanding right now, before anything else
+### ✅ Both S8 blockers are closed (S10, 2026-09-02)
 
-**1. The walk test has not been done.** The build on the phone (`494d537`) records device motion at
-25 Hz and **has never been run**. Martin will do it later. Ask him for it, then verify from the
-data, not from his description:
+**1. The walk test is done and it is green.** 81 minutes locked and pocketed over dinner:
+**25.1 Hz, 100% coverage, no gap over 2 s, 122,358 motion samples.** Background device-motion
+delivery is now *observed*, not inferred from `CMAltimeter`. **The IMU is cleared to ski with.**
 
-```sh
-xcrun devicectl device copy from --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6 \
-  --domain-type appDataContainer --domain-identifier com.gamberg.vertical \
-  --source Documents/Sessions --destination ~/Desktop/Projects/Vertical/Data/pull-$(date +%Y%m%d)
-./Tools/analyze.py <newest>.jsonl     # read the "--- MOTION (IMU) ---" block
-```
+**2. Martin is skiing with it today (2026-09-02)** — Vertical, Slopes, Carve and Strava together.
 
-The test: START, check the **MOTION** tile is green and climbing, **lock the phone and pocket it
-for ~2 min** (this is the part that matters — it tests background delivery for device motion, which
-is inferred from `CMAltimeter` behaving that way, not yet observed), unlock, STOP. What to look for:
-effective rate near 25 Hz, coverage near 100%, **no gap spanning the locked stretch**.
+The same file became the **negative control the project had never run**: over 81 stationary
+minutes our method reports **0 m**, while our reproduction of Carve's GPS-hysteresis pipeline
+reports **674 m** and naive GPS summing reports 1,162 m. Indoors, so it is an upper bound on the
+failure mode rather than a prediction of Carve's error on snow — but it is also independent
+mechanism-evidence for **A20** (Carve's +116 m across a *paused* lunch). See S10 in the log.
 
-**2. Whether to ski with it tomorrow is Martin's call, and he has not made it.** For: one more day
-out of ~5 before three months without snow. Against: new code on the last data days, and it makes
-the 3 h battery number "app + IMU" rather than "app". Worst realistic case is a crash, which
-`SessionRecovery` silently reopens and appends to (proven against a real `SIGKILL` in S4) — seconds
-lost and a baro seam, not a day. **If the walk test is clean, recommend skiing with it. If not, the
-previous build is two minutes away:** `git checkout 7ebef4e -- iOS/` then rebuild and reinstall.
+**Battery bound tightened to 0–3.7 %/h** (was 0–11): 90% → 90% over 1.33 h, zero 5% steps. Today's
+single long session is what finally answers it.
 
 ### ✅ D7 IS ANSWERED (S9). Read the decisions table's §13.6 before planning anything.
 
@@ -640,6 +632,54 @@ when MapLibre ships terrain, or when there is appetite for a Metal-shaped projec
 ---
 
 ## Session log
+
+### S10 — 2026-09-02 · the walk test came back green, and gave us the control we never ran
+
+**The IMU works in the background, and it is now observed rather than inferred.** Martin recorded
+**81 minutes** over dinner with the phone locked and pocketed — far longer than the 2 minutes
+asked for, which is what makes it evidence. `2026-09-01_portillo_stationary.jsonl`:
+
+- **122,358 motion samples in 4,898 batches. Effective 25.1 Hz against a nominal 25. Coverage
+  100%. No gap over 2 s across the whole 81 minutes.** The S8 note that background delivery for
+  device motion was *inferred from `CMAltimeter` behaving the same way* can be closed: it is
+  measured. **The IMU is cleared to ski with.**
+
+**And then the file turned out to be the negative control this project has never run.** Every
+accuracy claim so far has had the form "our number is close to Slopes' number". None has had the
+form "our number is **zero** when nothing happened". A phone sitting still on a table for 81
+minutes is exactly that test, and the answer is stark:
+
+| Method, same 81 stationary minutes | Vertical reported |
+|---|---|
+| **Ours — barometric, run-segmented** | **0 m** |
+| Barometric, summed deltas | 22 m |
+| GPS altitude, 10 m hysteresis | 147 m |
+| **GPS altitude, 3 m hysteresis — our reproduction of Carve's pipeline (S6)** | **674 m** |
+| GPS altitude, summed deltas | 1,162 m |
+
+Zero runs, zero sub-threshold metres, gated top speed 2.5 km/h. **Say this carefully (R20):** it is
+*indoors*, where GPS is at its worst — 0.44 Hz here against 1.00 Hz outdoors, hAcc median ±13.8 m,
+and only 278 of 2,132 fixes carrying valid Doppler. So 674 m is an **upper bound on the failure
+mode, not a prediction of Carve's error while skiing.** What it does establish, and could not be
+established from any ski day, is *the direction and the mechanism* — and that our own method
+reports nothing at all when nothing happens.
+
+**It is also independent evidence for A20.** Carve's vertical grew **116 m across a paused lunch**
+on 2026-09-01, which we could only treat as an unexplained residual. A pipeline that accrues
+hundreds of metres an hour from a stationary phone makes "Carve's pause freezes the elapsed clock
+but not the track" the ordinary explanation rather than a guess. **Not yet proof** — that still
+needs the before/after pause screenshots — but the hypothesis now has a measured mechanism behind
+it. `RESEARCH.md` A20.
+
+**Battery, still not answered, but the bound is tighter.** 90% → 90% over 1.33 h with **zero 5%
+steps observed**, so the honest range is now **0–3.7 %/h**, down from 0–11. Recording with the IMU
+running did not visibly move a battery in 81 minutes. A real number still needs 3 h+ — which is
+what today's one-START-no-STOP session is for.
+
+**Filed as a fixture and as a test.** `Data/fixtures/2026-09-01_portillo_stationary.jsonl` (10 MB)
+and `stationaryDinnerInventsNothing()`, which asserts zero runs, zero vertical, 122,358 motion
+samples and no gap over 2 s. **20 tests now.** A control is worth more as a test than as a
+paragraph: it fails the day a threshold change starts inventing vertical out of noise.
 
 ### S9 — 2026-09-01 · the app stops throwing the day away
 
