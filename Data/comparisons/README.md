@@ -65,6 +65,70 @@ Also worth keeping from the Slopes screen: it recorded the same 10:37–13:27 sp
 the 69-minute lunch break, and booked that break as **1 h 28 m of rest with no vertical**. And its
 **40 min of lift time** is an independent check on our own lift detector, which finds 37.4 min.
 
+## 2026-09-02, 12:45–12:46 — the four-app batch, taken at the START of the afternoon break
+
+`2026-09-02_strava_1245.png`, `2026-09-02_carve_1245.png`, `2026-09-02_slopes_1246.png`,
+`2026-09-02_vertical_1246.png`. App identification confirmed by Martin.
+
+Martin skied the morning with all four running, then **paused Slopes, Carve and Strava and left
+Vertical recording**, per the S7 ask. He does not ski again until ~14:30. These are **live screens,
+not saved records** (R12b applies to the end-of-day batch, not to a mid-day bracket like this one).
+
+| App | State | Elapsed | Runs | Vertical | Distance | Top speed | Altitude |
+|---|---|---|---|---|---|---|---|
+| **Vertical** | recording | 2:23:50 | **7** (+45 m sub) | **1,386 m** (naive 1,634) | — | **68** km/h, *gate clean* | 2,876 m (GPS) |
+| Slopes | paused | — | 8 | **1,360 m** | — | **69,2** km/h | 2.876 m |
+| Strava | paused | 02:13:28 | 9 | **1.412 m** | 9,62 km | — (avg 9,0) | — |
+| Carve | paused | 2:12:15 | 9 | **1572 m** | 9.15 km | **68.4** km/h | 2903 m |
+
+Against our 1,386 m: **Slopes −1.9%, Strava +1.9%, Carve +13.4%.**
+
+⚠️ **The windows are not identical and the percentages above are provisional.** Ours ran 2:23:50
+continuously; Carve's clock froze at 2:12:15 and Strava's at 02:13:28 when Martin paused them, and
+none of the four start times is known from a screenshot. Resolve against the raw file before these
+numbers go into `RESEARCH.md`.
+
+Five things this batch establishes, pending the raw file:
+
+1. **A21, first read: Strava sits in the tie cluster, not with Carve.** +1.9% over our barometric
+   number, the same order as Slopes' −1.9%. This does **not** yet answer whether Strava measures
+   with the barometer or DEM-corrects afterwards — that check is still owed before its number is
+   treated as a sensor reading.
+2. **Fourth independent Slopes agreement** (0.8%, 1.2%, 1.0%, now 1.9%) — and the **first time we
+   read higher than Slopes rather than lower**.
+3. **Carve is consistent with itself**: +13.4%, inside the +10.1 / +10.4 / +18.9% band from
+   2026-09-01, and still unexplained at the top end (A20).
+4. **Altitude cross-check, new and unprompted:** our GPS altitude reads **2,876 m** and Slopes reads
+   **2.876 m** — identical to the metre — while **Carve reads 2,903 m, +27 m high**. Independent
+   corroboration of the S5/S7 finding that Carve's altitude is GPS-only and smoothed.
+5. **A18's precondition is met for the first time: today has no multipath burst.** Our TOP SPEED
+   tile reads *gate clean*, which by `ContentView.swift:130` means `maxSpeedUngated ≤ maxSpeed` —
+   the hAcc gate rejected nothing faster than the clean peak. With no glitch available to anybody,
+   all three published top speeds land within 1.8% of each other (68 / 68.4 / 69,2). Contrast
+   2026-09-01, where Slopes read **+3.9%** over our clean peak with a known 4-second burst sitting
+   in the track. That leans A18 toward *Slopes captured the burst*, but it is one clean day against
+   one dirty one — **not settled, and the afternoon can still produce a burst.**
+
+**Open on our side:** we report **7 runs against Slopes' 8 and Carve/Strava's 9**, with **45 m of
+descent discarded under the minimum-drop threshold**. That is the exact signature of the S5 bug
+(a split run whose orphaned tail falls under `MIN_RUN_DROP_M` and is silently dropped), which is why
+the tile prints what the threshold ate. Check it against the raw file — do not assume it is the
+same cause.
+
+### The A20 bracket is live right now
+
+This batch is the **before** half. Carve accrued +116 m of vertical across a *paused* lunch on
+2026-09-01 (A20), and our reproduction of its GPS-hysteresis pipeline invented **674 m over 81
+stationary minutes** indoors. The **after** half is the identical four screenshots taken
+immediately before Martin resumes, ~14:30 — a **~1 h 45 m paused window**, far longer than the
+69-minute lunch that raised the question.
+
+What makes this version decisive rather than residual: **Vertical is recording throughout the same
+window**, outdoors, with the best GPS quality yet seen (hAcc ±4 m, Doppler 8,222/8,303 = 99.0%,
+0.96 Hz). So the paused break is simultaneously a **matched stationary control on snow** — we can
+replay the Carve model over exactly the minutes Carve was paused and compare it to Carve's actual
+accrual, instead of arguing from an indoor upper bound (R20).
+
 ---
 
 Vertical's own numbers for the first session come from the fixture, via `Tools/analyze.py` and
