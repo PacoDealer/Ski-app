@@ -16,11 +16,11 @@ and this is the build Martin skis with. Martin left the install decision to me; 
 that the change cannot reach a recording — `SessionReplay` only ever reads files that are already
 closed, and the only edit outside new files is marking `LiveMetrics` `nonisolated`.
 
-**Not verified: the launch.** `devicectl process launch` returned `FBSOpenApplicationErrorDomain
-error 7 — Locked`; the phone was locked and cannot be launched into remotely. The install itself
-reported success with a bundle path. **First thing next session: confirm the app opens, and that
-tapping a session row shows the detail screen.** If it does not, the previous build is
-`git checkout 494d537 -- iOS/` plus a rebuild and reinstall.
+**Confirmed by Martin, 2026-09-01: the app opens and the detail screen opens.** (`devicectl process
+launch` had failed with `FBSOpenApplicationErrorDomain error 7 — Locked`, so this needed his hands;
+a locked phone cannot be launched into remotely.) **Still unseen: the screen itself.** Nobody has
+looked at a screenshot of it, and the numbers on it have only ever been checked as text from
+`replay.sh` — worth one screenshot when he next opens a real day (R13, screenshot beyond the math).
 
 ### 🔴 The two things outstanding right now, before anything else
 
@@ -618,8 +618,10 @@ than from the file. **R21** now says to open the file before ranking work on it.
 tomorrow's build and answered "do what you think is best"; installed on the grounds that
 `SessionReplay` only reads closed files and cannot reach a recording. The built `Info.plist` was
 re-checked for `UIBackgroundModes`, `UIFileSharingEnabled` and
-`LSSupportsOpeningDocumentsInPlace` before installing (R-the-hard-way, S3). **The launch was not
-confirmed** — the phone was locked and `devicectl` cannot open an app on a locked device.
+`LSSupportsOpeningDocumentsInPlace` before installing (R-the-hard-way, S3). The launch could not be
+confirmed from here — the phone was locked and `devicectl` cannot open an app on a locked device —
+so **Martin confirmed it by hand: the app opens and the detail screen opens.** The *appearance* of
+the screen is still unseen; one screenshot of a real day would retire that.
 
 ### S7 — 2026-09-01 · the build ships to the phone, and the saved day tells a different story
 
