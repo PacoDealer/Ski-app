@@ -150,6 +150,57 @@ break is simultaneously a **matched stationary control on snow** — replay the 
 model over exactly the minutes Carve was paused and compare it against Carve's own accrual, instead
 of arguing from the indoor 674 m upper bound (R20).
 
+### ✅ THE A20 BRACKET WAS RUN — 2026-09-02, 16:57–17:07, after 4 h 12 m paused
+
+Screenshots: `2026-09-02_strava_1657_paused.png`, `2026-09-02_slopes_1657_paused.png`,
+`2026-09-02_carve_1658_paused_zeroed.png`, `2026-09-02_carve_1707_logbook_empty.png`.
+
+| App | at 12:45 | at 16:57, still paused | change over 4 h 12 m |
+|---|---|---|---|
+| Strava | 02:13:28, 9 runs, 1.412 m, 9,62 km | identical, to the second | **nothing** |
+| Slopes | 8 runs, 1.360 m, top 69,2, alt 2.876 m | 8 runs, **1.360 m**, top 69,2, alt 2.891 m | **nothing** (altitude is a live readout) |
+| Carve | 2:12:15, 9 runs, 1572 m, 9.15 km | **00:00 · 0 runs · 0 m · 0.00 km** | **the session is gone** |
+
+**A20's hypothesis is dead for Slopes and Strava.** Neither accrued a single metre across four
+hours paused. Whatever explains Carve's +116 m on 2026-09-01, it is not something a paused tracker
+normally does.
+
+**Slopes' altitude moved +15 m — and that is a fourth agreement, not a discrepancy.** Our own
+barometer drifted **+9.9 m over 2.86 h** parked on the same afternoon (≈3.5 m/h, weather pressure
+falling), which extrapolates to ≈14.5 m over Slopes' 4.2 h window. Two phones, the same drift.
+More usefully: **neither app turned that drift into vertical.** Ours stayed at 1,386 m with the
+drift landing in sub-threshold; Slopes stayed at 1,360. Another negative control, and precisely the
+failure mode a GPS-summing pipeline cannot reject.
+
+### 🔴 CARVE LOST THE DAY
+
+Nobody pressed Finish. After ~4 hours paused, Carve's Record screen shows `Paused 00:00` with every
+statistic at zero — speed, altitude, runs, top speed, vertical, distance — while the day's track is
+still drawn on the map behind it. The Logbook then shows a **`2 Sep 2026` row carrying no stats at
+all**, and the season header reads **2 days · 1.6k vert · 9.4 km · 7 runs**, which is the 1 Sep day
+by itself. The 2 Sep day contributes nothing.
+
+**A 2 h 12 m day — 9 runs, 1,572 m, 9.15 km, live on Carve's own screen at 12:45 — is unrecoverable.**
+
+This is the strongest evidence the project has for its own core design decision, and it is worth
+more than the A20 measurement it destroyed:
+
+- Carve is a **local-first tracker with no paywall and iCloud sync** (`RESEARCH.md` §2.2). It is the
+  app whose feature list we keep measuring ourselves against. It lost a full ski day to a pause.
+- Vertical cannot do this. Every sample is appended to a JSONL file and fsync'd as it arrives, so
+  the day exists on disk before any summary is computed. There is no save step to fail.
+- We had already proved this from the other side in S12: our own session file was **pulled off the
+  phone mid-recording** and analysed in full, hours before anyone pressed STOP.
+
+It also retires the A20 mechanism hunt as a priority. The leading hypothesis was "Carve's pause
+freezes the elapsed clock but not the track." What 2026-09-02 actually shows is that **Carve's
+pause/save path is unreliable outright** — the 2026-09-01 +116 m recomputation and this total loss
+are more plausibly one broken path than two separate behaviours. Do not spend more sessions
+reverse-engineering it; record the observation and move on.
+
+**Caveat (R5):** n=1, one pause, one device, and we do not know what a longer or shorter pause does.
+Say "Carve lost a day when paused for four hours on 2026-09-02", not "Carve loses days".
+
 ---
 
 Vertical's own numbers for the first session come from the fixture, via `Tools/analyze.py` and

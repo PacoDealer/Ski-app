@@ -24,11 +24,46 @@ motion capture on, **the cable hits this cap about 5¼ hours into any ski day** 
 of that file is still on the phone. Getting it needs another route — the `ShareLink` already in
 `SessionsView` (AirDrop) is the obvious one, and is now worth testing for real.
 
+### 🟢 S12 later — the A20 bracket ran, Carve lost the day, and Slopes handed us its raw file
+
+**A20's bracket, after 4 h 12 m paused:** Strava identical to the second; **Slopes unmoved at
+1,360 m**; **Carve zeroed itself** — `00:00`, every stat at zero, and a Logbook row for 2 Sep 2026
+with no stats at all while the season total equals the 1 Sep day alone. **A 2 h 12 m day, 9 runs,
+1,572 m, is unrecoverable, and nobody pressed Finish.** That is the strongest evidence this project
+has for append-only capture, and it retires the A20 mechanism hunt: Carve's pause/save path is
+simply unreliable. n=1 — say "lost a day when paused for four hours", not "loses days".
+
+**Slopes' altitude moved +15 m over that window and that is an agreement, not a discrepancy** — our
+own barometer drifted +9.9 m in 2.86 h parked (≈3.5 m/h), which extrapolates to ≈14.5 m. Neither app
+turned the drift into vertical.
+
+**Martin then exported `2 September 2026 - Portillo.slopes`, and it is the best ground truth the
+project has ever had.** It is a zip of `Metadata.xml` (one `<Action>` per lift and per run, with
+vertical, duration, top speed and *where* the top speed occurred), `RawGPS.csv` and `GPS.csv` —
+i.e. Slopes' Premium run-by-run data, exportable free. Full write-up:
+`Data/comparisons/2026-09-02_slopes_export.md`. Three results:
+
+1. **A18 IS ANSWERED: Slopes published the burst.** Its day top speed is stamped at a position
+   **0.0 m from our own peak fix, same second, same altitude** — the same physical instant. At that
+   timestamp Slopes' `RawGPS.csv` reads **68.42 km/h** (our number, to the decimal) and its
+   processed `GPS.csv` reads **69.17**, which is what it publishes. Slopes' processing costs
+   **+1.09%** on a clean peak; it cannot produce the **+3.9%** seen on 2026-09-01, so that gap is
+   the 11:28:59 multipath burst.
+2. **Slopes and Vertical record the identical CoreLocation stream.** All 1,345 of its raw fixes
+   match ours after a constant −0.154 s offset, with **1,117/1,117 non-clamped speeds identical to
+   float precision**. Every published difference between the two apps is a processing choice. Slopes
+   also clamps 228 slow fixes to zero and keeps only **17%** of the fixes we do (1,345 vs 7,900) —
+   R13, argued by the market leader's own export.
+3. **Run-by-run, 8 against 8, no hand tags on either side, +1.9% on the day** — and it exposed two
+   real defects of ours: **run 5 runs 134 s and +22 m long**, and **runs 7 and 8 start ~170 s early**
+   (the A19 plateau trim is not catching a 2-minute wait at the top). First data that disagrees with
+   the A19 fix. **Do not retune on one day (R5)** — read the barometer across those 170 s first.
+
 **🔴 STILL OPEN, and the reason to be quick: the fuse dies ~2026-09-08.** Vertical's session was
-still recording at 15:37 and nothing has closed it. Slopes, Carve and Strava are still **paused**
-from ~12:45 — so **A20's "after" screenshots are still available and still worth more than anything
-else on this list.** Screenshot all four *while still paused*, then their saved day records
-(R12b). Pressing Finish/Stop on any of the three destroys the measurement.
+still recording at 15:37 and nothing has closed it; the file's tail past 40 MB is still on the phone.
+**Worth asking for: the `.slopes` export of 1 Sep 2026**, still in the logbook — its
+`topSpeedLat`/`topSpeedLong` would turn A18's answer from inferred-from-a-clean-day into read-off-
+the-file, and it gives a second day of run-by-run ground truth for the run 5 / runs 7–8 defects.
 
 ### What the file settled
 

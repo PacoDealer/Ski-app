@@ -869,13 +869,27 @@ phase of the roadmap.
    without the paid account.
 4. **No App Store review exposure has been assessed at all** for background location and the
    health/fitness framing.
-5. **A18 — does Slopes publish the multipath glitch, or is it just ungated?** Its day top speed of
-   67.2 km/h is either the 11:28:59 burst (as Carve's demonstrably is) or the clean 11:01:11 peak
-   read +3.9% high. §5.1.2 has both cases and the evidence for each; neither may be asserted. **The
-   test is a session containing no multipath burst** — cheap, and every future recording is one.
-   **Still open after S7:** the finished day records add nothing — Slopes' saved top speed is the
-   same 67.2, Carve's saved 67 km/h is its 66.8 rounded. Both readings come from the day that
-   contains the burst, so only a new burst-free day can separate the cases.
+5. **~~A18 — does Slopes publish the multipath glitch, or is it just ungated?~~ ✅ ANSWERED S12,
+   2026-09-02: it published the glitch.** Martin's `.slopes` export of the burst-free 2026-09-02 day
+   settled it. `Metadata.xml` stamps the day's top speed with the position it occurred at; that
+   point is **0.0 m from our own peak fix, in the same second (12:10:44), at the same altitude** —
+   Slopes and Vertical select the *same physical instant*. At that timestamp Slopes' own
+   `RawGPS.csv` reads **19.0060 m/s = 68.42 km/h**, which is our number to the decimal, while its
+   processed `GPS.csv` reads **19.2128 = 69.17 km/h**, which is what Slopes publishes. **So Slopes
+   publishes a processed track, and its processing costs +1.09% on a clean peak** (across the day:
+   faster than its own raw on 1,014/1,343 fixes, mean +0.33 km/h, max +3.72). +1.09% cannot produce
+   the **+3.9%** seen on 2026-09-01, so that gap is not processing — it is the 11:28:59 burst. Same
+   verdict as Carve's 66.8, now reached by measurement rather than by leaning. [V]
+   *To convert this from "inferred from a clean day" to "read off the file", export the 1 Sep 2026
+   `.slopes` and check its `topSpeedLat`/`topSpeedLong` against the burst fix. Still in the logbook.*
+   **The larger finding from the same file:** all 1,345 of Slopes' raw fixes match ours after a
+   constant −0.154 s clock offset, with **1,117/1,117 non-clamped speeds identical to float
+   precision**, hAcc identical within the export's 1-dp rounding, and positions within the CSV's
+   6-decimal resolution. **Slopes and Vertical record the identical CoreLocation stream** — every
+   published difference is a processing choice. Slopes additionally clamps 228 slow fixes to
+   `0.0000` and retains only **17%** of the fixes we keep over the same window (1,345 vs 7,900),
+   which is R13's argument made by the market leader's own export. Full analysis:
+   `Data/comparisons/2026-09-02_slopes_export.md`.
 6. **~~A19 — our run durations include standing still, by about a third.~~ ✅ Fixed same session.**
    A run now starts at the end of the leading plateau at the top, not at the altitude turning
    point. The day goes **54.5 → 43.7 min against Slopes' 41** (+33% → +6.6%), and session 1's run 1
@@ -895,6 +909,18 @@ phase of the roadmap.
    one out. Two things settle it, both cheap: **what time Martin pressed stop**, and a **screenshot
    of Carve's vertical immediately before and after a pause**. Until then it is quoted as one
    reading superseding another, never as a mechanism and never as "Carve says 1,509".
+   **S12 UPDATE — the bracket was run, and it overtook the question.** After **4 h 12 m paused**,
+   Slopes and Strava had accrued **exactly nothing** (Strava identical to the second; Slopes'
+   vertical unmoved at 1,360 m) — so pause-accrual is not normal tracker behaviour. **Carve zeroed
+   itself**: Record screen back to `00:00` with every statistic at zero, and a Logbook row for
+   2 Sep 2026 carrying **no stats at all**, with the season total equal to the 1 Sep day alone.
+   **A 2 h 12 m day — 9 runs, 1,572 m — is unrecoverable, and nobody pressed Finish.** The
+   freeze-clock-not-track hypothesis is superseded by something simpler and worse: **Carve's
+   pause/save path is unreliable**, and the +116 m recomputation and this total loss are more
+   plausibly one broken path than two behaviours. **Stop reverse-engineering it** — the finding is
+   recorded, it is n=1 (say "lost a day when paused for four hours on 2026-09-02", not "loses
+   days"), and it is worth more as evidence for our own append-only capture than as a competitor
+   mechanism. `Data/comparisons/README.md` has the screenshots and the table. [V]
 8. **A21 — Strava enters the comparison 2026-09-02.** A third app, and the first with a large user
    base and a published elevation methodology to check against. Note before comparing: Strava
    corrects elevation against a DEM for some activity types and uses the device barometer for
