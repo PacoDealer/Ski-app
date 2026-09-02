@@ -43,12 +43,16 @@ vertical, duration, top speed and *where* the top speed occurred), `RawGPS.csv` 
 i.e. Slopes' Premium run-by-run data, exportable free. Full write-up:
 `Data/comparisons/2026-09-02_slopes_export.md`. Three results:
 
-1. **A18 IS ANSWERED: Slopes published the burst.** Its day top speed is stamped at a position
-   **0.0 m from our own peak fix, same second, same altitude** — the same physical instant. At that
-   timestamp Slopes' `RawGPS.csv` reads **68.42 km/h** (our number, to the decimal) and its
-   processed `GPS.csv` reads **69.17**, which is what it publishes. Slopes' processing costs
-   **+1.09%** on a clean peak; it cannot produce the **+3.9%** seen on 2026-09-01, so that gap is
-   the 11:28:59 multipath burst.
+1. **A18 IS ANSWERED — and the answer is neither option the question offered.** Martin then exported
+   1 Sep and 31 Aug too, and the 1 Sep file reads directly: Slopes' `RawGPS.csv` max is **69.57 km/h
+   @ 11:29:00 hAcc ±23.7** — the burst, matching our *ungated* max to 0.0000 km/h — its processed max
+   is 70.15, and **it published neither**. It published **67.21 @ 11:01:11**, the identical fix our
+   hAcc gate lands on, where its raw value is **64.74 km/h, bit-for-bit ours**. **Slopes rejects the
+   burst exactly as we do**, and the residual +3.81% is its smoothing of the clean fix.
+   ⚠️ **An earlier S12 write-up said "Slopes published the burst" and is withdrawn** — it generalised
+   a single fix's +1.09% uplift on 2 Sep into a bound, when the uplift is speed-dependent (1 Sep:
+   mean +2.72% above 54 km/h, max +5.62%). R2, on the day it was quoted approvingly. Both write-ups
+   carry the correction: `Data/comparisons/2026-09-01_slopes_export.md`.
 2. **Slopes and Vertical record the identical CoreLocation stream.** All 1,345 of its raw fixes
    match ours after a constant −0.154 s offset, with **1,117/1,117 non-clamped speeds identical to
    float precision**. Every published difference between the two apps is a processing choice. Slopes
@@ -56,8 +60,15 @@ i.e. Slopes' Premium run-by-run data, exportable free. Full write-up:
    R13, argued by the market leader's own export.
 3. **Run-by-run, 8 against 8, no hand tags on either side, +1.9% on the day** — and it exposed two
    real defects of ours: **run 5 runs 134 s and +22 m long**, and **runs 7 and 8 start ~170 s early**
-   (the A19 plateau trim is not catching a 2-minute wait at the top). First data that disagrees with
-   the A19 fix. **Do not retune on one day (R5)** — read the barometer across those 170 s first.
+   (the A19 plateau trim is not catching a 2-minute wait at the top). The 1 Sep export gives a second
+   graded day — **7 runs against 7 once Slopes' 7.4 m fragment is set aside, −0.4%**, and it
+   **localises the defect**: our starts are +9 to +62 s *late* on the six runs with a 5–46 s wait at
+   the top, and go *early* only where the wait is long (306 s → −39 s; 2 Sep's 131/163 s → −171/−168
+   s). On 2 Sep run 7 we started **before Slopes' lift had even ended**, so this is not only a missed
+   plateau — the descent is being declared during what Slopes still calls a lift. Portillo's
+   va-et-vient platters are the suspect. **Two days is still two days (R5)** — read the barometer
+   across those windows before touching a threshold.
+4. **The S5 "5 runs vs 4" disagreement is now a number: Slopes' extra run on 1 Sep is 7.4 m.**
 
 **🔴 STILL OPEN, and the reason to be quick: the fuse dies ~2026-09-08.** Vertical's session was
 still recording at 15:37 and nothing has closed it; the file's tail past 40 MB is still on the phone.

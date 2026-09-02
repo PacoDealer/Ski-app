@@ -870,18 +870,28 @@ phase of the roadmap.
 4. **No App Store review exposure has been assessed at all** for background location and the
    health/fitness framing.
 5. **~~A18 — does Slopes publish the multipath glitch, or is it just ungated?~~ ✅ ANSWERED S12,
-   2026-09-02: it published the glitch.** Martin's `.slopes` export of the burst-free 2026-09-02 day
-   settled it. `Metadata.xml` stamps the day's top speed with the position it occurred at; that
-   point is **0.0 m from our own peak fix, in the same second (12:10:44), at the same altitude** —
-   Slopes and Vertical select the *same physical instant*. At that timestamp Slopes' own
-   `RawGPS.csv` reads **19.0060 m/s = 68.42 km/h**, which is our number to the decimal, while its
-   processed `GPS.csv` reads **19.2128 = 69.17 km/h**, which is what Slopes publishes. **So Slopes
-   publishes a processed track, and its processing costs +1.09% on a clean peak** (across the day:
-   faster than its own raw on 1,014/1,343 fixes, mean +0.33 km/h, max +3.72). +1.09% cannot produce
-   the **+3.9%** seen on 2026-09-01, so that gap is not processing — it is the 11:28:59 burst. Same
-   verdict as Carve's 66.8, now reached by measurement rather than by leaning. [V]
-   *To convert this from "inferred from a clean day" to "read off the file", export the 1 Sep 2026
-   `.slopes` and check its `topSpeedLat`/`topSpeedLong` against the burst fix. Still in the logbook.*
+   2026-09-02 — and the answer is NEITHER of the two options the question offered.** The 1 Sep
+   `.slopes` export settles it by direct reading. **Slopes rejects the burst, exactly as we do:**
+
+   ```
+   Slopes RawGPS.csv max   69.57 km/h @ 11:29:00  hAcc ±23.7   <- the burst; identical to our ungated max
+   Slopes GPS.csv max      70.15 km/h @ 11:29:00  hAcc ±23.7
+   Slopes PUBLISHED        67.21 km/h @ 11:01:11  hAcc ± 9.3   <- the clean peak, the same fix we gate to
+   our gated peak          64.74 km/h @ 11:01:11  hAcc ± 9.3
+   ```
+
+   Slopes has the burst in both of its own files and published neither. Its published top speed comes
+   from **11:01:11 — the identical fix our hAcc gate lands on** — where its raw value is **64.74 km/h,
+   bit-for-bit ours**, and its raw day maximum (69.57) matches our ungated maximum to **0.0000 km/h**.
+   So the **+3.81%** is Slopes' **smoothing of the clean fix**, not a glitch and not an absent gate.
+   Slopes is doing what we do, then publishing a processed number instead of the fix. [V]
+
+   ⚠️ **CORRECTION — an earlier S12 write-up of this entry said the opposite** ("Slopes published the
+   burst"), reasoning that Slopes' processing cost +1.09% on 2026-09-02's peak and therefore could not
+   produce +3.9%. **That was wrong, and it was wrong in the way R2 warns about:** a single fix's uplift
+   on one day was generalised into a bound. The uplift is **variable and speed-dependent** — on 1 Sep
+   it averages **+2.72% on fixes above 54 km/h, max +5.62%**, against +1.09% at the 2 Sep peak.
+   Withdrawn. The evidence that overturned it is a direct read of the file, not a better inference.
    **The larger finding from the same file:** all 1,345 of Slopes' raw fixes match ours after a
    constant −0.154 s clock offset, with **1,117/1,117 non-clamped speeds identical to float
    precision**, hAcc identical within the export's 1-dp rounding, and positions within the CSV's

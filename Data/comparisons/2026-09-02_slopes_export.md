@@ -56,7 +56,13 @@ other than Martin's glove.
   it. **Do not retune against a single day (R5) — check what the barometer is doing across those
   170 s first.**
 
-## A18 IS SETTLED — and the mechanism is now measured, not inferred
+> ⚠️ **The A18 section immediately below was written before the 1 Sep and 31 Aug exports arrived,
+> and its conclusion is WITHDRAWN.** Everything in it about the 2 Sep day is correct and still
+> stands; the error is the last paragraph, which reasons from a single fix's +1.09% uplift to
+> "Slopes published the burst on 2026-09-01". It did not. See
+> `2026-09-01_slopes_export.md` for the direct reading that overturns it.
+
+## A18 — the 2026-09-02 half (correct), and a withdrawn inference
 
 `Metadata.xml` stamps the day's top speed with the exact position it occurred at. Searching our own
 raw file for that point:
@@ -78,16 +84,16 @@ So **Slopes publishes its processed track, not the fix the chip handed it**, and
 gap between us is Slopes' own post-processing. Across the whole day its processed track is faster
 than its own raw on **1,014 of 1,343 fixes**, mean **+0.33 km/h**, max **+3.72 km/h**.
 
-**That closes A18.** The question was whether Slopes' 67.2 km/h on 2026-09-01 was the 11:28:59
-multipath burst, or our clean 64.7 peak read +3.9% high. We now know what Slopes' processing costs
-on a clean peak: **+1.09%**. It cannot produce +3.9%. The 2026-09-01 gap is not processing, so it is
-the burst — the same conclusion we reached for Carve's 66.8, now for Slopes, and reached by
-measurement instead of by leaning.
-
-*(Confirming it outright would take one more thing: the `.slopes` export for **1 Sep 2026**, which
-is still in Martin's logbook. Its `topSpeedLat`/`topSpeedLong` would say directly whether Slopes'
-peak that day sits on the burst fix. Cheap, and it converts "settled by inference from a clean day"
-into "read off the file".)*
+> ❌ **WITHDRAWN — what followed here was:** *"We now know what Slopes' processing costs on a clean
+> peak: +1.09%. It cannot produce +3.9%. The 2026-09-01 gap is not processing, so it is the burst."*
+>
+> **That inference was wrong.** It took the uplift measured at one fix on one day and treated it as
+> a bound on the uplift everywhere. The uplift is speed-dependent: on 2026-09-01 it averages
+> **+2.72% above 54 km/h and reaches +5.62%**. The 1 Sep export shows Slopes **rejected** the burst
+> and published the clean 11:01:11 fix, smoothed by +3.81%. See `2026-09-01_slopes_export.md`.
+>
+> The lesson is R2's, on a day it had already been quoted: after the first inference, go and get the
+> primary source. The file that settles it was one message away and it did settle it — the other way.
 
 ## Slopes and Vertical are recording the same bytes
 
