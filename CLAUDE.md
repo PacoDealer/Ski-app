@@ -6,23 +6,25 @@
 
 A ski / snowboard day tracker for iOS that gives away everything Slopes charges for.
 
-> ⚠️ **The original bet — "the category has soft numbers and nobody has fixed accuracy" — was
-> tested against three apps on a real mountain and is half false. Read `RESEARCH.md` §13.5 (the S8
-> audit) before planning anything.** Slopes ties us to within 1% on three independent measurements,
-> has 88K ratings at 4.9★, and is actively shipped. The accuracy gap we can demonstrate is against
-> **Carve**, which still has too few ratings to show an overview. So: *the app we can beat has no
-> users, and the app with the users we merely tie.* Free was already dead as a strategy in S4.
+> ✅ **D7 answered by Martin, 2026-09-01 (S9), and the sentence above is his:** *"the objective of
+> the app was basically have Slopes and all its paid functions for free."* Accuracy was added
+> during planning — *"make it more accurate and maybe better if possible"* — and was never the
+> premise. *"Eventually I would like for my friends and family to have it too."*
 >
-> **What survived the audit, and it is better:** Slopes' free tier gives a **daily summary only** —
-> per-run stats, speed heatmaps, offline maps, 3D and run comparison are all Premium. The paid line
-> in this category is drawn around **analysis**, not recording and not maps (the old "maps aren't
-> paywalled" line was simply wrong). Per-run detail is the thing people pay for, and it is the half
-> we have already built. The honest claim is **"per-run detail, free, and your raw track is a file
-> you own"** — not "we are more accurate."
+> **So the target list is Slopes' Premium list:** run-by-run stats (✅ shipped S9), **run
+> comparison**, speed heatmaps, offline maps, 3D. Slopes' free tier gives a **daily summary only**;
+> the paid line in this category is drawn around **analysis**, and the old "Slopes paywalls maps"
+> line was simply wrong — the free tier has trail maps.
 >
-> **Open decision D7: what is this project for?** Personal tool / narrow data-ownership product /
-> chase the IMU "how you ski" axis / stop. The roadmap quietly assumes it is a product; the audit
-> says nobody has decided that.
+> ⚠️ **Do not re-litigate the accuracy thesis as if it were the project.** S4–S8 wrote it up as
+> "the ONLY differentiator", and the S8 audit then read the measured tie with Slopes as a
+> half-falsification. That framing was ours. On the actual goal, tying the market leader on
+> accuracy is a fine outcome; it only costs a marketing line we should not have been writing.
+> **R20 still stands: never claim accuracy we haven't measured.** `ROADMAP.md` §13.6 has the
+> re-plan; `RESEARCH.md` §13.5 has the audit that is still valid underneath it.
+>
+> **D5 answered too: yes to the $99 Apple Developer Program, after Yomi ships.** Friends and family
+> need TestFlight, so distribution is blocked on Yomi finishing — not on an undecided question.
 
 Slopes' paywall protects GIS headcount and per-resort data labour, not hard technology. Open trail-map data
 (OpenSkiMap, 6,992 ski areas) is free and worldwide — but **do not repeat the old "3× larger than

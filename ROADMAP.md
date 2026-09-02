@@ -47,13 +47,30 @@ the 3 h battery number "app + IMU" rather than "app". Worst realistic case is a 
 lost and a baro seam, not a day. **If the walk test is clean, recommend skiing with it. If not, the
 previous build is two minutes away:** `git checkout 7ebef4e -- iOS/` then rebuild and reinstall.
 
-### ⚠️ S8 was a full audit, and it changes the framing. Read `RESEARCH.md` §13.5 first.
+### ✅ D7 IS ANSWERED (S9). Read the decisions table's §13.6 before planning anything.
 
-Short version: **the accuracy thesis is half falsified by our own data** (Slopes ties us three
-times over; the app we beat, Carve, has no users), **"maps aren't paywalled" was false** (Slopes'
-free tier has trail maps), and the real paid line in this category is **analysis** — Slopes' free
-tier gives a daily summary only, and per-run detail is Premium. That last one is the better
-positioning and it is the half we already built.
+Martin, in his own words: **"the objective of the app was basically have Slopes and all its paid
+functions for free"**, accuracy was **"maybe better if possible"** added while planning, and
+**"eventually I would like for my friends and family to have it too."** Three consequences, and
+they are not small:
+
+1. **S8's audit was written as if accuracy were the premise. It never was.** Tying Slopes costs
+   the marketing line and costs nothing on the goal. Stop treating it as a strategic problem —
+   while still obeying R20 and not claiming accuracy we don't have.
+2. **The target list is literally Slopes' Premium feature list:** run-by-run stats ✅ (S9), run
+   comparison, speed heatmaps, offline maps, 3D. **S8 cut maps on the wrong test** — that Slopes
+   gives *trail maps* away free is irrelevant when the goal is what Slopes *charges* for.
+3. **"Friends and family" makes D3 (where we test next) load-bearing.** Everything we know comes
+   from one resort over two sessions, and Portillo's platters already broke the detector once.
+
+**D5 is answered too: yes to the $99 program, after Yomi ships.** So the 7-day fuse is a temporary
+cost with an end date, and TestFlight is blocked on Yomi rather than on a decision.
+
+### 🧊 Still true from the S8 audit (`RESEARCH.md` §13.5)
+
+**"Slopes paywalls maps" was false** — the free tier has trail maps. And the real paid line in this
+category is **analysis**: Slopes' free tier gives a daily summary only. That is still the sharpest
+description of what we're building, and per-run detail — the first item on it — shipped in S9.
 
 **The one thing with a deadline:** Martin leaves Portillo ~2026-09-07 and there is no snow within
 reach for ~3 months after. Desk work has unlimited runway; **capture does not**. And the recorder
@@ -97,22 +114,35 @@ and the real sample structs**, because a fixture that isn't byte-identical to pr
 only tests the fixture (S4). **The suite was mutation-checked, not just run**: setting
 `mergeAscentM` to 1.0 re-introduces the exact S5 bug and fails three tests, including the day total.
 
-**4. Port the detector into the app** (`Tools/detect.py` → Swift). This is what makes the app
-behave like Slopes — press START, pocket the phone, get runs and lifts with no input. It is also
-the precondition for **R19**: the four tag buttons come out of the UI once detection works, and
-Martin flagged them as scaffolding back in S4.
+**4. Run comparison — a Slopes Premium feature, and the cheapest one left. ⬅ do this next.**
+Re-ranked in S9 by D7's answer: the goal is Slopes' paid features, and this one needs no map, no
+new sensor and no new parsing — `SessionReplay` already returns every run of every day. Compare
+runs within a day, and the same run across days. It is the natural second screen after
+`SessionDetailView` and it is worth more than anything else on this list per hour spent.
 
-**5. GPX export.** Named in `RESEARCH.md` §2.2 as the switching-cost lever, but it is worth more
+**5. Port the detector into the app** (`Tools/detect.py` → Swift). `LiveMetrics` already segments
+*runs*; what `detect.py` adds is **lifts**, and the alternating lift/run timeline that complains
+when a descent has no ride before it. It is also the precondition for **R19**: the four tag buttons
+come out of the UI once detection works, and Martin flagged them as scaffolding back in S4 — they
+must be gone before anyone but him uses the app.
+
+**6. GPX export.** Named in `RESEARCH.md` §2.2 as the switching-cost lever, but it is worth more
 than that here: it makes a recording usable in Strava, Slopes, or anything else, which is the whole
 "your data is a file you own" claim made real rather than asserted.
 
-**6. A design pass.** `ContentView` says "deliberately ugly" at the top and it is right to have
-waited. But sunlight readability and glove-sized targets are *functional* requirements on a
-mountain, not polish, and the `design` skill is installed.
+**7. Speed heatmap** — Slopes Premium, and back on the list after D7 (§13.6). Needs a map view and
+a track coloured by the gated Doppler speed, which is already logged per fix. The map is the work;
+the data is done.
 
-**Deliberately not on this list:** maps (cut by the audit — Slopes gives trail maps away free), 3D
-(cut S5), naming (D6, don't spend cycles), and the $99 program (D5, deferred — and pointless until
-D7 says whether anything ships).
+**8. A design pass.** `ContentView` says "deliberately ugly" at the top and it is right to have
+waited. But sunlight readability and glove-sized targets are *functional* requirements on a
+mountain, not polish — and once friends and family have it, "deliberately ugly" stops being a
+defensible answer. The `design` skill is installed.
+
+**Off the list, with reasons:** naming (D6, don't spend cycles); 3D (D4 — a *deferred target* now,
+not out of scope, and still blocked on the real MapKit finding from S5); offline maps (a Slopes
+Premium feature and therefore a target, but the expensive one, with an ODbL licensing story to
+settle first — §7.1). **The $99 program is no longer a "why bother": D5 is yes, after Yomi.**
 
 ### S7 in four lines
 
@@ -270,33 +300,69 @@ not a lost recording. But that is an argument, not a test.
 
 **Deferred with a reason, not by drift:** 3D (Phase 3, cut — see below), Apple Watch, social.
 
-### Decisions — answered by Martin 2026-09-01, end of S5
+### Decisions — answered by Martin, 2026-09-01
 
 | # | Decision | Answer |
 |---|---|---|
 | **D1** | Platform | **iOS only.** Settled, not provisional. |
-| **D4** | 3D in v1 | **Postponed.** Not killed — revisit when MapLibre ships iOS terrain, or when there's appetite for a Metal-shaped project. Phase 3 stays written down so the option is costed rather than forgotten. |
-| **D5** | $99 Apple Developer Program | **Not yet** — "I will eventually get it done." See the standing cost below; plan around a free account until then. |
+| **D4** | 3D in v1 | **Postponed.** Not killed — revisit when MapLibre ships iOS terrain, or when there's appetite for a Metal-shaped project. Phase 3 stays written down so the option is costed rather than forgotten. **Note it is a Slopes Premium feature, so D7 puts it back on the target list — see §13.6.** |
+| **D5** | $99 Apple Developer Program | **Yes — after Yomi ships** (answered S9). Not "eventually": a real trigger with a real dependency. Until then, free provisioning and its 7-day fuse; TestFlight is unreachable, so "friends and family" is blocked on Yomi, not on this project. |
 | **D6** | Name | **"Vertical" stays a placeholder.** Don't spend cycles on naming; revisit before anything is published. |
-| **D7** | **What is this project for?** (opened S8) | **Open — and it gates everything else.** (a) personal tool + engineering playground, (b) narrow product for people who want their data, (c) chase the IMU "how you ski" axis, (d) stop. The accuracy-vs-Slopes framing that the rest of this file was built on did not survive the audit, so the plan should not be executed as written until this is answered. `RESEARCH.md` §13.5. |
+| **D7** | **What is this project for?** (opened S8) | ✅ **ANSWERED S9 — closest to (b), stated in Martin's own words: "have Slopes and all its paid functions for free," and "eventually I would like for my friends and family to have it too."** Accuracy was a *secondary* goal added while planning — "make it more accurate and maybe better if possible" — not the premise. Not a playground, not primarily the IMU axis, and not stop. **This changes the target list; read §13.6 below.** |
 | **A5** | Does Carve use the barometer? | **No** — absent from Motion & Fitness after a real 1 h 05 m recording. Its pipeline is now fully characterised (`RESEARCH.md` §2.2). |
+
+#### §13.6 — What D7's answer actually changes (S9)
+
+**1. The S8 audit was a smaller blow than it was written up as.** It concluded "the thesis is half
+falsified" because accuracy was believed to be the load-bearing claim — S4 wrote down that it was
+"the ONLY differentiator". **That was our framing, not Martin's.** His goal has been *Slopes'
+paid features for free* since the beginning; accuracy was an opportunistic extra. So the finding
+that we tie Slopes on accuracy costs the *marketing line* and costs nothing at all on the goal.
+Keep R20 — don't claim accuracy we don't have — and stop treating the tie as a strategic problem.
+
+**2. The audit cut features on the wrong criterion, and two come back.** S8 cut maps because
+"Slopes gives trail maps away free". True, and irrelevant: the goal is what Slopes *charges* for.
+Slopes Premium gates **run-by-run stats, speed heatmaps, offline maps, 3D, and run comparison** —
+so that list *is* the target list.
+
+| Slopes Premium feature | Status |
+|---|---|
+| Run-by-run stats | ✅ **shipped S9** (`SessionDetailView`) |
+| Run comparison | Not built. Cheap — the data is already there and it needs no map. **Next.** |
+| Speed heatmap | Not built. Needs a map view plus a coloured track; the per-fix speed is already logged and gated. |
+| Offline maps | Not built. The expensive one, and the one with a real licensing story (OpenSkiMap/ODbL, §7.1). |
+| 3D replay | D4, postponed on a real technical finding (MapKit flattens on custom overlays, S5). Still the right call — but it is now a *deferred target*, not out of scope. |
+
+**3. "Friends and family" adds a requirement nothing has tested: other mountains.** Every number
+in this project comes from one resort over two sessions. Portillo's va-et-vient platters already
+broke the detector once. Before anyone else uses this, the detector needs days from resorts we have
+never seen — which is a **D3** question (where we test next) that just became load-bearing.
+
+**4. The three-app comparison keeps its purpose.** It is no longer evidence for an accuracy claim;
+it is the **specification**. Slopes is what we are trying to match feature-for-feature and, on
+tomorrow's session, Strava too. Keep running it.
 
 D2 (backend/social) and D3 (where we test next) are still open, but neither blocks current work:
 everything in Phase 1 and Phase 2 is on-device, and the test site is Portillo until ~2026-09-07.
 
-### ⚠️ The standing cost of deferring D5 — read this before the trip ends
+### ⚠️ The standing cost of D5 until Yomi ships — read this before the trip ends
+
+**D5 is answered: Martin pays for the Apple Developer Program once Yomi is finished (S9).** So
+everything below is a cost with an end date rather than a ceiling — but the end date belongs to
+another project, and none of it is fixable from a chairlift in the meantime.
 
 A free account issues **7-day provisioning profiles**. The current build was installed
-**2026-09-01 16:17** (S7), so it **stops launching around 2026-09-08** — just after the week Martin
+**2026-09-01 20:03** (S9), so it **stops launching around 2026-09-08** — just after the week Martin
 stops skiing. Consequences to manage rather than discover:
 
 - **Reinstall before the trip's last ski day, not after the app dies.** A rebuild + `devicectl
   install` resets the clock for another 7 days and takes minutes *when the phone is at the Mac*. It
   is not something that can be fixed from a chairlift.
 - **Every future recording session has this same 7-day fuse.** Northern season starts in ~3 months;
-  by then D5 needs an answer or every ski day begins with a reinstall.
-- **TestFlight and the App Store are unavailable**, so "ship it" is not reachable on a free account
-  at all — this is a ceiling, not a friction.
+  if Yomi has not shipped by then, every ski day begins with a reinstall at a Mac.
+- **TestFlight and the App Store are unavailable**, so "friends and family" — the thing D7 says
+  this project is for — is **blocked on Yomi shipping**, via D5. Worth knowing when weighing work
+  on this project against work on that one.
 - `mobile-mcp` stays unusable on the device for the same reason (`RESEARCH.md` §13, A14).
 
 ### Pulling and analysing a day (the routine, now that it works)
