@@ -5,7 +5,52 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S9)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-02, S11)
+
+### 🔴 S11 — DO THESE TWO THINGS FIRST, IN THIS ORDER. The phone holds unsaved data.
+
+Martin skied the morning of 2026-09-02 with all four apps, paused Slopes/Carve/Strava over the
+break, **did not ski the afternoon, and left Vertical recording.** As of end of S11 that is still
+the state: **three apps paused, Vertical's session still open, nothing pulled off the phone.**
+
+**1. Pull the raw file.** It is the longest recording the project has (≥2:23:50, 8,303 fixes,
+217k IMU samples, ~19.3 MB, and still growing while the session is open). It has never been
+`devicectl copy from`'d. Until it is, a full ski day plus a multi-hour stationary control exists
+only on a phone whose **provisioning fuse dies ~2026-09-08**. Ask Martin to press STOP first — the
+file is append-only and safe, but a closed session is what `SessionRecovery` and `analyze.py` expect.
+
+**2. Ask for the A20 "after" screenshots BEFORE anything is finished.** Slopes, Carve and Strava
+have now been *paused* for many hours. If Carve's pause freezes the elapsed clock but not the track
+(the leading A20 hypothesis), the accrual is linear in wall-clock time and a multi-hour pause makes
+it **unmissable** instead of a 116 m residual. Screenshot all four **while still paused**, then the
+saved day records (R12b). **Pressing Finish/Stop on any of the three destroys the measurement.**
+
+Everything else from the morning is committed: `Data/comparisons/2026-09-02_*.png` plus the analysis
+in that directory's README (`681b043`).
+
+**What the morning batch already established** — Strava joins the tie cluster (**A21**, +1.9% over
+our 1,386 m; Slopes −1.9%, Carve +13.4%); a fourth independent Slopes agreement, and the first time
+we read *higher*; our GPS altitude and Slopes' agree **to the metre** at 2,876 m while Carve reads
++27 m, a third independent confirmation that Carve's altitude is GPS-only and smoothed; and **today
+has no multipath burst** (TOP SPEED tile reads *gate clean*), which is the precondition **A18** has
+been waiting for — all three top speeds land within 1.8%.
+
+**Two things NOT to carry forward as settled.** The percentages are provisional: our clock ran
+continuously while the other three froze at pause, and no start time is legible in any screenshot,
+so the windows are not identical until the raw file says so. And **A18 is leaning, not answered** —
+one clean day against one dirty one.
+
+**Open on our side, to check against the raw file, not assume:** we reported **7 runs against
+Slopes' 8 and Carve/Strava's 9**, with **45 m of descent discarded under the minimum-drop
+threshold**. That is the signature of the S5 bug (a split run whose orphaned tail falls under
+`MIN_RUN_DROP_M`), but it is a signature, not a diagnosis.
+
+**Battery stays unmeasured.** The phone was on charge at 60% by 12:46, so the continuous-drain
+number this day was supposed to deliver did not happen. Bound remains 0–3.7 %/h.
+
+---
+
+## Handoff as of S9 (2026-09-01) — still valid underneath the above
 
 ### 🟢 S9 built the session detail screen, and it is ON THE PHONE.
 

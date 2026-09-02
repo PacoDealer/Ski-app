@@ -115,19 +115,28 @@ descent discarded under the minimum-drop threshold**. That is the exact signatur
 the tile prints what the threshold ate. Check it against the raw file — do not assume it is the
 same cause.
 
-### The A20 bracket is live right now
+### The A20 bracket — Martin did not ski the afternoon, and that IMPROVED the test
 
-This batch is the **before** half. Carve accrued +116 m of vertical across a *paused* lunch on
-2026-09-01 (A20), and our reproduction of its GPS-hysteresis pipeline invented **674 m over 81
-stationary minutes** indoors. The **after** half is the identical four screenshots taken
-immediately before Martin resumes, ~14:30 — a **~1 h 45 m paused window**, far longer than the
-69-minute lunch that raised the question.
+**Update, end of 2026-09-02:** Martin never resumed. Slopes, Carve and Strava are still **paused**
+and Vertical is still **recording**. So this batch is not the "before" half of a 1 h 45 m bracket —
+it is the **final morning number**, and the paused window is now **open-ended and many hours long**
+instead of the 69-minute lunch that raised A20.
 
-What makes this version decisive rather than residual: **Vertical is recording throughout the same
-window**, outdoors, with the best GPS quality yet seen (hAcc ±4 m, Doppler 8,222/8,303 = 99.0%,
-0.96 Hz). So the paused break is simultaneously a **matched stationary control on snow** — we can
-replay the Carve model over exactly the minutes Carve was paused and compare it to Carve's actual
-accrual, instead of arguing from an indoor upper bound (R20).
+That is a better experiment, for a plain reason: if Carve's pause freezes the elapsed clock but not
+the track, the accrual is roughly linear in wall-clock time, so a multi-hour pause makes the effect
+**large and unmistakable** rather than a 116 m residual that has to be argued for. If Carve's
+vertical is unchanged after all those hours, the hypothesis is dead and A20 needs a different
+mechanism. Either way it stops being a guess.
+
+**⚠️ This measurement is live and unsaved. It is destroyed by pressing Finish/Stop on any of the
+three paused apps.** The "after" capture is the identical four screenshots taken **while still
+paused, before finishing anything** — then the saved day records afterwards (R12b).
+
+What makes it decisive rather than residual: **Vertical recorded through the whole window**,
+outdoors, at the best GPS quality yet seen (hAcc ±4 m, Doppler 8,222/8,303 = 99.0%, 0.96 Hz). The
+break is simultaneously a **matched stationary control on snow** — replay the Carve GPS-hysteresis
+model over exactly the minutes Carve was paused and compare it against Carve's own accrual, instead
+of arguing from the indoor 674 m upper bound (R20).
 
 ---
 
