@@ -7,15 +7,20 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ## ⚡ START HERE — handoff for the next session (updated 2026-09-01, S9)
 
-### 🟡 S9 built the session detail screen. It is committed and it is NOT on the phone.
+### 🟢 S9 built the session detail screen, and it is ON THE PHONE.
 
 `SessionDetailView` + `SessionReplay` (`c8960fd`) turn a saved recording into runs, vertical, top
-speed and a recording-quality block, on the phone, with no cable. It builds clean for the device
-and matches `analyze.py` exactly on both fixtures, but **installing it would replace the build
-Martin skis with tomorrow morning, so it was left uninstalled pending his call.** The change cannot
-touch a recording — `SessionReplay` only ever reads files that are already closed, and the only
-edit outside new files is marking `LiveMetrics` `nonisolated` so it can run off the main thread.
-Installing also resets the provisioning fuse. Command in "If the build has expired" below.
+speed and a recording-quality block, on the phone, with no cable. Matches `analyze.py` exactly on
+both fixtures. **Installed 2026-09-01 20:03**, so the provisioning fuse is reset again (~2026-09-08)
+and this is the build Martin skis with. Martin left the install decision to me; the reasoning was
+that the change cannot reach a recording — `SessionReplay` only ever reads files that are already
+closed, and the only edit outside new files is marking `LiveMetrics` `nonisolated`.
+
+**Not verified: the launch.** `devicectl process launch` returned `FBSOpenApplicationErrorDomain
+error 7 — Locked`; the phone was locked and cannot be launched into remotely. The install itself
+reported success with a bundle path. **First thing next session: confirm the app opens, and that
+tapping a session row shows the detail screen.** If it does not, the previous build is
+`git checkout 494d537 -- iOS/` plus a rebuild and reinstall.
 
 ### 🔴 The two things outstanding right now, before anything else
 
@@ -609,9 +614,12 @@ harness had compiled it happily for two sessions.
 than from the file. **R21** now says to open the file before ranking work on it. Automated tests
 (#3, still zero of them) inherit the top of that list.
 
-**Left deliberately undone:** the build is **not installed**. It would replace what Martin skis
-with tomorrow morning, and that is his call, not mine — even though the change cannot reach a
-recording (`SessionReplay` only reads closed files).
+**Installed 2026-09-01 20:03**, fuse reset to ~2026-09-08. Martin was asked whether to replace
+tomorrow's build and answered "do what you think is best"; installed on the grounds that
+`SessionReplay` only reads closed files and cannot reach a recording. The built `Info.plist` was
+re-checked for `UIBackgroundModes`, `UIFileSharingEnabled` and
+`LSSupportsOpeningDocumentsInPlace` before installing (R-the-hard-way, S3). **The launch was not
+confirmed** — the phone was locked and `devicectl` cannot open an app on a locked device.
 
 ### S7 — 2026-09-01 · the build ships to the phone, and the saved day tells a different story
 
