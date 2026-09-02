@@ -482,11 +482,30 @@ def main(path):
                 return float(n["text"].split("battery level=")[1].split()[0])
             except (IndexError, ValueError):
                 return None
+        def state(n):
+            try:
+                return int(n["text"].split("state=")[1].split()[0])
+            except (IndexError, ValueError):
+                return None
+
+        # Only unplugged stretches measure drain. On 2026-09-02 the phone was on a charger from
+        # 12:47 to ~12:57 in the middle of a 5.25 h recording; taking first-minus-last across that
+        # read 4.8 %/h for a day that actually drained ~7 (S12). A charge in the middle of a session
+        # is normal on a ski day, so the endpoints are not a measurement — the segments are.
+        # UIDevice.batteryState: 1 = unplugged, 2 = charging, 3 = full.
+        drain, hours, charged = 0.0, 0.0, False
+        for a, b in zip(batt, batt[1:]):
+            la, lb = lvl(a), lvl(b)
+            if la is None or lb is None or la < 0 or lb < 0:
+                continue
+            if state(a) != 1 or state(b) != 1 or lb > la:
+                charged = True
+                continue
+            drain += (la - lb) * 100
+            hours += (b["dt"] - a["dt"]) / 3600
+
         first, last = lvl(batt[0]), lvl(batt[-1])
-        span = batt[-1]["dt"] - batt[0]["dt"]
-        if first is not None and last is not None and span > 0 and first >= 0 and last >= 0:
-            drain = (first - last) * 100
-            hours = span / 3600
+        if first is not None and last is not None and hours > 0:
             # UIDevice.batteryLevel is quantised to 5% — every reading in every file so far is a
             # multiple of 0.05. So the rate is only as good as the number of *steps* observed, and
             # over a one-hour session there is exactly one. S5 and S6 published 5.5 %/h and
@@ -495,7 +514,10 @@ def main(path):
             # Print the uncertainty rather than a decimal the instrument cannot support (R7).
             steps = round(drain / 5)
             print(f"\n  --- BATTERY ---")
-            print(f"  {first*100:.0f}% -> {last*100:.0f}% over {hours:.2f} h"
+            print(f"  {first*100:.0f}% -> {last*100:.0f}% over the session")
+            if charged:
+                print(f"  charging (or an unreadable state) seen mid-session — that time is excluded")
+            print(f"  drained {drain:.0f}% over {hours:.2f} h unplugged"
                   f"   = {drain/hours:.1f} %/h nominal")
             if steps <= 2:
                 lo = max(0.0, drain - 5) / hours

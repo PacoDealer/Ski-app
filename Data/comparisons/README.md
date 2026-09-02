@@ -76,7 +76,7 @@ not saved records** (R12b applies to the end-of-day batch, not to a mid-day brac
 
 | App | State | Elapsed | Runs | Vertical | Distance | Top speed | Altitude |
 |---|---|---|---|---|---|---|---|
-| **Vertical** | recording | 2:23:50 | **7** (+45 m sub) | **1,386 m** (naive 1,634) | — | **68** km/h, *gate clean* | 2,876 m (GPS) |
+| **Vertical** | recording | 2:23:50 | **8** — *screen showed 7, see below* (+45 m sub) | **1,386 m** (naive 1,634) | — | **68** km/h, *gate clean* | 2,876 m (GPS) |
 | Slopes | paused | — | 8 | **1,360 m** | — | **69,2** km/h | 2.876 m |
 | Strava | paused | 02:13:28 | 9 | **1.412 m** | 9,62 km | — (avg 9,0) | — |
 | Carve | paused | 2:12:15 | 9 | **1572 m** | 9.15 km | **68.4** km/h | 2903 m |
@@ -109,11 +109,23 @@ Five things this batch establishes, pending the raw file:
    in the track. That leans A18 toward *Slopes captured the burst*, but it is one clean day against
    one dirty one — **not settled, and the afternoon can still produce a burst.**
 
-**Open on our side:** we report **7 runs against Slopes' 8 and Carve/Strava's 9**, with **45 m of
-descent discarded under the minimum-drop threshold**. That is the exact signature of the S5 bug
-(a split run whose orphaned tail falls under `MIN_RUN_DROP_M` and is silently dropped), which is why
-the tile prints what the threshold ate. Check it against the raw file — do not assume it is the
-same cause.
+**~~Open on our side:~~ RESOLVED IN S12 — and it was not the S5 bug.** The suspicion was that our
+**7 runs against Slopes' 8** were the S5 signature: a split run whose orphaned tail falls under
+`MIN_RUN_DROP_M`. It wasn't. Replaying the raw file truncated to this screenshot's exact elapsed
+(2:23:50) gives **8 runs / 1,386 m / +45 m sub-threshold** — the vertical and the discarded
+sub-threshold match the table above *to the metre*, and only the count differs. The segmenter had it
+right; **Slopes agreed with us on run count as well as vertical**, and the row above is a display
+bug.
+
+The cause was that the two tiles counted different things: `provisionalDescentM` included the
+descent that is closed-but-still-mergeable *plus* the leg in progress, while `runCount` counted only
+completed runs. All eight runs had finished by 12:35:31, ten minutes before the screenshot, but two
+of them were still held in provisional state with nothing to close them — so the tile read 7, and
+would have kept reading 7 until STOP. Fixed via `LiveMetrics.provisionalRunCount` (**R23**); no
+recorded data was affected and no golden number moved. **Read the Vertical row above as 8 runs.**
+
+Carve and Strava's 9 remain unexplained, and are consistent with their known GPS-summing behaviour
+splitting descents ours merges.
 
 ### The A20 bracket — Martin did not ski the afternoon, and that IMPROVED the test
 

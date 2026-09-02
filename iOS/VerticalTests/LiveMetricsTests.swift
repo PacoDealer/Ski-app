@@ -100,6 +100,34 @@ struct LiveMetricsTests {
         #expect(abs(m.subThresholdDropM - 16) < 0.001)
     }
 
+    @Test("S12: the live RUNS tile counts the same descents the live VERTICAL tile adds up")
+    func liveTilesAgreeBeforeTheSessionEnds() {
+        // The 2026-09-02 bug, in the shape that produced it: ski runs, then stop skiing and leave
+        // the session open. The last descent stays in `pending` — mergeable until something closes
+        // it — so `provisionalDescentM` counted it while `runCount` did not, and the phone sat all
+        // afternoon reading 7 runs / 1,386 m where a replay of the same bytes read 8 / 1,386.
+        var m = LiveMetrics()
+        var t: TimeInterval = 0
+        for _ in 0..<3 {
+            t = ramp(&m, from: 0, to: 200, startingAt: t)
+            t = ramp(&m, from: 200, to: 0, startingAt: t)
+        }
+        _ = hold(&m, at: 0, from: t, seconds: 600)   // the break: session still open, no STOP
+
+        // Live, mid-session — no `finish()`, which is the whole point.
+        #expect(m.provisionalRunCount == 3, "three descents skied, three on the tile")
+        #expect(abs(m.provisionalDescentM - 600) < 0.001)
+        // Two descents are outstanding at the bottom of the last run — one closed into `pending`,
+        // one whose leg has not turned around yet — so the tile was *two* behind, not one.
+        #expect(m.runCount == 1, "only the first descent is a settled, completed run")
+
+        // And ending the session must not change what the screen was already claiming.
+        m.finish()
+        #expect(m.runCount == 3)
+        #expect(m.provisionalRunCount == 3, "STOP settles the count, it does not move it")
+        #expect(abs(m.descentM - 600) < 0.001)
+    }
+
     @Test("S7/A19: a run starts when the skier pushes off, not when the altitude stops rising")
     func runStartsAfterThePlateau() {
         // Slopes graded us on this for free: our ski time read +33% high because a minute spent

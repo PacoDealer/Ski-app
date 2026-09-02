@@ -5,9 +5,65 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-02, S11)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-02, S12)
 
-### 🔴 S11 — DO THESE TWO THINGS FIRST, IN THIS ORDER. The phone holds unsaved data.
+### 🟢 S12 — the day is off the phone, and it carried two bugs out with it.
+
+**The recording is saved.** `Data/fixtures/2026-09-02_portillo_s3_partial.jsonl` — 5 h 15 m,
+10:22–15:37 local, 14,489 fixes, 473,854 motion samples, **8 runs / 1,386 m**, top speed 68.4 km/h
+*gate clean*. It was pulled **while the session was still recording**, without waiting for Martin to
+press STOP: the format is append-only and fsync'd, so a mid-recording copy is a valid prefix (new
+rule **R18b** — copy first, ask second; S11 left a full ski day on a phone for a day because the
+handoff had that order backwards).
+
+**It is a partial, and that is a finding, not an accident.** `devicectl copy from` stops at
+**exactly 40,000,000 bytes** and reports it as `CoreDeviceError 7000` / socket-closed, which reads
+like flakiness. Four retries and a whole-directory copy all produced byte-identical 40,000,000-byte
+files with the same md5, while a 10 MB file came across whole in the same run. At ~7.6 MB/h with
+motion capture on, **the cable hits this cap about 5¼ hours into any ski day** (**R18a**). The rest
+of that file is still on the phone. Getting it needs another route — the `ShareLink` already in
+`SessionsView` (AirDrop) is the obvious one, and is now worth testing for real.
+
+**🔴 STILL OPEN, and the reason to be quick: the fuse dies ~2026-09-08.** Vertical's session was
+still recording at 15:37 and nothing has closed it. Slopes, Carve and Strava are still **paused**
+from ~12:45 — so **A20's "after" screenshots are still available and still worth more than anything
+else on this list.** Screenshot all four *while still paused*, then their saved day records
+(R12b). Pressing Finish/Stop on any of the three destroys the measurement.
+
+### What the file settled
+
+**Battery, finally measured — and the harness was lying about it.** `analyze.py` read 75% → 50%
+over 5.25 h and printed **4.8 %/h**. The phone was on a charger from 12:47 to ~12:57 (`state=2`,
+60 → 70%), which the endpoint arithmetic silently absorbed. Excluding charged time: **7.0 %/h over
+5.00 h unplugged, 7 discrete 5% steps, ±1.0 %/h** — the first battery number this project is
+entitled to quote, and ~46% higher than the naive one. A 7 h day costs **~49% (42–56%)**, with GPS
+at 1 Hz and motion capture at 25 Hz running the whole time. Every earlier figure (5.5, 6.7, 0–3.7)
+was one step or none; they bracket 7.0 without contradicting it. Fixed in `analyze.py`, which now
+splits at charging and says so (**R24**).
+
+**The 7-runs-vs-8 gap was ours, and it was a UI bug, not a segmentation bug.** S11 read the phone at
+12:46 as **7 runs / 1,386 m / +45 m sub** against Slopes' 8. Replaying the identical bytes truncated
+to that exact instant gives **8 runs / 1,386 m / +45 m sub** — vertical and sub-threshold match to
+the metre, only the count differs, so the segmenter was right all along and **Slopes agreed with us
+on run count** too. Cause: `provisionalDescentM` counted the closed-but-still-mergeable descent
+*and* the leg in progress, while `runCount` counted completed runs only. Standing at the bottom
+after the last run of the day the tile was **two** descents low, and stayed there until STOP.
+Fixed with `provisionalRunCount` in `LiveMetrics`; **the recorded data was never affected** and no
+golden number moved. New rule **R23**, and a test that deliberately never calls `finish()`.
+
+**A18 gets its cleanest evidence yet.** Ungated and gated top speed are identical at 68.4 km/h over
+the whole 5¼ hours — no multipath burst anywhere in the day, including three hours of a parked
+phone. Still leaning, not settled: one clean day against one dirty one.
+
+**The IMU held for five hours.** 473,854 samples, 25.1 Hz, 100% coverage, **no gap over 0.2 s**,
+most of it screen-off and parked. S10 proved this for 81 minutes; this proves it across a ski day.
+
+Both fixes ship with tests — **22 now, all green** (`Tools/test.sh`), including a golden test on
+this day. Everything committed.
+
+---
+
+### 🔴 S11's original handoff — item 1 is DONE (see above), item 2 is NOT.
 
 Martin skied the morning of 2026-09-02 with all four apps, paused Slopes/Carve/Strava over the
 break, **did not ski the afternoon, and left Vertical recording.** As of end of S11 that is still

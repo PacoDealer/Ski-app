@@ -74,6 +74,37 @@ nonisolated struct LiveMetrics {
     /// `descentM` plus the descent currently in progress, so the screen moves while skiing.
     var provisionalDescentM: Double { descentM + pendingDrop + liveDrop }
     var runCount: Int { runs.count }
+    /// `runCount` plus the closed-but-still-mergeable descent, so the RUNS tile counts the same
+    /// descents `provisionalDescentM` is already adding up.
+    ///
+    /// A descent is held in `pending` until either the next one closes or the session ends, because
+    /// the merge rule may still absorb it. `provisionalDescentM` includes that pending drop; before
+    /// 2026-09-02 `runCount` did not, so the live screen showed one fewer run than its own vertical
+    /// accounted for — permanently, from the last run of the day until STOP. On 2026-09-02 the phone
+    /// read 7 runs / 1,386 m while a replay of the same bytes read 8 runs / 1,386 m (S12).
+    ///
+    /// Two descents can be outstanding at once — one closed into `pending`, one still descending —
+    /// which is why standing at the bottom after the last run of the day showed the tile *two*
+    /// behind its own vertical. Both are counted here, on the same min-drop threshold that decides
+    /// whether a descent becomes a run, and the merge rule is applied first so a leg that will be
+    /// absorbed into `pending` counts once rather than twice.
+    var provisionalRunCount: Int {
+        var count = runs.count
+        var pendingProvisionalDrop = pendingDrop
+        var liveIsASeparateRun = liveDrop > 0
+
+        if liveDrop > 0, let pendingTopAlt, let anchorAlt, let legTopAlt,
+           legTopAlt - pendingBotAlt < Self.mergeAscentM,
+           legTopTime - pendingBotTime < Self.mergeGapS {
+            // Same shape as `closeDescent`'s merge: one run, measured from the earlier top.
+            pendingProvisionalDrop = max(0, pendingTopAlt - anchorAlt)
+            liveIsASeparateRun = false
+        }
+
+        if pendingProvisionalDrop >= Self.minRunDropM { count += 1 }
+        if liveIsASeparateRun, liveDrop >= Self.minRunDropM { count += 1 }
+        return count
+    }
 
     // MARK: - Segmenter state
 

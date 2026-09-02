@@ -129,7 +129,9 @@ struct ContentView: View {
                          // evening — this is the only warning we get on the mountain.
                          naive: m.maxSpeedUngated > m.maxSpeed
                              ? String(format: "ungated %.0f", m.maxSpeedUngated * 3.6) : "gate clean")
-            headlineStat("RUNS", "\(m.runCount)",
+            // Provisional, to match VERTICAL above: both count the descent that is closed but still
+            // mergeable. Using `runCount` here left the tile one behind all afternoon (S12).
+            headlineStat("RUNS", "\(m.provisionalRunCount)",
                          naive: m.subThresholdDropM > 0
                              ? String(format: "+%.0f m sub", m.subThresholdDropM) : "—")
         }

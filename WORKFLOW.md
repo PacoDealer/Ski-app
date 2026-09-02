@@ -125,6 +125,20 @@ day. Any new sensor dependency gets a readout before it gets a feature. *(S3.)*
 Do not retry. Use `devicectl` for launch/kill/file copy, and ask Martin for taps and screenshots.
 *(S5, after S4 wasted a cycle on it.)*
 
+**R18a — `devicectl copy from` stops at exactly 40,000,000 bytes, and calls it a network error.**
+The message is `CoreDeviceError 7000` / `NSPOSIXErrorDomain error 60 — socket closed unexpectedly`,
+which reads like flakiness. It is not: four attempts and a whole-directory copy all produced
+byte-identical 40,000,000-byte files with the same md5, while a 10 MB file in the same run came
+across whole. **Always check the size of what you pulled against the size `devicectl device info
+files` reports.** At ~7.6 MB/h with motion capture on, the cap is hit around **5¼ hours** — i.e.
+partway through any full ski day. The prefix is still good data: it is plain JSONL and the reader
+already tolerates a torn final line. *(S12.)*
+
+**R18b — Pull the file while the session is still open; don't wait for STOP.** The format is
+append-only and fsync'd, so a copy taken mid-recording is a valid prefix and costs nothing. S11
+ended with a full ski day sitting on a phone whose provisioning fuse dies in six days, because the
+handoff said to ask Martin to press STOP first. Copy first, ask second. *(S12.)*
+
 ---
 
 ## 4. Session ritual
@@ -169,3 +183,19 @@ run is evidence about the tests, not about the code. Break the rule on purpose �
 delete the guard — confirm the suite goes red in the place you expect, then put it back. S9 set
 `mergeAscentM` to 1.0, watched the exact S5 bug fail three tests including the day total, and only
 then believed the suite. *(S9.)*
+
+**R23 — A live tile and the total beside it must count the same events.** The screen showed
+VERTICAL provisionally (it added the descent that was closed-but-still-mergeable, plus the leg still
+in progress) and RUNS conservatively (completed runs only). Both were individually defensible and
+together they were wrong: on 2026-09-02 the phone read **7 runs / 1,386 m** where a replay of the
+same bytes read **8 runs / 1,386 m**, and standing at the bottom after the last run of the day it
+was **two** descents low, not one. Nobody caught it on the mountain because each number looks
+plausible alone. When two numbers on one screen describe the same events, derive them from the same
+provisional state, and assert it in a test that never calls `finish()`. *(S12.)*
+
+**R24 — A rate needs the interval it was measured over, not the endpoints.** `analyze.py` read
+75% → 50% over 5.25 h and printed 4.8 %/h. The phone had been on a charger for ten minutes in the
+middle; excluding that time gives **7.0 %/h**, ~46% higher. The file already recorded
+`batteryState` on every sample — the bug was arithmetic that assumed monotonicity, not a missing
+measurement. Before dividing a delta by a span, check the file for the thing that would invalidate
+it. *(S12.)*
