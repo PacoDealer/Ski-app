@@ -48,6 +48,9 @@ MAX_SPEED_ACC = 3.0     # m/s
 MAX_H_ACC = 25.0        # m
 # Doppler speed is only trustworthy while the receiver still knows where it is.
 MAX_SPEED_H_ACC = 15.0  # m
+# Shortest interval that can carry a speed. CoreLocation redelivers fixes microseconds apart;
+# differentiating positions across those pairs divides scatter by ~0, not by a sample period.
+MIN_DERIV_DT = 0.5      # s
 
 
 def load(path):
@@ -366,10 +369,17 @@ def main(path):
     doppler_ungated = [l["speed"] for l in locs if l["speed"] >= 0]
 
     # The naive method every other app uses: differentiate successive positions.
+    #
+    # S13: CoreLocation delivers duplicate/batched fixes microseconds apart — 384 pairs closer
+    # than 0.2 s on 2026-09-02, the tightest 95 µs. Dividing a metre of scatter by that interval
+    # produced a "position-differentiated max" of 341,659 km/h and a +499,243% headline. The old
+    # `dt <= 0` guard never fired because the intervals are positive, just meaningless. Requiring
+    # a real sampling interval is the whole fix. We criticised Carve for publishing a glitch as
+    # its top speed; this is the same mistake in our own harness (R20).
     derived = []
     for a, b in zip(locs, locs[1:]):
         dt = b["dt"] - a["dt"]
-        if dt <= 0:
+        if dt < MIN_DERIV_DT:
             continue
         d = haversine(a["lat"], a["lon"], b["lat"], b["lon"])
         derived.append(d / dt)
@@ -404,7 +414,7 @@ def main(path):
             step = ""
             if prev:
                 gap = l["dt"] - prev["dt"]
-                if gap > 0:
+                if gap >= MIN_DERIV_DT:
                     d = haversine(prev["lat"], prev["lon"], l["lat"], l["lon"])
                     step = f"  pos-diff {kmh(d/gap):5.1f} km/h"
             flag = "  <-- MAX" if l is peak else ""

@@ -39,7 +39,7 @@ TZ = datetime.timezone(datetime.timedelta(hours=-4))   # Portillo
 FIXTURES = Path(__file__).parent.parent / "Data" / "fixtures"
 DAYS = {
     "2026-09-01": ["2026-09-01_portillo_s1", "2026-09-01_portillo_s2"],
-    "2026-09-02": ["2026-09-02_portillo_s3_partial"],
+    "2026-09-02": ["2026-09-02_portillo_s3"],
 }
 
 

@@ -199,3 +199,12 @@ middle; excluding that time gives **7.0 %/h**, ~46% higher. The file already rec
 `batteryState` on every sample — the bug was arithmetic that assumed monotonicity, not a missing
 measurement. Before dividing a delta by a span, check the file for the thing that would invalidate
 it. *(S12.)*
+
+**R25 — A guard against division by zero is not a guard against division by nearly zero.** The
+naive-max-speed estimator skipped fix pairs with `dt <= 0` and then divided by `dt`. The pairs that
+broke it had positive intervals — CoreLocation redelivers fixes microseconds apart, 384 of them
+under 0.2 s on 2026-09-02 and the tightest **95 µs** — so a metre of ordinary scatter came out as
+**341,659 km/h**. The condition to test is not "is the denominator zero" but "is this denominator a
+sampling interval that could carry the quantity I am computing". Sensor streams deliver duplicates,
+batches and replays; assume it. The sting: this was the number we quote to describe *other apps'*
+error, and publishing a glitch as a speed is the exact thing S5 caught Carve doing. *(S13.)*

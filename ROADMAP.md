@@ -5,7 +5,63 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-02, S12)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S13)
+
+### 🟢 S13 — the whole file is off the phone, and the prefix claim is now a test
+
+Martin AirDropped the complete 2026-09-02 recording:
+**`Data/fixtures/2026-09-02_portillo_s3.jsonl`, 49,716,710 bytes, 6 h 37 m (10:22–16:59)**,
+17,446 fixes, 22,008 baro, 597,193 motion samples. It replaces the 40 MB partial, which is gone
+from `Data/fixtures/` (`portilloS3Partial` → `portilloS3`).
+
+**Three things it settles.**
+
+1. **The append-only prefix claim is proven, not asserted.** The 40 MB pull is a *byte-exact*
+   prefix of the whole file (same md5 over the first 39,998,540 bytes), and it reports the
+   **identical 8 runs / 1,386 m / 68.4 km/h**. That is what licenses R18b (copy first, ask
+   second) and it is now the test `fortyMegabytePrefixReadsTheSameDay`, which truncates the
+   fixture in-process rather than keeping a second 40 MB blob in git. **24 tests green.**
+   `replay.sh` agrees with `analyze.py` to the metre on the new fixture.
+2. **The session was properly closed** — a real `end` record at 16:59:28, `imuCount` 597,193.
+   S11/S12's "the phone is holding an unclosed session" is resolved; nothing is stranded.
+   **IMU coverage 100.3% over 6.6 h, no gap > 0.2 s.** The dinner control proved background
+   device motion for one hour; this proves it for six and a half.
+3. **The tail is a second negative control, and it is cleaner than the first.** The last 82
+   minutes are a stationary phone *outdoors at 2,890 m* (baro flat within 8.6 m, GPS under
+   1 km/h). It added **zero runs and zero vertical** — the day total did not move by a metre.
+   It accrued 59 m of sub-threshold descent across 10 candidates (~43 m/h), all far under the
+   30 m `MIN_RUN_DROP_M`, which is exactly the margin doing its job. The dinner control was
+   indoors; this one is the outdoor case, and both invent nothing.
+
+**🔴 A real defect of ours, found here, in `analyze.py` (fixed, `MIN_DERIV_DT = 0.5`).** The
+"position-differentiated" max speed — *our own headline about the category's error* — divided by
+whatever interval separated two fixes, guarded only by `dt <= 0`. **CoreLocation redelivers fixes
+microseconds apart**: 384 pairs closer than 0.2 s on this day, the tightest **95 µs**. A metre of
+scatter over 95 µs printed **341,659 km/h** and a **+499,243%** headline. Every fixture has such
+pairs (9 / 4 / 237 / 384). **We criticised Carve for publishing a glitch as its top speed and had
+the same bug in our own harness** (R20).
+
+- **The 1 Sep +136.5% headline survives untouched** — 153.1 km/h there was always a real 42.5 m
+  jump across a full second. Nothing published has to be withdrawn.
+- **2 Sep's naive max is now 311.7 km/h** and it is a genuine finding: an **86.4 m one-second
+  position jump at 13:42:51 while the phone sat still**, Doppler reading 2.5 → 0.0 km/h across it.
+- **No number the app displays was affected.** The app's "naive" tiles are summed baro deltas and
+  ungated Doppler; it never position-differentiates. Harness-only.
+
+**🔋 Battery, best measurement yet: 6.7 %/h over 6.00 h unplugged, 8 discrete 5% steps (±0.8).**
+Projects to **47% for a 7 h day (41–52%)**. Split: **7.0 %/h over the 5 h skiing window** (identical
+to S12's figure, same window) and 5.5 %/h over the stationary tail — but that tail is *one* step,
+so it is a hint, not a rate. The mid-session charge (12:47–12:57) is still correctly excluded (R24).
+
+**Also in the file:** two `kCLErrorDomain error 0` location dropouts at 15:49 and 15:54 while
+parked, both self-healing; one fix at ±1,414 m hAcc at 12:36 which the 25 m gate discarded.
+
+### 🔴 Still open, unchanged by S13
+1. **Reinstall before the fuse dies ~2026-09-08** — also ships the RUNS-tile fix from S12. Martin's
+   last ski day is ~2026-09-07, so this is the deadline that actually bites.
+2. **The false-top fix stays unshipped** — S13 added a *longer* day, not a *third graded* one, so
+   R5 is unchanged. A third `.slopes` export still decides it.
+3. **Ask for the 1 Sep `.slopes` export** if it is still in the logbook (see S12 below).
 
 ### 🟢 S12 — the day is off the phone, and it carried two bugs out with it.
 

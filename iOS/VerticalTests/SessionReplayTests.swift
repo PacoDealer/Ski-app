@@ -89,21 +89,43 @@ struct SessionReplayTests {
         #expect(s.imuMaxGapS < 2, "no gap while the phone was locked in a pocket")
     }
 
-    @Test("2026-09-02: eight runs, and the IMU held for five hours")
+    @Test("2026-09-02: eight runs, and the IMU held for six and a half hours")
     func portilloS3() throws {
         // The four-app day. At 12:46 the phone's own screen read 7 runs / 1,386 m; replaying the
         // same bytes reads 8 / 1,386, which is how the provisional-run-count bug was found. The
         // vertical was never wrong — only the count — so this fixture pins both.
-        let s = try summarize(Fixtures.portilloS3Partial)
+        let s = try summarize(Fixtures.portilloS3)
         #expect(s.runs.count == 8, "the count the phone should have been showing")
         #expect(abs(s.descentM - 1386) < 1)
         #expect(abs(s.maxSpeedMS * 3.6 - 68.4) < 0.1)
         #expect(s.maxSpeedUngatedMS <= s.maxSpeedMS, "no multipath burst this day — A18's precondition")
+        #expect(s.closedCleanly, "the whole file ends on a real end record")
 
-        // Five and a quarter hours of 25 Hz device motion, most of it with the phone parked and the
-        // screen off. The 81-minute dinner control proved this for one hour; this proves it for five.
+        // Six and a half hours of 25 Hz device motion, most of it with the phone parked and the
+        // screen off. The 81-minute dinner control proved this for one hour; this proves it for six.
+        #expect(s.imuCount == 597_193)
         #expect(s.imuCoverage > 0.99)
         #expect(s.imuMaxGapS < 2)
+    }
+
+    @Test("The 40 MB devicectl prefix reads the same day as the whole file")
+    func fortyMegabytePrefixReadsTheSameDay() throws {
+        // S12 analysed this day from a 40,000,000-byte truncation, because `devicectl copy from`
+        // stops there and reports it as a socket error (R18a). S13 got the whole 49,716,710-byte
+        // file off by AirDrop. The capture format is append-only and fsync'd, so a mid-recording
+        // copy is supposed to be a valid prefix — this is the test of that claim, and it is what
+        // licenses pulling a file off the phone without waiting for STOP (R18b).
+        let dir = try Fixtures.makeTempDirectory()
+        defer { Fixtures.remove(dir) }
+        let whole = try Data(contentsOf: Fixtures.portilloS3)
+        let url = dir.appendingPathComponent("2026-09-02_102227_2BBEACBF.jsonl")
+        try whole.prefix(Fixtures.devicectlPrefixBytes).write(to: url)
+
+        let s = try SessionReplay.summarize(url)
+        #expect(s.runs.count == 8)
+        #expect(abs(s.descentM - 1386) < 1)
+        #expect(abs(s.maxSpeedMS * 3.6 - 68.4) < 0.1)
+        #expect(!s.closedCleanly, "a prefix has no end record — and is summarised anyway")
     }
 
     @Test("v1 files still parse after the format-2 motion records were added")

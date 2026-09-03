@@ -7,7 +7,7 @@ multipath burst is in) and `31 August 2026 - Portillo.slopes` (a day we have no 
 |---|---|---|---|---|
 | 31 Aug 2026 | 11 | 2,072.0 m | 54.93 km/h | **none** — we were not recording |
 | 1 Sep 2026 | 8 (one is 7.4 m) | 1,379.7 m | **67.21 km/h** | fixtures `_s1` + `_s2` |
-| 2 Sep 2026 | 8 | 1,359.9 m | 69.17 km/h | fixture `_s3_partial` |
+| 2 Sep 2026 | 8 | 1,359.9 m | 69.17 km/h | fixture `_s3` |
 
 ## A18 is answered, and neither of its two options was right
 

@@ -33,14 +33,17 @@ enum Fixtures {
     /// 81 minutes of a phone sitting still through dinner, with motion capture running. The
     /// negative control the project never had: whatever the rules do here, they do to *nothing*.
     static let portilloStationary = day("2026-09-01_portillo_stationary")
-    /// 2026-09-02: eight runs, then three hours parked with the session still open — the four-app
-    /// comparison day, and the day the live RUNS tile was caught reading two descents low.
+    /// 2026-09-02: eight runs, then four and a half hours parked — the four-app comparison day,
+    /// and the day the live RUNS tile was caught reading two descents low.
     ///
-    /// **Partial on purpose.** `devicectl copy from` stops at exactly 40,000,000 bytes (S12), so
-    /// this is the first 5 h 15 m of a longer recording, cut at a torn line the reader already
-    /// handles. Replace it with the whole file if one is ever pulled by another route; the numbers
-    /// below cover only skiing that had finished by 12:35, so they should not move.
-    static let portilloS3Partial = day("2026-09-02_portillo_s3_partial")
+    /// **The whole file, 6 h 37 m and 49,716,710 bytes**, AirDropped off the phone in S13 after
+    /// `devicectl copy from` capped at exactly 40,000,000 bytes (R18a). The 40 MB prefix that
+    /// stood in for it through S12 is a byte-exact prefix of this file, and reports the identical
+    /// 8 runs / 1,386 m / 68.4 km/h — see `fortyMegabytePrefixReadsTheSameDay` below.
+    static let portilloS3 = day("2026-09-02_portillo_s3")
+
+    /// The byte offset the cable stopped at, rounded down to the last complete line.
+    static let devicectlPrefixBytes = 39_998_540
 
     // MARK: - Synthetic sessions, written the way the app writes them
 
