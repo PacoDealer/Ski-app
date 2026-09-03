@@ -94,9 +94,14 @@ struct SessionReplayTests {
         // The four-app day. At 12:46 the phone's own screen read 7 runs / 1,386 m; replaying the
         // same bytes reads 8 / 1,386, which is how the provisional-run-count bug was found. The
         // vertical was never wrong — only the count — so this fixture pins both.
+        //
+        // S14 moved the vertical 1,386 -> 1,390: this is the one day of the three with false tops,
+        // and the higher-top merge rule measures its runs 6-8 from the real summit. Slopes reads
+        // 1,359.9 for the same day, so the 4 m moved us 1.9% -> 2.2% away from it while halving
+        // the run-start error (56 s -> 29 s). See `Tools/falsetop.py`.
         let s = try summarize(Fixtures.portilloS3)
         #expect(s.runs.count == 8, "the count the phone should have been showing")
-        #expect(abs(s.descentM - 1386) < 1)
+        #expect(abs(s.descentM - 1390) < 1)
         #expect(abs(s.maxSpeedMS * 3.6 - 68.4) < 0.1)
         #expect(s.maxSpeedUngatedMS <= s.maxSpeedMS, "no multipath burst this day — A18's precondition")
         #expect(s.closedCleanly, "the whole file ends on a real end record")
@@ -104,6 +109,28 @@ struct SessionReplayTests {
         // Six and a half hours of 25 Hz device motion, most of it with the phone parked and the
         // screen off. The 81-minute dinner control proved this for one hour; this proves it for six.
         #expect(s.imuCount == 597_193)
+        #expect(s.imuCoverage > 0.99)
+        #expect(s.imuMaxGapS < 2)
+    }
+
+    @Test("2026-09-03: nine runs, and the gate throws away a 78 km/h burst")
+    func portilloS4() throws {
+        let s = try summarize(Fixtures.portilloS4)
+        #expect(s.runs.count == 9, "Slopes itemises 8 — we split its run 2, and the halves sum to +0.7%")
+        #expect(abs(s.descentM - 1380) < 1)
+        #expect(s.closedCleanly)
+
+        // The speed gate, doing the one job it exists for. At 17:16:56 — after the last run, with
+        // the phone off the snow — four fixes report 78.4 km/h with `speedAcc` invalid and hAcc
+        // degrading 12 -> 20 m. Ungated, that burst is the day's headline. Gated, the day peaks at
+        // 67.0 km/h, which is *bit-for-bit* the maximum in Slopes' own RawGPS.csv for the same day
+        // (66.999 km/h @ 12:57:16.999, hAcc ±7.9). Slopes published 69.1 — its own smoothing of the
+        // same clean fix, +3.2%, in line with the +2.7% mean measured on 2026-09-01. Neither app
+        // published the burst; that is A18, confirmed a second time and this time on a burst day.
+        #expect(abs(s.maxSpeedMS * 3.6 - 67.0) < 0.1)
+        #expect(s.maxSpeedUngatedMS * 3.6 > 78, "the burst is really in the file")
+
+        #expect(s.imuCount == 489_904)
         #expect(s.imuCoverage > 0.99)
         #expect(s.imuMaxGapS < 2)
     }
@@ -123,7 +150,7 @@ struct SessionReplayTests {
 
         let s = try SessionReplay.summarize(url)
         #expect(s.runs.count == 8)
-        #expect(abs(s.descentM - 1386) < 1)
+        #expect(abs(s.descentM - 1390) < 1)
         #expect(abs(s.maxSpeedMS * 3.6 - 68.4) < 0.1)
         #expect(!s.closedCleanly, "a prefix has no end record — and is summarised anyway")
     }

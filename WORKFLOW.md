@@ -217,3 +217,13 @@ install date told us nothing; `security cms -D -i <app>/embedded.mobileprovision
 everything. The general form: when a deadline is a property of a *file*, check the file. Anything
 you derive from "I did the thing that usually refreshes it" is an assumption wearing a date.
 *(S13.)*
+
+**R27 — Two systems' lists of the same events line up in time, not by index.**
+`Tools/falsetop.py --score` zipped our runs against Slopes' itemised runs positionally. It worked
+for two days because both days happened to agree on the count. On 2026-09-03 we detected 9 runs to
+Slopes' 8 — a real and *benign* difference, we split one of its runs across a 4-minute mid-run gap
+and the halves sum to +0.7% of its figure — and every row from the third on was scored against the
+wrong run. The report printed a **−11,964 s** start error and a "mean" of 1,974 s, which is not a
+number any process produces; it was an alignment artifact. Pair by overlap, allow many-to-one, and
+print the group size so a split is visible as a split. A comparison harness that cannot survive the
+two lists disagreeing is measuring its own indexing. *(S14.)*

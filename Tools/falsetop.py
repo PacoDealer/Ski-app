@@ -40,6 +40,7 @@ FIXTURES = Path(__file__).parent.parent / "Data" / "fixtures"
 DAYS = {
     "2026-09-01": ["2026-09-01_portillo_s1", "2026-09-01_portillo_s2"],
     "2026-09-02": ["2026-09-02_portillo_s3"],
+    "2026-09-03": ["2026-09-03_portillo_s4"],
 }
 
 
@@ -103,6 +104,7 @@ def day_runs(fixtures, adopt_higher_top):
         for times, alts in split_at_seams([x[0] for x in baro], [x[1] for x in baro], seams):
             for r in segment(times, alts, adopt_higher_top):
                 out.append({"start": (started + datetime.timedelta(seconds=r["start"])).astimezone(TZ),
+                            "end": (started + datetime.timedelta(seconds=r["end"])).astimezone(TZ),
                             "drop": r["drop"],
                             "top": (started + datetime.timedelta(seconds=r["top_t"])).astimezone(TZ)})
     return sorted(out, key=lambda r: r["start"])
@@ -147,9 +149,30 @@ def report_false_tops():
 def slopes_runs(metadata, min_vertical=MIN_RUN_DROP_M):
     """Slopes' itemised runs, skipping fragments below our own minimum so the lists pair up."""
     root = ET.parse(metadata).getroot()
-    return [(datetime.datetime.strptime(a["start"], "%Y-%m-%d %H:%M:%S %z"), float(a["vertical"]))
+    return [(datetime.datetime.strptime(a["start"], "%Y-%m-%d %H:%M:%S %z"),
+             datetime.datetime.strptime(a["end"], "%Y-%m-%d %H:%M:%S %z"),
+             float(a["vertical"]))
             for a in (e.attrib for e in root.iter("Action"))
             if a["type"] == "Run" and float(a["vertical"]) >= min_vertical]
+
+
+def pair_by_time(ref, ours):
+    """Group our runs under the Slopes run they overlap, not the one at the same index.
+
+    The two lists are not the same length — on 2026-09-03 we split one Slopes run in two — so
+    zipping them shifts every later row and manufactures 14-minute "errors" (S14). Each of our
+    runs goes to the Slopes run it overlaps most, or failing that the nearest by start time.
+    """
+    groups = [[] for _ in ref]
+    for r in ours:
+        best, best_key = None, None
+        for i, (s, e, _) in enumerate(ref):
+            overlap = (min(r["end"], e) - max(r["start"], s)).total_seconds()
+            key = (overlap > 0, overlap, -abs((r["start"] - s).total_seconds()))
+            if best_key is None or key > best_key:
+                best, best_key = i, key
+        groups[best].append(r)
+    return groups
 
 
 def score(export_dirs):
@@ -162,23 +185,27 @@ def score(export_dirs):
             print(f"\n=== {day}: no recording of ours — reference only ===")
             continue
         now, fixed = day_runs(DAYS[day], False), day_runs(DAYS[day], True)
+        gnow, gfixed = pair_by_time(ref, now), pair_by_time(ref, fixed)
         print(f"\n=== {day} ===")
-        print(f"{'#':>2} {'Slopes':>9} | {'now':>9} {'Δs':>6} {'vert':>7} | {'fixed':>9} {'Δs':>6} {'vert':>7}")
+        print(f"{'#':>2} {'Slopes':>9} {'vert':>7} | {'now':>9} {'Δs':>6} {'vert':>7} {'n':>2}"
+              f" | {'fixed':>9} {'Δs':>6} {'vert':>7} {'n':>2}")
         errs_now, errs_fixed = [], []
-        for i, (start, vert) in enumerate(ref):
-            a = now[i] if i < len(now) else None
-            b = fixed[i] if i < len(fixed) else None
-            da = (a["start"] - start).total_seconds() if a else None
-            db = (b["start"] - start).total_seconds() if b else None
-            if da is not None: errs_now.append(abs(da))
-            if db is not None: errs_fixed.append(abs(db))
-            print(f"{i+1:>2} {start.strftime('%H:%M:%S'):>9} |"
-                  f" {a['start'].strftime('%H:%M:%S') if a else '—':>9} {da:>+6.0f} {a['drop']:>7.1f} |"
-                  f" {b['start'].strftime('%H:%M:%S') if b else '—':>9} {db:>+6.0f} {b['drop']:>7.1f}")
+        for i, (start, _end, vert) in enumerate(ref):
+            cells = []
+            for group, errs in ((gnow[i], errs_now), (gfixed[i], errs_fixed)):
+                if not group:
+                    cells.append(f" {'—':>9} {'—':>6} {'—':>7} {0:>2}")
+                    continue
+                d = (group[0]["start"] - start).total_seconds()
+                errs.append(abs(d))
+                cells.append(f" {group[0]['start'].strftime('%H:%M:%S'):>9} {d:>+6.0f}"
+                             f" {sum(r['drop'] for r in group):>7.1f} {len(group):>2}")
+            print(f"{i+1:>2} {start.strftime('%H:%M:%S'):>9} {vert:>7.1f} |{cells[0]} |{cells[1]}")
         print(f"   mean |start error|   now {sum(errs_now)/len(errs_now):.0f} s"
               f"   fixed {sum(errs_fixed)/len(errs_fixed):.0f} s")
-        print(f"   day vertical   Slopes {sum(v for _, v in ref):.1f}"
+        print(f"   day vertical   Slopes {sum(v for _, _, v in ref):.1f}"
               f"   now {sum(r['drop'] for r in now):.1f}   fixed {sum(r['drop'] for r in fixed):.1f}")
+        print(f"   run count      Slopes {len(ref)}   ours {len(now)}")
 
 
 if __name__ == "__main__":

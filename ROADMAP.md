@@ -5,7 +5,63 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S13)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S14)
+
+### 🟢 S14 — the third graded day, and the false-top fix is shipped
+
+`Data/fixtures/2026-09-03_portillo_s4.jsonl` — **42,328,503 bytes, 5 h 25 m (11:54–17:19)**,
+17,440 fixes at 0.90 Hz, 18,304 baro, 489,904 motion samples at 25.1 Hz, closed cleanly, hAcc
+median ±7.1 m. **9 runs / 1,380 m**, gated top **67.0 km/h**. Battery **6.5 %/h over 5.42 h**,
+7 discrete steps — third independent measurement, and it brackets S12/S13's 7.0 and 6.7.
+
+**1. It is the best-graded day the project has, and it shipped the false-top fix.**
+Scored run-by-run against `3 September 2026 - Portillo.slopes`, **mean run-start error is 16 s**
+(2026-09-01: 36 s, 2026-09-02: 56 s), every run inside 13 s except run 1 at −35 s. **The day has
+zero false tops** — all three in the project remain on 2026-09-02. That is the third graded day R5
+was waiting for, so the pre-registered candidate fix — *on merge, adopt the higher of the two tops*
+— is now in `analyze.py` **and** `LiveMetrics.swift`. It is a **bit-for-bit no-op on 2026-09-01 and
+2026-09-03**, and on 2026-09-02 it takes the mean start error **56 s → 29 s** (run 8 −168 s → −7 s).
+It costs run 6 there (−9 s → +54 s), where the higher peak lands after the real push-off, and moves
+that day's golden vertical **1,386 → 1,390 m**. Both golden tests updated and mutation-checked (reverting the rule fails `portilloS3` and
+`fortyMegabytePrefixReadsTheSameDay`, R22). **24 tests green** — note S13's write-up said 24 when
+there were 23; counted this time with `grep -c '@Test'`, not from memory.; `replay.sh` agrees with `analyze.py` to the metre on all four fixtures.
+
+**2. `Tools/falsetop.py --score` was pairing the two run lists by INDEX, and it invented a
+14-minute error.** We detect 9 runs on 2026-09-03 where Slopes itemises 8, so every row from the
+third on was compared against the wrong Slopes run — the report showed "−11,964 s". It now pairs by
+time overlap (`pair_by_time`) and prints how many of our runs fell under each Slopes run. **The
+9-vs-8 gap is not a defect:** we split Slopes' run 2 (12:23:45–12:43:36) into 365.7 m + 51.3 m,
+across a 4-minute mid-run gap, and **the two halves sum to 417.0 m against its 414.1 m (+0.7%)**.
+Day vertical **1,379.7 vs Slopes' 1,335.2 (+3.3%)**. **New rule R27.**
+
+**3. A18 confirmed a second time, and this time on a burst day** — the case S12b said was missing.
+Our ungated max is **78.4 km/h** across four fixes at 17:16:56, *after* the last run, `speedAcc`
+invalid (−1) and hAcc degrading 12 → 20 m; the gate rejects all four. Our gated max is **67.0 km/h**,
+which is **bit-for-bit the maximum in Slopes' own `RawGPS.csv`** (66.999 @ 12:57:16.999, hAcc ±7.9).
+Slopes published **69.1 km/h** — its own smoothing of that same clean fix, **+3.17%**, in line with
+the +2.72% mean measured on 1 Sep. **Neither app published the burst.** Pinned as `portilloS4()`.
+
+**4. A third negative control, and the hardest one.** Slopes marks **13:15:09–16:09:54 as
+`ignore`** in its `Metadata.xml` — a 2 h 55 m midday break. Over that window we hold **8,829 GPS
+fixes with Doppler up to 47.5 km/h** of real horizontal motion, only **14.7 m** of barometric span
+(net drift −2.6 m/h), and our segmenter reports **zero runs**. The dinner control was indoors and
+still; the S13 tail was outdoors and still; **this one is outdoors and moving**, which is the case
+that actually threatens a barometric segmenter.
+
+**5. 🔴 R18a did not reproduce.** `devicectl copy from` brought **42,328,503 bytes** across whole,
+past the 40,000,000-byte cap that was hard and repeatable in S12 (4 retries, byte-identical). The
+phone is on **iOS 26.6.1** now, not 26.5.2. **Do not withdraw R18a on one success** — keep checking
+the pulled size against `devicectl device info files`, which is the part of the rule that matters.
+
+### 🔴 Still open after S14
+1. **Ask for a `.slopes` export after every remaining ski day.** The trip ends ~2026-09-07 and then
+   there is no snow for ~3 months. A fourth graded day would test the higher-top rule's one
+   regression (2026-09-02 run 6) rather than leave it as a known cost.
+2. **Run comparison** is the next Premium-list feature — no map, no new sensor, the data is already
+   in `SessionReplay`.
+3. The installed build expires **2026-09-10 12:32 UTC**; no reinstall needed before the trip ends.
+
+### 🟢 S13 — handoff (previous session)
 
 ### 🟢 S13 — the whole file is off the phone, and the prefix claim is now a test
 

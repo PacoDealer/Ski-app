@@ -96,8 +96,8 @@ nonisolated struct LiveMetrics {
         if liveDrop > 0, let pendingTopAlt, let anchorAlt, let legTopAlt,
            legTopAlt - pendingBotAlt < Self.mergeAscentM,
            legTopTime - pendingBotTime < Self.mergeGapS {
-            // Same shape as `closeDescent`'s merge: one run, measured from the earlier top.
-            pendingProvisionalDrop = max(0, pendingTopAlt - anchorAlt)
+            // Same shape as `closeDescent`'s merge: one run, measured from the higher top.
+            pendingProvisionalDrop = max(0, max(pendingTopAlt, legTopAlt) - anchorAlt)
             liveIsASeparateRun = false
         }
 
@@ -266,12 +266,19 @@ nonisolated struct LiveMetrics {
         guard topAlt - botAlt > 0 else { return }
 
         // The merge rule, applied *before* the min-drop filter — the order is the whole point.
-        // A merged run keeps the *first* descent's top and ski start: the blip that split it was
-        // never a stop at the top, so the second half contributes only its bottom.
+        // A merged run is measured from the HIGHER of the two tops (S14). Keeping the first one
+        // was wrong when the first was a false top: a lift cresting a roll dips just past the 3 m
+        // hysteresis and then climbs higher, so the descent gets declared during the climb and the
+        // run starts minutes early. Adopting the higher top takes its ski start with it, because
+        // that is the leg whose plateau trim was measured from the real summit.
         if let prevTop = pendingTopAlt,
            topAlt - pendingBotAlt < Self.mergeAscentM,
            topTime - pendingBotTime < Self.mergeGapS {
-            _ = prevTop
+            if topAlt > prevTop {
+                pendingTopAlt = topAlt
+                pendingTopTime = topTime
+                pendingSkiFrom = skiFrom
+            }
             pendingBotAlt = botAlt
             pendingBotTime = botTime
             return

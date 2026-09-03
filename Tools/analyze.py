@@ -215,11 +215,27 @@ def segment_runs(times, alts, min_drop=MIN_RUN_DROP_M, threshold=BARO_HYSTERESIS
     # run 4 into 284 m + a 16 m tail. The tail then fell under MIN_RUN_DROP_M and was silently
     # deleted, so the day was reported 16 m short. A blip that survives 3 m of hysteresis is
     # still nothing like a lift ride; only a real ascent separates two runs.
+    # S14: on merge, adopt the HIGHER of the two tops instead of always keeping the first.
+    #
+    # A lift that crests a roll can dip just past the 3 m hysteresis and then climb higher again,
+    # so the first turning point is declared *during the climb* — a false top (Tools/falsetop.py).
+    # The merge then stitched the pieces back together but kept that first top, so `descent_start`
+    # walked its plateau trim forward from the wrong place and the run started minutes early. On
+    # 2026-09-02 run 7 we declared a descent while Slopes still had him on a lift.
+    #
+    # Scored against three days of Slopes' itemised exports: a bit-for-bit no-op on 2026-09-01 and
+    # 2026-09-03 (neither has a false top), and on 2026-09-02 it takes the mean |start error| from
+    # 56 s to 29 s — run 8 from -168 s to -7 s. It costs run 6 (-9 s -> +54 s), where the higher
+    # peak lands after the real push-off, and moves that day's vertical 1386.0 -> 1390.1.
+    # Measuring top-to-bottom is what "vertical" already claims to mean, so the higher top is the
+    # honest one; three graded days is the evidence bar R5 asked for.
     merged = []
     for d in descents:
         if (merged
                 and d["top_a"] - merged[-1]["bot_a"] < MERGE_ASCENT_M
                 and d["top_t"] - merged[-1]["bot_t"] < MERGE_GAP_S):
+            if d["top_a"] > merged[-1]["top_a"]:
+                merged[-1]["top_a"], merged[-1]["top_t"] = d["top_a"], d["top_t"]
             merged[-1]["bot_t"], merged[-1]["bot_a"] = d["bot_t"], d["bot_a"]
         else:
             merged.append(dict(d))

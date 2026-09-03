@@ -40,7 +40,14 @@ enum Fixtures {
     /// `devicectl copy from` capped at exactly 40,000,000 bytes (R18a). The 40 MB prefix that
     /// stood in for it through S12 is a byte-exact prefix of this file, and reports the identical
     /// 8 runs / 1,386 m / 68.4 km/h — see `fortyMegabytePrefixReadsTheSameDay` below.
+    /// 2026-09-02: eight runs, 1,390 m — the number moved from 1,386 in S14, see `portilloS3()`.
     static let portilloS3 = day("2026-09-02_portillo_s3")
+    /// 2026-09-03: the best-graded day. Nine runs to Slopes' eight — we split its run 2 in two, and
+    /// the two halves sum to 0.7% of its figure. Mean run-start error 16 s, the lowest of the three
+    /// days with a `.slopes` export, and the day has **no false top**, which is what let the
+    /// higher-top merge rule ship (R5 wanted a third graded day). It also carries a 2 h 55 m midday
+    /// break that Slopes had to mark `ignore` and our segmenter simply reports as no runs.
+    static let portilloS4 = day("2026-09-03_portillo_s4")
 
     /// The byte offset the cable stopped at, rounded down to the last complete line.
     static let devicectlPrefixBytes = 39_998_540

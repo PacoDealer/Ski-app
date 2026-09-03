@@ -892,6 +892,18 @@ phase of the roadmap.
    on one day was generalised into a bound. The uplift is **variable and speed-dependent** — on 1 Sep
    it averages **+2.72% on fixes above 54 km/h, max +5.62%**, against +1.09% at the 2 Sep peak.
    Withdrawn. The evidence that overturned it is a direct read of the file, not a better inference.
+
+   ✅ **REPLICATED S14, 2026-09-03, on a second burst day** — the case the S12 answer was missing
+   (it rested on one dirty day). Our ungated max is **78.44 km/h** across four fixes at 17:16:56,
+   *after* the last run ended, with `speedAcc` **invalid (−1)** and hAcc degrading 12 → 20 m. Our
+   gated max is **66.999 km/h @ 12:57:16**, and Slopes' own `RawGPS.csv` peaks at **66.999 km/h @
+   12:57:16.999, hAcc ±7.9** — the same fix, bit-for-bit, a fourth confirmation of the identical
+   CoreLocation stream. Slopes published **69.12 km/h**, its processed value for that same second,
+   **+3.17%** — consistent with 1 Sep's +2.72% mean above 54 km/h. **Neither app published the
+   burst, on either dirty day.** Note also that the top burst fix has hAcc **±12.2 m, inside the
+   15 m gate** — the loose `speedAcc` ceiling kept as a secondary sanity bound in S5 is the only
+   thing that rejected it, which is an argument against ever simplifying that gate to hAcc alone.
+   Write-up: `Data/comparisons/2026-09-03_slopes_export.md`. [V]
    **The larger finding from the same file:** all 1,345 of Slopes' raw fixes match ours after a
    constant −0.154 s clock offset, with **1,117/1,117 non-clamped speeds identical to float
    precision**, hAcc identical within the export's 1-dp rounding, and positions within the CSV's

@@ -205,3 +205,23 @@ Say "Carve lost a day when paused for four hours on 2026-09-02", not "Carve lose
 
 Vertical's own numbers for the first session come from the fixture, via `Tools/analyze.py` and
 `Tools/detect.py`, not from a screenshot.
+
+---
+
+## 2026-09-03 — the third graded day
+
+`3 September 2026 - Portillo.slopes` (unzipped to `slopes_2026-09-03/`), analysed in
+**`2026-09-03_slopes_export.md`**. Ours: `Data/fixtures/2026-09-03_portillo_s4.jsonl`.
+
+Slopes 1,335.2 m / 8 runs vs. our 1,379.7 m / 9 runs (**+3.3%**); **mean run-start error 16 s**,
+the best of the three graded days. Zero false tops, which is what let the higher-top merge fix ship
+(R5). Top speed: our gate rejects a 78.4 km/h burst and lands on **66.999 km/h — bit-for-bit
+Slopes' own raw maximum**; Slopes published 69.1, its smoothing of that same fix (A18, replicated).
+Slopes marks 13:15–16:10 `ignore`; our segmenter reports zero runs there unaided.
+
+**Note on the run counts:** 9 vs 8 is a labelling difference, not a defect — we split Slopes' run 2
+across a 4-minute mid-run gap and the halves sum to +0.7% of its figure. The scorer used to pair
+the two lists by index and reported a −11,964 s error for this; see **R27**.
+
+All three exports are unzipped in-tree as `slopes_2026-09-01/`, `slopes_2026-09-02/`,
+`slopes_2026-09-03/`, which is what `Tools/falsetop.py --score <dirs>` reads.
