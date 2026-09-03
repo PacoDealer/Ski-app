@@ -227,3 +227,15 @@ wrong run. The report printed a **−11,964 s** start error and a "mean" of 1,97
 number any process produces; it was an alignment artifact. Pair by overlap, allow many-to-one, and
 print the group size so a split is visible as a split. A comparison harness that cannot survive the
 two lists disagreeing is measuring its own indexing. *(S14.)*
+
+**R28 — Calibrate an estimator against a reference that isolates it, or you will fit the wrong
+thing.** S14 added per-run distance and tuned `MIN_DISTANCE_DT` so our day totals matched Slopes'.
+That gave 3.0 s and looked excellent: −1.5% / +0.1% / +1.5% across three days. It was two errors
+cancelling. Our runs end ~60 s later than Slopes' — we deliberately keep the runout — so the day
+total mixes a *distance estimator* question with a *segmentation* question, and the knob was
+quietly absorbing the second. Re-running the identical sweep over **Slopes' own run windows**, with
+segmentation taken out of the comparison, moved the optimum to 2.5 s and dropped the per-run error
+from 8.8% to 1.6%. The generalisable form: before fitting a parameter, ask what else varies between
+you and the reference, and construct a comparison where only the thing you are fitting can move.
+A fit that lands on zero while two known differences point opposite ways has not been validated —
+it has been balanced. *(S14.)*

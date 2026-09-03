@@ -76,6 +76,8 @@ struct SessionDetailView: View {
                 // Slopes prints this same pair on its day card, and in S7 it graded our detector
                 // for free: our ski time read +33% high because runs counted standing at the top.
                 row("Ski time", duration(s.skiTime))
+                row("Descent distance",
+                    String(format: "%.2f km", s.descentDistanceM / 1000))
                 if !s.closedCleanly {
                     row("Closed", "interrupted — data intact", tint: .orange)
                 }
@@ -180,31 +182,53 @@ struct SessionDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// One run, with the five numbers Slopes itemises per run behind its paywall.
+    ///
+    /// Distance and the run's own top speed arrived in S14, and both are graded against Slopes'
+    /// exports run by run (`Tools/grade.py`) rather than merely computed. The vertical rate stays
+    /// because it is the one number here that needs no map to separate a pitch from a traverse —
+    /// it is how run 2 of 2026-09-01 shows up as the 0.2 m/s crawl it was.
     private func runRow(index: Int, run: LiveMetrics.Run) -> some View {
-        HStack(spacing: 12) {
-            Text("\(index)")
-                .font(.headline.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(width: 22, alignment: .trailing)
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
+                Text("\(index)")
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22, alignment: .trailing)
                 Text(String(format: "%.0f m", run.drop))
                     .font(.headline)
                 Text("\(clock(run.startTime)) → \(clock(run.endTime))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
+                Spacer()
                 Text(duration(run.duration))
                     .font(.body.monospacedDigit())
-                // Vertical metres per second of descent. It separates a pitch from a traverse
-                // without needing a map, and it is how run 2 of session 1 shows up as the
-                // 0.2 m/s crawl it was.
-                Text(String(format: "%.1f m/s", run.drop / max(run.duration, 1)))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 0) {
+                Color.clear.frame(width: 34)
+                stat(run.distanceM >= 1000
+                     ? String(format: "%.2f km", run.distanceM / 1000)
+                     : String(format: "%.0f m", run.distanceM), "distance")
+                stat(run.topSpeedMS >= 0
+                     ? String(format: "%.0f", run.topSpeedMS * 3.6) : "—", "top km/h")
+                stat(String(format: "%.0f", run.averageSpeedMS * 3.6), "avg km/h")
+                stat(String(format: "%.1f", run.verticalRateMS), "m/s vert")
             }
         }
+        .padding(.vertical, 2)
+    }
+
+    private func stat(_ value: String, _ label: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(value)
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+            Text(label)
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
     }
 
     /// The IMU is the one sensor whose failure has no other symptom — the file just quietly lacks

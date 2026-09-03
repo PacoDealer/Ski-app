@@ -307,6 +307,8 @@ final class TrackRecorder {
             metrics.ingestFix(speed: l.speed,
                               horizontalAccuracy: l.horizontalAccuracy,
                               speedAccuracy: l.speedAccuracy,
+                              latitude: l.coordinate.latitude,
+                              longitude: l.coordinate.longitude,
                               at: s.dt)
             if l.speed >= 0 && l.speedAccuracy >= 0 { dopplerValidCount += 1 }
             lastSpeed = l.speed

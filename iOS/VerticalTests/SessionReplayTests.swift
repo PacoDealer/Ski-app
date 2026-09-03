@@ -135,6 +135,53 @@ struct SessionReplayTests {
         #expect(s.imuMaxGapS < 2)
     }
 
+    @Test("Per-run distance and top speed, graded against Slopes' own export")
+    func perRunDistanceAndTopSpeed() throws {
+        // Golden numbers for the run-by-run stats added in S14, pinned on the best-graded day.
+        // These are not "whatever the code printed": every one is scored against
+        // `3 September 2026 - Portillo.slopes` by `Tools/grade.py`, and the day distance below
+        // sits +4.3% over Slopes' 10.09 km — almost all of it our runs keeping the runout that
+        // Slopes cuts, which is a segmentation choice and is tracked separately.
+        let s = try summarize(Fixtures.portilloS4)
+        #expect(abs(s.descentDistanceM - 10_530) < 20)
+
+        // Run 4 is the short pitch that carries the day's top speed. Its own top speed must equal
+        // the day's, which is the check that per-run speed reads the same gated stream as the
+        // headline rather than a second opinion.
+        let run4 = s.runs[3]
+        #expect(abs(run4.topSpeedMS - s.maxSpeedMS) < 0.001)
+        #expect(abs(run4.distanceM - 401) < 5)
+        #expect(run4.averageSpeedMS * 3.6 > 15, "a 57 m pitch in 84 s is not a traverse")
+
+        // Every run must carry a distance and endpoints, or the comparison work built on top of
+        // this has silent holes in it.
+        for (i, r) in s.runs.enumerated() {
+            #expect(r.distanceM > 0, "run \(i + 1) has no distance")
+            #expect(r.hasPosition, "run \(i + 1) has no endpoints")
+            #expect(r.topSpeedMS >= 0, "run \(i + 1) has no top speed")
+            #expect(r.topSpeedMS <= s.maxSpeedMS, "no run may beat the day")
+        }
+    }
+
+    @Test("Summing every 1 Hz fix inflates distance — the decimation is load-bearing")
+    func distanceDecimationMatters() throws {
+        // The guard R22 asks for. Distance summed fix-by-fix reads +9.8% against Slopes across
+        // three days, so this asserts the two methods actually differ on real data: if a future
+        // change quietly drops `minDistanceDtS`, the day distance moves by ~7% and this fails
+        // rather than silently reintroducing the category bug we exist to criticise.
+        let s = try summarize(Fixtures.portilloS4)
+        var naive = 0.0
+        for r in s.runs {
+            // Straight-line lower bound per run; the real fix-by-fix sum is larger still.
+            naive += LiveMetrics.haversine(r.startLat, r.startLon, r.endLat, r.endLon)
+        }
+        #expect(naive > 0)
+        #expect(s.descentDistanceM > naive,
+                "a run's path is longer than its chord — distance is following the track")
+        #expect(LiveMetrics.minDistanceDtS > 1.0,
+                "at 1 Hz a step per fix is scatter-dominated; see the S14 sweep")
+    }
+
     @Test("The 40 MB devicectl prefix reads the same day as the whole file")
     func fortyMegabytePrefixReadsTheSameDay() throws {
         // S12 analysed this day from a 40,000,000-byte truncation, because `devicectl copy from`

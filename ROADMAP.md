@@ -5,7 +5,71 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S14)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S14b)
+
+### 🟢 S14b — per-run distance and top speed, and our own distance method was +9.8%
+
+The next item on the Premium list is **run comparison**, and it turned out to be blocked on
+something more basic: a `LiveMetrics.Run` carried only times and a drop. `ingestFix` was not even
+given a coordinate. So this session built the per-run numbers Slopes itemises — **distance, the
+run's own top speed, average speed, and the run's start/end position** — in `LiveMetrics`,
+`analyze.py`, `SessionReplay`, `replay.swift` and the detail screen. All four fixtures agree
+**run-for-run, all 24 runs, on drop, distance and top speed** between the app's code and the
+harness.
+
+**🔴 And the first thing it found was a +9.8% error of ours.** Summing every 1 Hz fix put our run
+distance **+5.9% / +11.8% / +11.8%** over Slopes' itemised run distances — *the same shape as the
+5–10% vertical overestimate this entire project exists to criticise, in our own code, for the
+second session running* (S13's naive-max-speed bug was the first). The mechanism is not exotic: at
+1 Hz a skier moves ~10 m between fixes while the median fix is ±7 m, so scatter is a large share of
+every step and **scatter only ever adds**. Stepping over a decimated trail instead
+(`MIN_DISTANCE_DT`) fixes it.
+
+**🔴 …and the obvious calibration was wrong too, in an instructive way (new rule R28).** Tuning the
+interval so our *day totals* matched Slopes gave **3.0 s** and looked superb — −1.5% / +0.1% /
++1.5%. It was **two errors cancelling**. Our runs end **~60 s later than Slopes'** on 2026-09-02
+(+98, +43, +70, +60, +134, +3, +37, +51 s) because `descent_start` deliberately keeps the runout,
+so a day total mixes the distance estimator with a segmentation difference and the knob was
+absorbing the second. Re-running the identical sweep over **Slopes' own run windows** moves the
+optimum to **2.5 s** and takes the **per-run** error from **8.8% → 1.6%**. Shipped 2.5 s: the
+correct estimator with an honestly-reported residual, not a fitted one that hides a second error.
+
+| calibrated over | optimum | day-total err | per-run err |
+|---|---|---|---|
+| our windows (confounded) | 3.0 s | 1.0% | 8.8% |
+| **Slopes' windows (isolated)** | **2.5 s** | 1.0%¹ | **1.6%** |
+
+¹ over Slopes' windows. Over *our* windows the day distance now reads **+4.3%** on 2026-09-03 —
+that residual is the runout, and it is a segmentation question, not a measurement one.
+
+**🟢 `Tools/grade.py` — the run-by-run grading harness.** Pairs by time overlap (R27), grades
+vertical, distance, top speed and run start against every unzipped `.slopes` export. Across
+**23 graded runs on three days**:
+
+| | mean | mean abs | worst |
+|---|---|---|---|
+| vertical | +2.87% | 4.09% | +18.4% |
+| distance | +5.75% | 8.70% | +32.6% |
+| top speed | **−3.59%** | 3.59% | −24.1% |
+| run start | — | 26 s | 72 s |
+
+**The top-speed column is the quiet win.** It is *consistently negative and tightly clustered* —
+most runs land between −0.1% and −4% — which is exactly the **Slopes smoothing uplift** measured
+independently in S12b (+2.72% mean above 54 km/h) and again in S14 (+3.17%). Our per-run top speeds
+being ~3% under Slopes is the expected, correct answer, not an error.
+
+### 🔴 Open after S14b
+1. **Our run ends run ~60 s past Slopes'.** First time this is quantified. It is the single biggest
+   contributor to the distance and vertical residuals, and it is a *deliberate* choice (S7: "coasting
+   out is skiing"). **Do not retune blind** — S7 already showed that trimming both ends undershoots
+   Slopes' ski time by 13%. A fourth graded day plus `Tools/grade.py` is how to decide it.
+2. **Run comparison itself** — now unblocked. Runs carry endpoints, so matching "the same run skied
+   twice" can be done on geometry with no map. 2026-09-03 has repeats: runs 4–8 are the same short
+   lift-and-pitch cycle five times.
+3. Distance's two worst per-run outliers (2026-09-02 run 5, 2026-09-03 run 5) are both **boundary
+   attribution**, not measurement — they pair with a neighbouring run's opposite-signed error.
+
+### 🟢 S14 — the third graded day, and the false-top fix is shipped
 
 ### 🟢 S14 — the third graded day, and the false-top fix is shipped
 

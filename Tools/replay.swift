@@ -45,6 +45,8 @@ for path in CommandLine.arguments.dropFirst() {
     print(String(format: "  max speed, ungated    %6.1f km/h", kmh(s.maxSpeedUngatedMS)))
     print(String(format: "  runs                  %6d", s.runs.count))
     print(String(format: "  descent, run-segmented%6.0f m", s.descentM))
+    print(String(format: "  descent distance      %6.2f km",
+                 s.runs.reduce(0) { $0 + $1.distanceM } / 1000))
     print(String(format: "  sub-threshold, unused %6.0f m", s.metrics.subThresholdDropM))
     print(String(format: "  ski time              %6.1f min", s.skiTime / 60))
     print(String(format: "  doppler valid         %6d/%d", s.dopplerValidCount, s.locCount))
@@ -55,7 +57,9 @@ for path in CommandLine.arguments.dropFirst() {
                      s.imuCount, s.imuRateHz, s.imuCoverage * 100, s.imuMaxGapS))
     }
     for (i, r) in s.runs.enumerated() {
-        print(String(format: "   %2d. %6.0f m  %5.1f min", i + 1, r.drop, r.duration / 60))
+        let top = r.topSpeedMS >= 0 ? String(format: "%5.1f", r.topSpeedMS * 3.6) : "    -"
+        print(String(format: "   %2d. %6.0f m %6.0f m %5.1f min  top %@ km/h",
+                     i + 1, r.drop, r.distanceM, r.duration / 60, top))
     }
 }
 }

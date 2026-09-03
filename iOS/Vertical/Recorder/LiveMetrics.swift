@@ -43,6 +43,28 @@ nonisolated struct LiveMetrics {
     static let maxSpeedHAccM = 15.0
     /// Kept only as a loose sanity bound. Not load-bearing.
     static let maxSpeedAccMS = 3.0
+    /// A position fix worse than this is not used for distance or for a run's endpoints. Looser
+    /// than the speed gate on purpose: `maxSpeedHAccM` exists because Doppler goes wrong in ways
+    /// hAcc predicts, while a ±20 m fix still places you on the right pitch. Matches `MAX_H_ACC`.
+    static let maxPositionHAccM = 25.0
+    /// Shortest interval between two fixes used as a distance step.
+    ///
+    /// **This is the distance equivalent of the vertical bug.** Summing every 1 Hz step reads
+    /// **+9.8%** against Slopes' itemised run distances across the three graded days — the same
+    /// shape as the 5–10% vertical overestimate the whole project exists to criticise, in our own
+    /// code. The cause is not exotic: at 1 Hz a skier moves ~10 m between fixes while the median
+    /// fix is ±7 m, so scatter is a large fraction of every step, and scatter only ever adds.
+    ///
+    /// **Calibrated over Slopes' own run windows rather than ours**, which is the part that
+    /// matters. Our runs end ~60 s later than Slopes' because `descent_start` deliberately keeps
+    /// the runout, so fitting against our own windows tunes the estimator to absorb a
+    /// *segmentation* difference and lands on 3.0 s. Removing segmentation from the question gives
+    /// **2.5 s**, and takes the per-run error from **8.8% to 1.6%** (day totals ≈1.0%).
+    ///
+    /// The knob is quantised by the fix rate — at 1 Hz anything in (2, 3] keeps roughly every third
+    /// fix — so 2.5 sits mid-plateau rather than on a boundary where jitter flips the step between
+    /// 2 and 3 fixes. Three days (R5); re-score with `Tools/grade.py` on a fourth.
+    static let minDistanceDtS = 2.5
 
     // MARK: - Output
 
@@ -53,9 +75,26 @@ nonisolated struct LiveMetrics {
         let topTime: TimeInterval
         let endTime: TimeInterval
         let drop: Double
+        /// Ground distance covered between `startTime` and `endTime`, summed over position fixes
+        /// inside `maxPositionHAccM`. Zero when the run carried no usable fix.
+        var distanceM: Double = 0
+        /// The gated Doppler maximum *within this run*, m/s; negative if the run had none. Not the
+        /// day maximum — a run's own top speed is half of what a comparison between two runs is.
+        var topSpeedMS: Double = -1
+        /// First and last usable position of the run, for matching one run against another later.
+        var startLat: Double = .nan
+        var startLon: Double = .nan
+        var endLat: Double = .nan
+        var endLon: Double = .nan
+
         /// Time actually descending. See `descent_start` in `analyze.py` for why this excludes the
         /// wait at the top but keeps the runout at the bottom.
         var duration: TimeInterval { endTime - startTime }
+        /// Mean speed over the ground while descending, m/s. Slopes prints this per run.
+        var averageSpeedMS: Double { duration > 0 ? distanceM / duration : 0 }
+        /// Vertical metres per second — separates a pitch from a traverse with no map.
+        var verticalRateMS: Double { duration > 0 ? drop / duration : 0 }
+        var hasPosition: Bool { !startLat.isNaN && !endLat.isNaN }
     }
 
     /// Doppler maximum, accuracy-gated. **This is the number to show.** m/s; negative = none yet.
@@ -106,6 +145,84 @@ nonisolated struct LiveMetrics {
         return count
     }
 
+    // MARK: - Position trail
+
+    private struct Fix {
+        let dt: TimeInterval
+        let lat: Double
+        let lon: Double
+        /// Doppler speed if it passed the speed gate, else negative.
+        let speed: Double
+    }
+
+    /// Recent position fixes, kept only long enough to measure the run they belong to.
+    ///
+    /// **Why a buffer and not the whole track.** A run's window is not known until the run closes —
+    /// the merge rule can still extend its bottom — so distance has to be attributed backwards.
+    /// Keeping every fix would make a 6-hour day a 17,000-element array inside a struct that gets
+    /// copied to the UI on every sample. Instead this holds only what a *future* run could still
+    /// need, which is one descent plus the lift before it, and `pruneTrail` drops the rest.
+    private var trail: [Fix] = []
+
+    /// The earliest instant any run still to be reported could begin at.
+    ///
+    /// While a descent is pending or in progress that is its own ski start; otherwise it is the top
+    /// of the climb currently being tracked, which moves forward on every sample — including on a
+    /// stationary day, where the altitude never leaves the plateau band and the buffer would
+    /// otherwise grow without bound.
+    private var trailKeepFrom: TimeInterval {
+        if pendingTopAlt != nil { return pendingSkiFrom }
+        if direction == -1 { return legSkiStartTime }
+        return plateauEnd
+    }
+
+    private mutating func pruneTrail() {
+        let keep = trailKeepFrom
+        guard let first = trail.first, first.dt < keep else { return }
+        // Amortised: only pay for the copy once a meaningful number of fixes have aged out.
+        guard let cut = trail.firstIndex(where: { $0.dt >= keep }) else {
+            trail.removeAll(keepingCapacity: true)
+            return
+        }
+        if cut >= 256 { trail.removeFirst(cut) }
+    }
+
+    /// Distance, own top speed and endpoints for the fixes inside a finished run's window.
+    private func measure(from start: TimeInterval, to end: TimeInterval) -> (Double, Double, Fix?, Fix?) {
+        var distance = 0.0
+        var top = -1.0
+        var first: Fix?
+        var last: Fix?
+        // Distance walks a decimated copy of the window (see `minDistanceDtS`); top speed and the
+        // endpoints read every fix, because throwing away 2 of every 3 fixes would also throw away
+        // the peak. Two different questions, two different samplings of the same trail.
+        var stepFrom: Fix?
+        for f in trail where f.dt >= start && f.dt <= end {
+            if let prev = stepFrom {
+                if f.dt - prev.dt >= Self.minDistanceDtS {
+                    distance += Self.haversine(prev.lat, prev.lon, f.lat, f.lon)
+                    stepFrom = f
+                }
+            } else {
+                stepFrom = f
+            }
+            if f.speed > top { top = f.speed }
+            if first == nil { first = f }
+            last = f
+        }
+        return (distance, top, first, last)
+    }
+
+    /// Great-circle distance in metres. Duplicated from `Tools/analyze.py`'s `haversine` on
+    /// purpose — this file takes no dependencies so the replay harness can compile it on a Mac.
+    static func haversine(_ aLat: Double, _ aLon: Double, _ bLat: Double, _ bLon: Double) -> Double {
+        let r = 6_371_000.0
+        let p1 = aLat * .pi / 180, p2 = bLat * .pi / 180
+        let dp = (bLat - aLat) * .pi / 180, dl = (bLon - aLon) * .pi / 180
+        let h = sin(dp / 2) * sin(dp / 2) + cos(p1) * cos(p2) * sin(dl / 2) * sin(dl / 2)
+        return 2 * r * asin(min(1, sqrt(h)))
+    }
+
     // MARK: - Segmenter state
 
     /// The descent that is closed but may still be extended by the merge rule.
@@ -152,13 +269,28 @@ nonisolated struct LiveMetrics {
     /// the oldest 5.9 s early) and the port must too — a cached fix from the drive up the mountain
     /// carries the *car's* Doppler speed, and would otherwise be published as the day's top speed
     /// before the first run. It is still written to the file; this only keeps it out of the metric.
+    /// `latitude`/`longitude` are optional so a caller with no position (the unit tests, an older
+    /// fixture) still exercises the speed path. A fix inside `maxPositionHAccM` is kept on a short
+    /// trail buffer so that when a run finalises, its distance, its own top speed and its endpoints
+    /// can be read off the fixes that fell inside it.
     mutating func ingestFix(speed: Double, horizontalAccuracy: Double, speedAccuracy: Double,
+                            latitude: Double = .nan, longitude: Double = .nan,
                             at dt: TimeInterval) {
-        guard dt >= 0, speed >= 0 else { return }
-        maxSpeedUngated = max(maxSpeedUngated, speed)
-        guard horizontalAccuracy >= 0, horizontalAccuracy <= Self.maxSpeedHAccM,
-              speedAccuracy >= 0, speedAccuracy <= Self.maxSpeedAccMS else { return }
-        maxSpeed = max(maxSpeed, speed)
+        guard dt >= 0 else { return }
+
+        let speedGated = speed >= 0
+            && horizontalAccuracy >= 0 && horizontalAccuracy <= Self.maxSpeedHAccM
+            && speedAccuracy >= 0 && speedAccuracy <= Self.maxSpeedAccMS
+        if speed >= 0 {
+            maxSpeedUngated = max(maxSpeedUngated, speed)
+            if speedGated { maxSpeed = max(maxSpeed, speed) }
+        }
+
+        guard !latitude.isNaN, !longitude.isNaN,
+              horizontalAccuracy >= 0, horizontalAccuracy <= Self.maxPositionHAccM else { return }
+        trail.append(Fix(dt: dt, lat: latitude, lon: longitude,
+                         speed: speedGated ? speed : -1))
+        pruneTrail()
     }
 
     /// One barometric altitude reading. `altitude` may be relative — only differences are used.
@@ -296,8 +428,12 @@ nonisolated struct LiveMetrics {
         guard let top = pendingTopAlt else { return }
         let drop = top - pendingBotAlt
         if drop >= Self.minRunDropM {
+            let (distance, topSpeed, first, last) = measure(from: pendingSkiFrom, to: pendingBotTime)
             runs.append(Run(startTime: pendingSkiFrom, topTime: pendingTopTime,
-                            endTime: pendingBotTime, drop: drop))
+                            endTime: pendingBotTime, drop: drop,
+                            distanceM: distance, topSpeedMS: topSpeed,
+                            startLat: first?.lat ?? .nan, startLon: first?.lon ?? .nan,
+                            endLat: last?.lat ?? .nan, endLon: last?.lon ?? .nan))
         } else if drop > 0 {
             subThresholdDropM += drop
         }

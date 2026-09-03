@@ -74,6 +74,9 @@ nonisolated enum SessionReplay {
         /// Time spent descending, summed over completed runs. Compare against `duration` for the
         /// share of the day actually skiing — Slopes prints the same pair on its day card.
         var skiTime: TimeInterval { metrics.runs.reduce(0) { $0 + $1.duration } }
+        /// Ground distance covered while descending, summed over runs. Excludes lifts, which is
+        /// how Slopes reports it too — its activity `distance` is exactly the sum of its runs'.
+        var descentDistanceM: Double { metrics.runs.reduce(0) { $0 + $1.distanceM } }
         var dopplerRatio: Double {
             locCount > 0 ? Double(dopplerValidCount) / Double(locCount) : 0
         }
@@ -132,7 +135,10 @@ nonisolated enum SessionReplay {
                     s.speedGateRejected += 1
                 }
                 s.metrics.ingestFix(speed: speed, horizontalAccuracy: hAcc,
-                                    speedAccuracy: speedAcc, at: dt)
+                                    speedAccuracy: speedAcc,
+                                    latitude: obj["lat"] as? Double ?? .nan,
+                                    longitude: obj["lon"] as? Double ?? .nan,
+                                    at: dt)
 
             case "baro":
                 s.baroCount += 1

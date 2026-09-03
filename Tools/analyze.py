@@ -51,6 +51,22 @@ MAX_SPEED_H_ACC = 15.0  # m
 # Shortest interval that can carry a speed. CoreLocation redelivers fixes microseconds apart;
 # differentiating positions across those pairs divides scatter by ~0, not by a sample period.
 MIN_DERIV_DT = 0.5      # s
+# Shortest interval between two fixes used as a distance step.
+#
+# Summing every 1 Hz step reads +9.8% against Slopes' itemised run distances — the distance twin
+# of the vertical bug this whole project is about, in our own code. At 1 Hz a skier moves ~10 m
+# between fixes against a median +/-7 m fix, so scatter is a large share of every step, and
+# scatter only ever adds.
+#
+# Calibrated over SLOPES' OWN RUN WINDOWS, not ours, which is the part that matters: our runs end
+# ~60 s later than Slopes' because we deliberately keep the runout, so fitting against our own
+# windows tunes the estimator to absorb a segmentation difference. Doing that gave 3.0 s; taking
+# segmentation out of the question gives 2.5 s, and drops the PER-RUN error from 8.8% to 1.6%.
+#
+# The knob is quantised by the fix rate — at 1 Hz every threshold in (2, 3] keeps roughly every
+# third fix — so 2.5 is chosen to sit mid-plateau rather than on a boundary where sampling jitter
+# flips the step between 2 and 3 fixes. Three days (R5); re-score with Tools/grade.py on a fourth.
+MIN_DISTANCE_DT = 2.5   # s
 
 
 def load(path):
@@ -170,6 +186,36 @@ def descent_start(times, alts, top_t, bot_t, threshold=BARO_HYSTERESIS_M):
         ceiling = max(ceiling, a)
         started = t
     return started
+
+
+def attach_run_positions(runs, locs):
+    """Per-run distance, own top speed and endpoints, from the fixes inside each run's window.
+
+    Kept out of `segment_runs` on purpose: segmentation is barometric and must stay that way, and
+    the run windows are not final until the merge rule has had its say. This is the batch twin of
+    `LiveMetrics.measure` — same gates, same walk — so `Tools/replay.sh` can prove they agree.
+    """
+    usable = [l for l in locs if 0 <= l["hAcc"] <= MAX_H_ACC]
+    for r in runs:
+        window = [l for l in usable if r["start"] <= l["dt"] <= r["end"]]
+        # Distance walks a decimated copy (MIN_DISTANCE_DT); top speed reads every fix, because
+        # dropping 2 of every 3 would also drop the peak. Same trail, two samplings.
+        dist, step_from = 0.0, None
+        top = -1.0
+        for l in window:
+            if step_from is None:
+                step_from = l
+            elif l["dt"] - step_from["dt"] >= MIN_DISTANCE_DT:
+                dist += haversine(step_from["lat"], step_from["lon"], l["lat"], l["lon"])
+                step_from = l
+            if (l["speed"] >= 0 and 0 <= l["speedAcc"] <= MAX_SPEED_ACC
+                    and 0 <= l["hAcc"] <= MAX_SPEED_H_ACC):
+                top = max(top, l["speed"])
+        r["dist"] = dist
+        r["top_speed"] = top
+        r["start_pos"] = (window[0]["lat"], window[0]["lon"]) if window else None
+        r["end_pos"] = (window[-1]["lat"], window[-1]["lon"]) if window else None
+    return runs
 
 
 def segment_runs(times, alts, min_drop=MIN_RUN_DROP_M, threshold=BARO_HYSTERESIS_M):
@@ -459,7 +505,7 @@ def main(path):
         results[f"barometric, {BARO_HYSTERESIS_M:.0f} m hysteresis"] = \
             sum(hysteresis_descent(a) for _, a in segments)
 
-    runs = [r for t, a in segments for r in segment_runs(t, a)]
+    runs = attach_run_positions([r for t, a in segments for r in segment_runs(t, a)], locs)
     if runs:
         results["barometric, run-segmented"] = sum(r["drop"] for r in runs)
 
@@ -477,12 +523,16 @@ def main(path):
     # ---- runs ----------------------------------------------------------------------------
     if runs:
         print(f"\n  --- {len(runs)} RUNS DETECTED (barometric, >= {MIN_RUN_DROP_M:.0f} m drop) ---")
+        print(f"  {'#':>3}  {'vert':>6} {'dist':>7} {'time':>6} {'top':>7} {'avg':>7} {'v.rate':>7}")
         for i, r in enumerate(runs, 1):
-            print(f"  {i:2d}.  {r['drop']:5.0f} m   {r['dur']/60:5.1f} min"
-                  f"   {r['drop']/max(r['dur'], 1):.1f} m/s vertical rate")
+            top = f"{r['top_speed']*3.6:5.1f}  " if r["top_speed"] >= 0 else "    -  "
+            avg = r["dist"] / max(r["dur"], 1) * 3.6
+            print(f"  {i:2d}.  {r['drop']:5.0f}m {r['dist']:6.0f}m {r['dur']/60:5.1f}m"
+                  f" {top} {avg:5.1f}  {r['drop']/max(r['dur'], 1):5.1f} m/s")
         drops = [r["drop"] for r in runs]
         print(f"\n  longest drop {max(drops):.0f} m   shortest {min(drops):.0f} m"
-              f"   total {sum(drops):.0f} m")
+              f"   total {sum(drops):.0f} m"
+              f"   descent distance {sum(r['dist'] for r in runs)/1000:.2f} km")
         # Never let a threshold discard vertical silently — that is how we lost 16 m in S5.
         sub = [d for r in runs for d in r.get("sub_threshold", [])]
         if sub:
