@@ -70,6 +70,44 @@ i.e. Slopes' Premium run-by-run data, exportable free. Full write-up:
    across those windows before touching a threshold.
 4. **The S5 "5 runs vs 4" disagreement is now a number: Slopes' extra run on 1 Sep is 7.4 m.**
 
+### 🔬 The run-start defect is diagnosed — `Tools/falsetop.py` — and deliberately NOT fixed yet
+
+**It is a false *top*, not a missed plateau.** `segment_runs` declares a descent's top at the first
+turning point that survives 3 m of hysteresis. On a lift cresting a roll the altitude dips just past
+3 m and then climbs higher again, so the top is declared **during the climb**. The merge rule then
+stitches the two descents back together and keeps the **first** one's top, so vertical is barely
+affected — but `descent_start` walks its plateau trim forward from the wrong place and the run
+**starts minutes early**. On 2026-09-02 run 7 we declared a descent while Slopes still had him on a
+lift.
+
+Run 7's raw trace: peak **123.11 m at 12:18:43**, dip to **119.99 at 12:18:53** — **3.12 m**, i.e.
+**12 cm past the threshold** — then back up to **123.84 at 12:19:41**, and the real push-off at
+**12:21:50** (GPS jumps 1.5 → 17.1 km/h). Between them, two minutes of milling at 0–6 km/h with the
+course swinging 177° → 278° → 236°.
+
+**Exactly three false tops exist across all three recorded days, all on 2026-09-02, and they are
+runs 6, 7 and 8** — precisely the runs the Slopes comparison flagged. The dips that fired them are
+**3.12, 3.25 and 4.48 m**, all within 1.5 m of the threshold. 2026-09-01 has none, which is why that
+day's starts are all correct.
+
+**Candidate fix, scored:** when two descents merge, adopt the **higher** of the two tops instead of
+always keeping the first — which is what "measured top-to-bottom" already claims to mean, and it
+leaves the S5 case untouched (there the blip is at the bottom, so the second top is lower).
+
+| | 2026-09-01 | 2026-09-02 |
+|---|---|---|
+| mean \|start error\|, now | 36 s | 56 s |
+| mean \|start error\|, fixed | **36 s** (bit-for-bit no-op) | **29 s** |
+| run 8 | — | −168 s → **−7 s** |
+| run 7 | — | −171 s → −72 s |
+| run 6 | — | −9 s → **+54 s (worse)** |
+| day vertical | 1366.8 (unchanged) | 1386.0 → **1390.1** |
+
+**Not shipped, on purpose.** It halves the error on the affected day and does nothing on the
+unaffected one, but it makes one run worse and moves **1386 m**, which is a golden number in the
+suite. Two graded days is two graded days (R5). **A third `.slopes` export decides it** — re-run
+`Tools/falsetop.py --score <unzipped export dirs>`.
+
 **🔴 STILL OPEN, and the reason to be quick: the fuse dies ~2026-09-08.** Vertical's session was
 still recording at 15:37 and nothing has closed it; the file's tail past 40 MB is still on the phone.
 **Worth asking for: the `.slopes` export of 1 Sep 2026**, still in the logbook — its
