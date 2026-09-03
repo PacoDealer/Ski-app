@@ -28,8 +28,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from analyze import (MIN_RUN_DROP_M, attach_run_positions, load, resume_seams, segment_runs,
-                     split_at_seams)
+from analyze import (MAX_SPEED_ACC, MAX_SPEED_H_ACC, MIN_RUN_DROP_M, attach_run_positions,
+                     haversine, load, resume_seams, segment_runs, split_at_seams)
 
 TZ = datetime.timezone(datetime.timedelta(hours=-4))
 ROOT = Path(__file__).parent.parent
@@ -92,6 +92,41 @@ def pair_by_time(ref, ours):
     return groups
 
 
+def top_speed_location(export_dir, fixtures):
+    """Where each app says the day's fastest moment happened — position, not just value.
+
+    The strongest form of the "Slopes and Vertical read the identical CoreLocation stream" finding
+    (S12c), because it tests the one number each app actually publishes. On 2026-09-01 and
+    2026-09-02 Slopes' `topSpeedLat/Long/Alt` are our gated peak fix's coordinates **to 0.0 m and
+    0.0 m of altitude** — the same instant on the mountain — and the whole published difference is
+    Slopes smoothing that fix (+3.81%, +1.09%). On 2026-09-03 it lands one fix away, 19.0 m.
+    """
+    root = ET.parse(Path(export_dir) / "Metadata.xml").getroot()
+    runs = [a for a in (e.attrib for e in root.iter("Action")) if a["type"] == "Run"]
+    if not runs:
+        return None
+    best = max(runs, key=lambda a: float(a["topSpeed"]))
+    peak = None
+    for name in fixtures:
+        recs, _ = load(str(FIXTURES / f"{name}.jsonl"))
+        for l in recs["loc"]:
+            if l["dt"] < 0 or l["speed"] < 0:
+                continue
+            if not (0 <= l["speedAcc"] <= MAX_SPEED_ACC and 0 <= l["hAcc"] <= MAX_SPEED_H_ACC):
+                continue
+            if peak is None or l["speed"] > peak["speed"]:
+                peak = l
+    if peak is None:
+        return None
+    return {
+        "slopes": float(best["topSpeed"]),
+        "ours": peak["speed"],
+        "metres_apart": haversine(peak["lat"], peak["lon"],
+                                  float(best["topSpeedLat"]), float(best["topSpeedLong"])),
+        "alt_delta": float(best["topSpeedAlt"]) - peak["alt"],
+    }
+
+
 def pct(a, b):
     return f"{100 * (a - b) / b:+6.1f}%" if b else "     —"
 
@@ -139,6 +174,12 @@ def grade(export_dirs):
         sd = sum(r["dist"] for r in ref)
         ov = sum(r["vert"] for r in ours)
         od = sum(r["dist"] for r in ours)
+        tsl = top_speed_location(d, DAYS[day])
+        if tsl:
+            print(f"   top speed happened {tsl['metres_apart']:.1f} m apart"
+                  f" (alt Δ{tsl['alt_delta']:+.1f} m) — Slopes {tsl['slopes']*3.6:.2f}"
+                  f" vs ours {tsl['ours']*3.6:.2f} km/h, {pct(tsl['slopes'], tsl['ours']).strip()}"
+                  f" of pure smoothing")
         print(f"   day    vertical {sv:>7.1f} vs {ov:>7.1f} {pct(ov, sv)}"
               f"    distance {sd/1000:>5.2f} km vs {od/1000:>5.2f} km {pct(od, sd)}"
               f"    runs {len(ref)} vs {len(ours)}")

@@ -58,6 +58,45 @@ most runs land between −0.1% and −4% — which is exactly the **Slopes smoot
 independently in S12b (+2.72% mean above 54 km/h) and again in S14 (+3.17%). Our per-run top speeds
 being ~3% under Slopes is the expected, correct answer, not an error.
 
+### 🟢 S14b — run comparison, prototyped in Python and deliberately not shipped
+
+`Tools/similar.py`. Run comparison needs an answer to *"which of these descents are the same
+run?"*, and Slopes answers it from the per-resort trail database its paywall actually protects.
+We have no map and are not building one, so it has to come from the track.
+
+**Method:** resample each run to 32 points evenly spaced **by distance along the track** (not by
+time — that is what makes a fast descent and a slow one comparable), then score a pair by the mean
+separation between corresponding points.
+
+**Endpoints alone are not enough, and the data says so.** At Portillo every run off one lift shares
+its two stations: 2026-09-02 run 5 and 2026-09-03 run 9 match to **10 m at the start and 137 m at
+the end** while covering 1,197 m and 1,608 m — plainly different pistes. Shape matching separates
+them; 29 endpoint "matches" collapse to a handful of real ones.
+
+**🔴 Not shipped, because there is no threshold to ship.** The pairwise scores are a continuum —
+11, 21, 25, 30, 35, 43, 50, 59, 66, 69, 78, 80 m — with no gap to cut at, which is what a resort of
+overlapping corridors should look like. Picking a number and telling Martin "you skied this run 5
+times" is a claim we have not validated (R20), and **Slopes' export carries no trail name**, so it
+cannot settle it. Clustering at 40 m gives three plausible groups (2026-09-02 r2/r3/r4 at 128–131 m;
+2026-09-01 r2 with 2026-09-03 r4 at 57–58 m; 2026-09-01 r1 with 2026-09-02 r1 at 297–303 m) — but
+plausible is not verified. **The ground truth is Martin, who skied them.** Same pattern as
+`detect.py`: prototype in Python, validate, then port to Swift.
+
+### 🟢 S14b — Slopes' published top speed happens at OUR fix, to the metre
+
+`Tools/grade.py` now checks `topSpeedLat/Long/Alt`, and this is the strongest form yet of the
+identical-CoreLocation-stream finding, because it tests the one number each app publishes:
+
+| day | metres apart | alt Δ | Slopes | ours | difference |
+|---|---|---|---|---|---|
+| 2026-09-01 | **0.0 m** | −0.0 m | 67.21 | 64.74 | +3.8% |
+| 2026-09-02 | **0.0 m** | −0.0 m | 69.17 | 68.42 | +1.1% |
+| 2026-09-03 | 19.0 m | +0.9 m | 69.12 | 67.00 | +3.2% |
+
+On two of three days Slopes' published fastest moment is **our gated peak fix's exact coordinates
+and altitude** — the same instant on the mountain — and the entire published difference is its
+smoothing of that fix. On the third it lands one fix away.
+
 ### 🔴 Open after S14b
 1. **Our run ends run ~60 s past Slopes'.** First time this is quantified. It is the single biggest
    contributor to the distance and vertical residuals, and it is a *deliberate* choice (S7: "coasting
