@@ -56,9 +56,24 @@ so it is a hint, not a rate. The mid-session charge (12:47–12:57) is still cor
 **Also in the file:** two `kCLErrorDomain error 0` location dropouts at 15:49 and 15:54 while
 parked, both self-healing; one fix at ±1,414 m hAcc at 12:36 which the 25 m gate discarded.
 
-### 🔴 Still open, unchanged by S13
-1. **Reinstall before the fuse dies ~2026-09-08** — also ships the RUNS-tile fix from S12. Martin's
-   last ski day is ~2026-09-07, so this is the deadline that actually bites.
+### 🟢 S13 — reinstalled, and the fuse assumption was wrong
+
+**Rebuilt and installed 2026-09-03 08:33** (ships S12's RUNS-tile fix). All 12 session files
+survived the upgrade install. **Launch not yet confirmed — the phone was locked**
+(`FBSOpenApplication error 7`), so someone still has to open it once.
+
+🔴 **The docs' claim that a reinstall resets the 7-day fuse is FALSE, and it nearly cost the last
+ski day.** `-allowProvisioningUpdates` reuses any cached profile that has not expired: the first
+S13 install re-signed with the profile *created 2026-08-31 23:05*, so the brand-new build still
+expired **2026-09-07 23:05 UTC**. Moving that profile aside and rebuilding minted a fresh one —
+**the installed build now runs to 2026-09-10 12:32 UTC**, three days past the last ski day. The
+recipe and the verification command are in "If the build has expired" below. **Read the expiry off
+the built product, not off the install date** — the two are not the same thing, which is the whole
+bug.
+
+### 🔴 Still open after S13
+1. **Confirm the app launches** — unlock the phone and open it once (or
+   `devicectl device process launch --device 270B9EDA-… com.gamberg.vertical`).
 2. **The false-top fix stays unshipped** — S13 added a *longer* day, not a *third graded* one, so
    R5 is unchanged. A third `.slopes` export still decides it.
 3. **Ask for the 1 Sep `.slopes` export** if it is still in the logbook (see S12 below).
@@ -493,9 +508,27 @@ xcrun devicectl device install app --device 270B9EDA-7298-5206-9E67-71C0E8F60CF6
   ~/Library/Developer/Xcode/DerivedData/Vertical-hhltzbilrpjrdxgsdbemtrfnvlhq/Build/Products/Debug-iphoneos/Vertical.app
 ```
 
-It **resets the 7-day provisioning fuse** (S7 reset it to ~2026-09-08, just past the end of the
-trip) *and* ships the S6 screen, which shows accuracy-gated top speed and run-segmented vertical
-live — the three numbers that get compared against Slopes on the mountain, without a file pull.
+⚠️ **It does NOT reset the 7-day fuse on its own — corrected in S13.** `-allowProvisioningUpdates`
+reuses a cached profile that has not yet expired; it only mints a new one when there isn't a usable
+one on disk. S13's first reinstall re-signed with the profile created **2026-08-31 23:05**, so the
+freshly installed app still died 2026-09-07. **To actually extend it, move the profile aside and
+rebuild:**
+
+```sh
+mv ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/<uuid>.mobileprovision /tmp/
+# which uuid: check every profile's Name + ExpirationDate with
+#   security cms -D -i <file> | plutil -p - | grep -E '"Name"|ExpirationDate'
+xcodebuild ... -allowProvisioningUpdates clean build     # mints a new 7-day profile
+```
+Then **verify the expiry you actually shipped**, from the built product, never from the calendar:
+```sh
+security cms -D -i .../Vertical.app/embedded.mobileprovision | plutil -p - | grep ExpirationDate
+```
+This needs network + a signed-in Apple ID, so do it at the hotel, not at the lift.
+
+The reinstall also ships the S6 screen, which shows accuracy-gated top speed and run-segmented
+vertical live — the three numbers that get compared against Slopes on the mountain, without a
+file pull.
 
 **Then smoke-test it before skiing with it** (R16 — it has never run on the device): launch, press
 START, confirm no yellow background-mode warning, walk ~2 minutes, watch GPS FIXES climb, press

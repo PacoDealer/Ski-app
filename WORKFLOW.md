@@ -208,3 +208,12 @@ under 0.2 s on 2026-09-02 and the tightest **95 µs** — so a metre of ordinary
 sampling interval that could carry the quantity I am computing". Sensor streams deliver duplicates,
 batches and replays; assume it. The sting: this was the number we quote to describe *other apps'*
 error, and publishing a glitch as a speed is the exact thing S5 caught Carve doing. *(S13.)*
+
+**R26 — Read the expiry off the artifact, not off the calendar.** "Reinstalling resets the 7-day
+provisioning fuse" was in the docs from S7 and was never true. `-allowProvisioningUpdates` reuses
+any cached profile that has not yet expired, so S13's reinstall produced a brand-new build signed
+with a three-day-old profile: installed 3 Sep, dead 7 Sep, on the last ski day of the trip. The
+install date told us nothing; `security cms -D -i <app>/embedded.mobileprovision` told us
+everything. The general form: when a deadline is a property of a *file*, check the file. Anything
+you derive from "I did the thing that usually refreshes it" is an assumption wearing a date.
+*(S13.)*
