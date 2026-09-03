@@ -59,8 +59,9 @@ parked, both self-healing; one fix at ±1,414 m hAcc at 12:36 which the 25 m gat
 ### 🟢 S13 — reinstalled, and the fuse assumption was wrong
 
 **Rebuilt and installed 2026-09-03 08:33** (ships S12's RUNS-tile fix). All 12 session files
-survived the upgrade install. **Launch not yet confirmed — the phone was locked**
-(`FBSOpenApplication error 7`), so someone still has to open it once.
+survived the upgrade install. **Confirmed working by Martin** — the app opens, the saved sessions
+read back, and there is no location-permission banner, so authorization survived the reinstall.
+Process confirmed alive from the new bundle (pid 7064). **The phone is ready to ski with.**
 
 🔴 **The docs' claim that a reinstall resets the 7-day fuse is FALSE, and it nearly cost the last
 ski day.** `-allowProvisioningUpdates` reuses any cached profile that has not expired: the first
@@ -72,11 +73,10 @@ the built product, not off the install date** — the two are not the same thing
 bug.
 
 ### 🔴 Still open after S13
-1. **Confirm the app launches** — unlock the phone and open it once (or
-   `devicectl device process launch --device 270B9EDA-… com.gamberg.vertical`).
-2. **The false-top fix stays unshipped** — S13 added a *longer* day, not a *third graded* one, so
+1. **The false-top fix stays unshipped** — S13 added a *longer* day, not a *third graded* one, so
    R5 is unchanged. A third `.slopes` export still decides it.
-3. **Ask for the 1 Sep `.slopes` export** if it is still in the logbook (see S12 below).
+2. **Ask for a `.slopes` export after every remaining ski day** — that is the third graded day, and
+   it is one tap from Martin. The trip ends ~2026-09-07 and then there is no snow for ~3 months.
 
 ### 🟢 S12 — the day is off the phone, and it carried two bugs out with it.
 
