@@ -287,3 +287,23 @@ pistes. That removed the single overlapping pair and printed **SEPARATED**, an e
 a threshold of 34 m — a confident, shippable, wrong number, produced by a capital L. The tool
 existed specifically to refuse invented thresholds and it nearly emitted one. When a comparison
 suddenly reports a cleaner result than the data felt like, suspect the comparison. *(S15b.)*
+
+**R32 — Before blaming a measurement, re-measure over the reference's own windows.** Three days of
+grading published our runs as **vertical +2.87%, distance +5.75%** against Slopes, and both were
+being read as measurement error. Holding the segmentation fixed — running our identical pipeline
+over **Slopes' exact run windows** — took distance to **+0.1% across 23 runs** and vertical to
+**-3.0%**, low on 20 of them. So the distance error was never in the measurement at all; it was
+entirely the run boundary. And the vertical figure was **two errors cancelling** (R28 again, from
+the other side): a segmentation surplus of +6% sitting on a measurement deficit of -3%, netting a
+mild-looking +2.9%. Fixing only the visible half would have made vertical *worse* while making
+distance right. A day total cannot tell a boundary artifact from a measurement error, and the
+control that separates them costs one function. Run it before attributing either. *(S16.)*
+
+**R32b — A number that is "deliberate" still has to be measured.** The run end running ~60 s past
+Slopes' was recorded as a deliberate choice — "coasting out is skiing" (S7) — and on that basis it
+sat unexamined for two sessions while it quietly owned both residuals. It took one column in
+`grade.py` to size it (mean **+65 s**, later on **21 of 23** runs) and one tool to look inside it:
+mean speed **3.3 km/h**, and **12 of 21 tails neither moving nor descending**. The rationale was
+not wrong in principle — a real runout *is* skiing — it was simply never checked against what the
+seconds contained. Label a choice deliberate and you exempt it from grading; grade it anyway.
+*(S16.)*

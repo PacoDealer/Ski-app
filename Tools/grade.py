@@ -132,7 +132,7 @@ def pct(a, b):
 
 
 def grade(export_dirs):
-    totals = {"vert": [], "dist": [], "top": [], "start": []}
+    totals = {"vert": [], "dist": [], "top": [], "start": [], "end": []}
     for d in sorted(export_dirs):
         meta = Path(d) / "Metadata.xml"
         if not meta.exists():
@@ -148,8 +148,9 @@ def grade(export_dirs):
         groups = pair_by_time(ref, ours)
 
         print(f"\n=== {day} ===")
-        print(f"{'#':>2} {'start Δs':>8} | {'vert':>16} | {'distance':>18} | {'top speed':>17}")
-        print(f"{'':>2} {'':>8} | {'Slopes':>6} {'ours':>9} | {'Slopes':>7} {'ours':>10} |"
+        print(f"{'#':>2} {'start Δs':>8} {'end Δs':>7} | {'vert':>16} | {'distance':>18} |"
+              f" {'top speed':>17}")
+        print(f"{'':>2} {'':>8} {'':>7} | {'Slopes':>6} {'ours':>9} | {'Slopes':>7} {'ours':>10} |"
               f" {'Slopes':>5} {'ours':>11}")
         for s, g in zip(ref, groups):
             if not g:
@@ -159,13 +160,15 @@ def grade(export_dirs):
             di = sum(r["dist"] for r in g)
             tp = max(r["top"] for r in g)
             ds = (g[0]["start"] - s["start"]).total_seconds()
+            de = (g[-1]["end"] - s["end"]).total_seconds()
             totals["vert"].append(100 * (v - s["vert"]) / s["vert"])
             totals["dist"].append(100 * (di - s["dist"]) / s["dist"])
             totals["start"].append(abs(ds))
+            totals["end"].append(de)
             if tp >= 0 and s["top"] > 0:
                 totals["top"].append(100 * (tp - s["top"]) / s["top"])
             n = f"×{len(g)}" if len(g) > 1 else "  "
-            print(f"{ref.index(s)+1:>2} {ds:>+8.0f} |"
+            print(f"{ref.index(s)+1:>2} {ds:>+8.0f} {de:>+7.0f} |"
                   f" {s['vert']:>6.0f} {v:>6.0f}{pct(v, s['vert'])[:0]}{n} {pct(v, s['vert'])} |"
                   f" {s['dist']:>7.0f} {di:>7.0f} {pct(di, s['dist'])} |"
                   f" {s['top']*3.6:>5.1f} {tp*3.6:>5.1f} {pct(tp, s['top'])}")
@@ -194,6 +197,14 @@ def grade(export_dirs):
                   f"   worst {max(v, key=abs):+6.1f}%")
         st = totals["start"]
         print(f"  {'run start':<10} mean |error| {sum(st)/len(st):5.0f} s   worst {max(st):.0f} s")
+        # Run END is graded SIGNED, unlike start. S14b left open that our runs end ~60 s past
+        # Slopes' because we deliberately count the runout as skiing (S7), and a mean |error|
+        # would hide exactly the thing under test: whether the overshoot is one-directional.
+        en = totals["end"]
+        print(f"  {'run end':<10} mean  error {sum(en)/len(en):+5.0f} s"
+              f"   mean|err| {sum(abs(x) for x in en)/len(en):.0f} s"
+              f"   median {sorted(en)[len(en)//2]:+.0f} s"
+              f"   later on {sum(1 for x in en if x > 0)}/{len(en)}")
 
 
 if __name__ == "__main__":

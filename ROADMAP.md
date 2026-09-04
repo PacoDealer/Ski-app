@@ -5,7 +5,59 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S15b)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-04, S16)
+
+### 🟢 S16 — the two accuracy residuals were never one problem, and one of them isn't ours
+
+S14b left this open: *"our runs end ~60 s past Slopes'; biggest contributor to both residuals, and
+a deliberate choice (S7: coasting out is skiing) — needs a 4th graded day, not a blind retune."*
+It did not need a fourth day. It needed the existing three days looked at two ways.
+
+**1. `grade.py` now grades the run END, signed.** It was only ever grading starts, so the thing
+S14b named had never actually been measured. It is real and one-directional: **mean +65 s, median
++57 s, later than Slopes on 21 of 23 runs.**
+
+**2. `Tools/runout.py` — new — reads what is inside those seconds.** They are not skiing:
+
+| | |
+|---|---|
+| 21 tails | mean **72 s**, worst 179 s |
+| mean speed across them | **3.3 km/h** — walking pace |
+| still moving (≥ 8 km/h) | **2 / 21**, and neither of those is descending |
+| neither moving nor dropping | **12 / 21** — pure dead time |
+
+**3. But cutting them overshoots by ~2x**, so a blanket trim is still the wrong fix — exactly what
+S7 found the one time it tried. The tails hold 129 m of vertical against a **+69 m** excess, and
+1,576 m of distance against a **+821 m** excess; removing them lands at **−60 m and −756 m**, past
+Slopes rather than on it. That arithmetic is what said the residual was never one error.
+
+**4. The control that split it (R32): re-measure our own pipeline over SLOPES' EXACT windows.**
+Segmentation held fixed, only the measurement left:
+
+| over Slopes' own windows | result |
+|---|---|
+| **distance** | **+0.1%** across 23 runs — the method is right |
+| **vertical** | **−3.0%**, low on 20 of 23 |
+
+**⇒ The published `distance +5.75%` is not a measurement error at all — it is 100% the run
+boundary. And the published `vertical +2.87%` is two errors cancelling (R28 from the other side):
+a ~+6% segmentation surplus sitting on a ~−3% measurement deficit.** Trimming the tail alone
+would have made distance right and vertical *worse*. That is the whole reason not to have retuned
+blind, and it is now a number rather than a caution.
+
+**🔴 Open, and deliberately not fixed here:** why vertical reads 3% low inside Slopes' own window.
+Slopes' top speed sits +3.59% above ours and S12c/S14b called that smoothing; a smoothing uplift of
+the same sign and size on altitude is a coincidence worth checking, **not a mechanism to quote**
+(A18's lesson). **Do not retune vertical on it.**
+
+**➡️ Next:** the trim rule the tails justify is *conditional*, not blanket — end the run when the
+skier stops descending **and** stops moving, which is 12 of 21 tails and leaves the 2 genuinely
+still-moving ones alone. Size it with `runout.py` before writing it, then grade it, then port to
+`LiveMetrics` and prove `replay.sh` still agrees to the decimal.
+
+---
+
+## Previous handoff (2026-09-03, S15b)
 
 ### 🔴 S15b — one screenshot from Martin found two bugs in the matcher
 
@@ -161,6 +213,13 @@ vertical, distance, top speed and run start against every unzipped `.slopes` exp
 | distance | +5.75% | 8.70% | +32.6% |
 | top speed | **−3.59%** | 3.59% | −24.1% |
 | run start | — | 26 s | 72 s |
+| run end *(added S16)* | **+65 s** | 67 s | +179 s |
+
+> ⚠️ **S16 re-read the vertical and distance rows and they do not mean what they say here.** Over
+> Slopes' *own* run windows our distance is **+0.1%** and our vertical **−3.0%**, so the +5.75%
+> is entirely the run boundary and the +2.87% is a segmentation surplus cancelling a measurement
+> deficit. See the S16 handoff at the top and `Tools/runout.py`. Quote these two numbers as
+> *published end-to-end error*, never as measurement accuracy.
 
 **The top-speed column is the quiet win.** It is *consistently negative and tightly clustered* —
 most runs land between −0.1% and −4% — which is exactly the **Slopes smoothing uplift** measured
