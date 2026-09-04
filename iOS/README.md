@@ -44,6 +44,29 @@ certificate**, then grant location as **Always**.
    The app logs battery level and thermal state every 5 minutes, so a shortened day still tells
    us something useful.
 
+### Recording alongside Slopes — pause or not? (S16)
+
+**Vertical: one session, all day, never paused.** It has no pause button and needs none — it
+appends raw samples and segments them offline. The 81-minute stationary control reports **0 m**, so
+a lunch break costs nothing. And one long session is *better* than two: 1 September was two
+sessions, which is what made run ids collide and destroyed a set of Martin's hand labels (R30).
+
+**Slopes: it makes no difference to anything we grade, so do whatever is natural.** Checked against
+all three exports rather than assumed — a `.slopes` file contains **only `Lift` and `Run` actions**,
+and `grade.py` reads the `Run` ones. A break never creates a run; it appears as a gap between
+actions, and we have already graded days containing a **73-minute** gap (1 Sep) and a **3h09m** one
+(3 Sep) with no trouble.
+
+The one thing to avoid is pausing *as a habit*, and the reason is operational rather than technical:
+a **forgotten unpause** silently deletes descents from the only external ground truth the project
+has, and it cannot be recovered afterwards. Leaving Slopes running costs nothing we measure.
+
+**A graded day needs both apps alive**, so the real constraint is battery, not pause state — two
+GPS apps for a full day, with Vertical alone at ~6.7 %/h. Bring the pack.
+
+**Export the `.slopes` file the same evening.** It is the only external ground truth, and it is the
+one thing about a ski day that cannot be reconstructed later.
+
 ### About the tag buttons
 
 They are **optional**, and they are **not** how the finished app will work. The shipped app
