@@ -53,7 +53,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from analyze import (MAX_H_ACC, MAX_SPEED_ACC, MAX_SPEED_H_ACC, MIN_DISTANCE_DT,
                      attach_run_positions, haversine, load, resume_seams, segment_runs,
-                     split_at_seams)
+                     speed_lookup, split_at_seams)
 from grade import DAYS, FIXTURES, ROOT, TZ, pair_by_time, slopes_runs
 
 
@@ -66,8 +66,9 @@ def day_tracks(fixtures):
         locs = [l for l in recs["loc"] if l["dt"] >= 0]
         baro = [(b["dt"], b["relAlt"]) for b in recs["baro"]]
         seams = resume_seams(recs["note"])
+        speed_at = speed_lookup(locs)
         runs = [r for t, a in split_at_seams([x[0] for x in baro], [x[1] for x in baro], seams)
-                for r in segment_runs(t, a)]
+                for r in segment_runs(t, a, speed_at=speed_at)]
         for r in attach_run_positions(runs, locs):
             out.append({
                 "start": (started + datetime.timedelta(seconds=r["start"])).astimezone(TZ),

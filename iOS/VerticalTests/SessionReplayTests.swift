@@ -33,16 +33,16 @@ struct SessionReplayTests {
         #expect(s.resumeSeams == 0)
 
         #expect(s.runs.count == 4)
-        #expect(abs(s.descentM - 905) < 0.5, "the corrected day total; 895 was the bug")
+        #expect(abs(s.descentM - 898) < 0.5, "905 until S16 trimmed the dead runout off each run")
         #expect(abs(s.metrics.subThresholdDropM - 12) < 0.5)
         #expect(abs(s.maxSpeedMS * 3.6 - 64.7) < 0.1, "gated: the real peak")
         #expect(abs(s.maxSpeedUngatedMS * 3.6 - 69.6) < 0.1, "ungated: inside the multipath burst")
-        #expect(abs(s.skiTime / 60 - 19.9) < 0.1, "after the A19 leading-plateau trim")
+        #expect(abs(s.skiTime / 60 - 17.6) < 0.1, "after the A19 leading and the S16 trailing trim")
 
         // Slopes' itemised run 1 for this morning was 5m26s and 415 m; ours is 407 m in 5.7 min.
         let first = try #require(s.runs.first)
-        #expect(abs(first.drop - 407) < 0.5)
-        #expect(abs(first.duration / 60 - 5.7) < 0.1)
+        #expect(abs(first.drop - 406) < 0.5)
+        #expect(abs(first.duration / 60 - 4.9) < 0.1)
     }
 
     @Test("Session 2, 2026-09-01 — 462 m over 3 runs, the slow afternoon that replicated the result")
@@ -55,11 +55,11 @@ struct SessionReplayTests {
         #expect(abs(s.hAccMedian - 7.9) < 0.05)
 
         #expect(s.runs.count == 3, "includes the 38 s surface tow the 60 s minimum used to miss")
-        #expect(abs(s.descentM - 462) < 0.5)
+        #expect(abs(s.descentM - 459) < 0.5)
         #expect(abs(s.metrics.subThresholdDropM - 24) < 0.5)
         #expect(abs(s.maxSpeedMS * 3.6 - 43.9) < 0.1)
         #expect(s.maxSpeedUngatedMS == s.maxSpeedMS, "a clean session: the gate changes nothing")
-        #expect(abs(s.skiTime / 60 - 23.8) < 0.1)
+        #expect(abs(s.skiTime / 60 - 19.1) < 0.1)
     }
 
     @Test("The two days together are the day the head-to-head was run on")
@@ -67,8 +67,8 @@ struct SessionReplayTests {
         let s1 = try summarize(Fixtures.portilloS1)
         let s2 = try summarize(Fixtures.portilloS2)
         // 1,367 m for the day. Slopes' saved record said 1,380 (+1.0%); Carve's said 1,625 (+18.9%).
-        #expect(abs(s1.descentM + s2.descentM - 1367) < 1)
-        #expect(abs((s1.skiTime + s2.skiTime) / 60 - 43.7) < 0.2)
+        #expect(abs(s1.descentM + s2.descentM - 1357) < 1)
+        #expect(abs((s1.skiTime + s2.skiTime) / 60 - 36.7) < 0.2)
     }
 
     @Test("The negative control: 81 stationary minutes produce no runs and no vertical")
@@ -101,7 +101,7 @@ struct SessionReplayTests {
         // the run-start error (56 s -> 29 s). See `Tools/falsetop.py`.
         let s = try summarize(Fixtures.portilloS3)
         #expect(s.runs.count == 8, "the count the phone should have been showing")
-        #expect(abs(s.descentM - 1390) < 1)
+        #expect(abs(s.descentM - 1368) < 1)
         #expect(abs(s.maxSpeedMS * 3.6 - 68.4) < 0.1)
         #expect(s.maxSpeedUngatedMS <= s.maxSpeedMS, "no multipath burst this day — A18's precondition")
         #expect(s.closedCleanly, "the whole file ends on a real end record")
@@ -117,7 +117,7 @@ struct SessionReplayTests {
     func portilloS4() throws {
         let s = try summarize(Fixtures.portilloS4)
         #expect(s.runs.count == 9, "Slopes itemises 8 — we split its run 2, and the halves sum to +0.7%")
-        #expect(abs(s.descentM - 1380) < 1)
+        #expect(abs(s.descentM - 1365) < 1)
         #expect(s.closedCleanly)
 
         // The speed gate, doing the one job it exists for. At 17:16:56 — after the last run, with
@@ -140,17 +140,19 @@ struct SessionReplayTests {
         // Golden numbers for the run-by-run stats added in S14, pinned on the best-graded day.
         // These are not "whatever the code printed": every one is scored against
         // `3 September 2026 - Portillo.slopes` by `Tools/grade.py`, and the day distance below
-        // sits +4.3% over Slopes' 10.09 km — almost all of it our runs keeping the runout that
-        // Slopes cuts, which is a segmentation choice and is tracked separately.
+        // sat +4.3% over Slopes' 10.09 km until S16, because our runs kept a runout Slopes cuts.
+        // That tail is now trimmed when the skier has stopped both descending and moving, and the
+        // day reads 10.35 km, +2.5%. The residual is measurement, not segmentation: over Slopes'
+        // OWN run windows our distance is +0.1% across 23 runs (`Tools/runout.py`).
         let s = try summarize(Fixtures.portilloS4)
-        #expect(abs(s.descentDistanceM - 10_530) < 20)
+        #expect(abs(s.descentDistanceM - 10_350) < 20)
 
         // Run 4 is the short pitch that carries the day's top speed. Its own top speed must equal
         // the day's, which is the check that per-run speed reads the same gated stream as the
         // headline rather than a second opinion.
         let run4 = s.runs[3]
         #expect(abs(run4.topSpeedMS - s.maxSpeedMS) < 0.001)
-        #expect(abs(run4.distanceM - 401) < 5)
+        #expect(abs(run4.distanceM - 394) < 5)
         #expect(run4.averageSpeedMS * 3.6 > 15, "a 57 m pitch in 84 s is not a traverse")
 
         // Every run must carry a distance and endpoints, or the comparison work built on top of
@@ -197,7 +199,7 @@ struct SessionReplayTests {
 
         let s = try SessionReplay.summarize(url)
         #expect(s.runs.count == 8)
-        #expect(abs(s.descentM - 1390) < 1)
+        #expect(abs(s.descentM - 1368) < 1)
         #expect(abs(s.maxSpeedMS * 3.6 - 68.4) < 0.1)
         #expect(!s.closedCleanly, "a prefix has no end record — and is summarised anyway")
     }

@@ -68,6 +68,90 @@ MIN_DERIV_DT = 0.5      # s
 # flips the step between 2 and 3 fixes. Three days (R5); re-score with Tools/grade.py on a fourth.
 MIN_DISTANCE_DT = 2.5   # s
 
+# --- when a run ends (S16) -------------------------------------------------------------------
+#
+# A run is cut at the altitude minimum, so a skier standing at the bottom is still inside the run
+# — the mirror of the problem `descent_start` fixed at the top, and left in on purpose (S7:
+# "coasting out is skiing"). S16 measured what that costs for the first time. Our runs end **mean
+# +65 s** after Slopes', later on 21 of 23; the tails average **3.3 km/h**, only 2 of 21 are still
+# moving at 8 km/h and *neither of those is descending*, and **12 of 21 are neither moving nor
+# dropping**. So the rationale was sound and the seconds it protects mostly are not skiing.
+#
+# It cannot be fixed barometrically. A run already ends at its altitude minimum, so the tail is by
+# definition inside the hysteresis band, and a plateau trim cuts a skier coasting a flat runout
+# and a skier standing still alike. Distinguishing them needs speed, which is why this is the one
+# place segmentation is allowed to read GPS — and it degrades to the barometric-only trim when
+# there is no gated fix to read, rather than to the untrimmed run.
+#
+# Movement has to be SUSTAINED to halt the trim: the naive form stops at the first sample above
+# the gate, so one noisy fix preserves the whole tail. The median over a +/-10 s window is the
+# same "never let one fix own a number" discipline as the hAcc gate (S5).
+#
+# Graded on three days and 23 runs (Tools/trimend.py), against Slopes' totals:
+#
+#     current (no trim)        vertical +1.7%   distance +3.1%   ski time +11.9%   end +65 s
+#     baro plateau only        vertical -0.3%   distance -1.4%   ski time  -1.3%   end +17 s
+#     this rule                vertical +0.5%   distance +0.6%   ski time  -0.2%   end +21 s
+#
+# Sweeping 7-12 km/h against 6-16 s windows is a flat plateau (vertical +0.3..+0.6%, distance
+# +0.1..+1.0%), so these sit mid-plateau rather than fitted to an edge, and the existing 3 m
+# hysteresis is reused so only one new parameter pair enters the code. Three days, one resort,
+# 23 runs (R5) — re-grade on a fourth day before trusting it anywhere else.
+RUNOUT_STOP_KMH = 8.0
+RUNOUT_WINDOW_S = 10
+
+
+def descent_end(times, alts, start_t, bot_t, bot_a, speed_at, threshold=BARO_HYSTERESIS_M):
+    """When the skiing actually stops, as opposed to when the altitude stopped going down.
+
+    Walks back from the altitude minimum while the skier is both inside the floor band and not
+    moving, and returns the last moment he was doing either. The floor is constant through the
+    walk because `segment_runs` ends the run at the minimum, which is what makes the same rule
+    expressible forward, one sample at a time, in `LiveMetrics`.
+    """
+    if speed_at is None:
+        return bot_t
+    end = bot_t
+    for t, a in zip(reversed(times), reversed(alts)):
+        if t > bot_t:
+            continue
+        if t <= start_t:
+            break
+        if a > bot_a + threshold or _moving(t, speed_at):
+            return t
+        end = t
+    return end
+
+
+def _moving(t, speed_at, kmh=RUNOUT_STOP_KMH, window=RUNOUT_WINDOW_S):
+    """Median gated speed around `t`, so a single scattered fix cannot hold a run open.
+
+    **No usable fix counts as MOVING, not as stopped**, which stops the trim. Absence of evidence
+    is not evidence he was standing, and the asymmetry matters: reading it the other way cuts real
+    descent. The synthetic segmentation tests caught this — a continuous ramp to the bottom with no
+    GPS at all had its last 4 m trimmed off, because every sample inside the hysteresis band looked
+    stationary. On a run with no speed data anywhere this makes the rule a no-op and the run keeps
+    its runout, which is the old behaviour and the safe direction to fail in.
+    """
+    vs = [v for v in (speed_at(t + off) for off in range(-window, window + 1, 2)) if v is not None]
+    if not vs:
+        return True
+    return sorted(vs)[len(vs) // 2] * 3.6 >= kmh
+
+
+def speed_lookup(locs, max_gap_s=3.0):
+    """Nearest gated Doppler speed to a time, or None where there is no usable fix nearby."""
+    pts = [(l["dt"], l["speed"]) for l in locs
+           if l["speed"] >= 0 and 0 <= l["speedAcc"] <= MAX_SPEED_ACC
+           and 0 <= l["hAcc"] <= MAX_SPEED_H_ACC]
+
+    def at(t):
+        if not pts:
+            return None
+        best = min(pts, key=lambda p: abs(p[0] - t))
+        return best[1] if abs(best[0] - t) <= max_gap_s else None
+    return at
+
 
 def load(path):
     recs = {"meta": None, "loc": [], "baro": [], "abs": [], "mark": [], "note": [],
@@ -218,7 +302,8 @@ def attach_run_positions(runs, locs):
     return runs
 
 
-def segment_runs(times, alts, min_drop=MIN_RUN_DROP_M, threshold=BARO_HYSTERESIS_M):
+def segment_runs(times, alts, min_drop=MIN_RUN_DROP_M, threshold=BARO_HYSTERESIS_M,
+                 speed_at=None):
     """Split into descents by finding turning points, then keep only the meaningful drops.
     Vertical is then measured top-to-bottom per run — never by summing deltas."""
     if len(alts) < 2:
@@ -292,8 +377,14 @@ def segment_runs(times, alts, min_drop=MIN_RUN_DROP_M, threshold=BARO_HYSTERESIS
         drop = d["top_a"] - d["bot_a"]
         if drop >= min_drop:
             skiing_from = descent_start(times, alts, d["top_t"], d["bot_t"], threshold)
-            runs.append({"start": skiing_from, "end": d["bot_t"], "drop": drop,
-                         "dur": d["bot_t"] - skiing_from,
+            # The min_drop test uses the FULL descent, so trimming the runout can never delete a
+            # run that the mountain earned; it only decides where to stop counting it (S16).
+            skiing_to = descent_end(times, alts, skiing_from, d["bot_t"], d["bot_a"],
+                                    speed_at, threshold)
+            end_a = next((a for t, a in zip(reversed(times), reversed(alts)) if t <= skiing_to),
+                         d["bot_a"])
+            runs.append({"start": skiing_from, "end": skiing_to, "drop": d["top_a"] - end_a,
+                         "dur": skiing_to - skiing_from,
                          "top_t": d["top_t"]})
         elif drop > 0:
             dropped.append(drop)
@@ -505,7 +596,9 @@ def main(path):
         results[f"barometric, {BARO_HYSTERESIS_M:.0f} m hysteresis"] = \
             sum(hysteresis_descent(a) for _, a in segments)
 
-    runs = attach_run_positions([r for t, a in segments for r in segment_runs(t, a)], locs)
+    speed_at = speed_lookup(locs)
+    runs = attach_run_positions(
+        [r for t, a in segments for r in segment_runs(t, a, speed_at=speed_at)], locs)
     if runs:
         results["barometric, run-segmented"] = sum(r["drop"] for r in runs)
 

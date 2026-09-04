@@ -47,6 +47,15 @@ nonisolated struct LiveMetrics {
     /// than the speed gate on purpose: `maxSpeedHAccM` exists because Doppler goes wrong in ways
     /// hAcc predicts, while a ±20 m fix still places you on the right pitch. Matches `MAX_H_ACC`.
     static let maxPositionHAccM = 25.0
+
+    /// Runout trim (S16). Graded on three days and 23 runs by `Tools/trimend.py`: against Slopes,
+    /// vertical goes +1.7% -> +0.5%, distance +3.1% -> +0.6%, ski time +11.9% -> -0.2% and the run
+    /// end +65 s -> +21 s. Sweeping 7-12 km/h against 6-16 s windows is a flat plateau, so these
+    /// sit mid-plateau rather than fitted to an edge, and the existing 3 m hysteresis is reused so
+    /// only one new pair of numbers enters the code. One resort, three days (R5).
+    static let runoutStopKmh = 8.0
+    static let runoutWindowS = 10
+    static let speedLookupGapS = 3.0
     /// Shortest interval between two fixes used as a distance step.
     ///
     /// **This is the distance equivalent of the vertical bug.** Summing every 1 Hz step reads
@@ -164,6 +173,14 @@ nonisolated struct LiveMetrics {
     /// need, which is one descent plus the lift before it, and `pruneTrail` drops the rest.
     private var trail: [Fix] = []
 
+    /// Recent barometric samples, kept on the same window as `trail` and for the same reason.
+    ///
+    /// A run's end is not known until it closes — the runout trim walks *backwards* from the
+    /// altitude minimum (S16) — so the trailing altitudes have to still be in hand at that
+    /// moment. Pruned by `trailKeepFrom` exactly like `trail`, so this is one descent plus the
+    /// lift before it, not the day.
+    private var altTrail: [(dt: TimeInterval, alt: Double)] = []
+
     /// The earliest instant any run still to be reported could begin at.
     ///
     /// While a descent is pending or in progress that is its own ski start; otherwise it is the top
@@ -178,13 +195,21 @@ nonisolated struct LiveMetrics {
 
     private mutating func pruneTrail() {
         let keep = trailKeepFrom
-        guard let first = trail.first, first.dt < keep else { return }
-        // Amortised: only pay for the copy once a meaningful number of fixes have aged out.
-        guard let cut = trail.firstIndex(where: { $0.dt >= keep }) else {
-            trail.removeAll(keepingCapacity: true)
-            return
+        if let first = trail.first, first.dt < keep {
+            // Amortised: only pay for the copy once a meaningful number of fixes have aged out.
+            if let cut = trail.firstIndex(where: { $0.dt >= keep }) {
+                if cut >= 256 { trail.removeFirst(cut) }
+            } else {
+                trail.removeAll(keepingCapacity: true)
+            }
         }
-        if cut >= 256 { trail.removeFirst(cut) }
+        if let first = altTrail.first, first.dt < keep {
+            if let cut = altTrail.firstIndex(where: { $0.dt >= keep }) {
+                if cut >= 256 { altTrail.removeFirst(cut) }
+            } else {
+                altTrail.removeAll(keepingCapacity: true)
+            }
+        }
     }
 
     /// Distance, own top speed and endpoints for the fixes inside a finished run's window.
@@ -295,6 +320,11 @@ nonisolated struct LiveMetrics {
 
     /// One barometric altitude reading. `altitude` may be relative — only differences are used.
     mutating func ingestAltitude(_ altitude: Double, at time: TimeInterval) {
+        // Recorded before the branches so the sample that *becomes* the bottom is in the buffer
+        // the runout trim later walks back through.
+        altTrail.append((dt: time, alt: altitude))
+        pruneTrail()
+
         guard let anchor = anchorAlt else {
             anchorAlt = altitude
             anchorTime = time
@@ -378,6 +408,7 @@ nonisolated struct LiveMetrics {
         direction = 0
         legTopAlt = nil
         plateauCeiling = nil   // the altitudes either side of a seam are not comparable
+        altTrail.removeAll(keepingCapacity: true)  // and neither can the trim walk across one
     }
 
     /// Close out the session. The descent in progress ends wherever the last sample left it.
@@ -424,13 +455,85 @@ nonisolated struct LiveMetrics {
         pendingBotTime = botTime
     }
 
+    /// When the skiing actually stops, as opposed to when the altitude stopped going down.
+    ///
+    /// The mirror of the plateau trim at the top, and the twin of `analyze.py: descent_end` —
+    /// `Tools/replay.sh` proves the two agree on the real fixtures. A run is cut at its altitude
+    /// minimum, so a skier standing at the bottom is still inside it; S16 measured that at **mean
+    /// +65 s** past Slopes' run end, with those seconds averaging **3.3 km/h** and 12 of 21 neither
+    /// moving nor descending. It cannot be fixed barometrically, because the tail is by definition
+    /// inside the hysteresis band and a plateau trim cannot tell a flat runout from standing
+    /// still. This is therefore the one place segmentation reads GPS, and with no gated fix to
+    /// read it falls back to the barometric trim rather than to no trim at all.
+    ///
+    /// The floor is constant through the walk because the run ends at the minimum by construction.
+    private func descentEnd(skiFrom: TimeInterval, botTime: TimeInterval,
+                            botAlt: Double) -> TimeInterval {
+        var end = botTime
+        for sample in altTrail.reversed() {
+            if sample.dt > botTime { continue }
+            if sample.dt <= skiFrom { break }
+            if sample.alt > botAlt + Self.baroHysteresisM || isMoving(at: sample.dt) {
+                return sample.dt
+            }
+            end = sample.dt
+        }
+        return end
+    }
+
+    /// Median gated speed around `t`, so a single scattered fix cannot hold a run open.
+    ///
+    /// The naive form — stop at the first sample over the gate — leaves the whole tail in place
+    /// when one noisy fix lands in the middle of dead time, which is most of why it barely moved
+    /// ski time when it was graded. Same "never let one fix own a number" discipline as the hAcc
+    /// gate (S5).
+    private func isMoving(at t: TimeInterval) -> Bool {
+        var speeds: [Double] = []
+        var offset = -Self.runoutWindowS
+        while offset <= Self.runoutWindowS {
+            if let v = speed(near: t + Double(offset)) { speeds.append(v) }
+            offset += 2
+        }
+        // No usable fix counts as MOVING, not as stopped, which stops the trim. Absence of
+        // evidence is not evidence he was standing, and reading it the other way cuts real
+        // descent: a continuous ramp to the bottom with no GPS lost its last 4 m, because every
+        // sample inside the hysteresis band looked stationary. With no speed data anywhere the
+        // rule becomes a no-op and the run keeps its runout — the old behaviour, and the safe
+        // direction to fail in.
+        guard !speeds.isEmpty else { return true }
+        speeds.sort()
+        return speeds[speeds.count / 2] * 3.6 >= Self.runoutStopKmh
+    }
+
+    /// The nearest gated Doppler speed to `t`, or nil when no usable fix is close enough.
+    private func speed(near t: TimeInterval) -> Double? {
+        var best: Fix?
+        var bestGap = Double.infinity
+        for f in trail where f.speed >= 0 {
+            let gap = abs(f.dt - t)
+            // Strictly less, so the earliest fix wins a tie — `min()` in the Python twin does the
+            // same, and the two have to agree fix for fix.
+            if gap < bestGap {
+                bestGap = gap
+                best = f
+            }
+        }
+        guard let best, bestGap <= Self.speedLookupGapS else { return nil }
+        return best.speed
+    }
+
     private mutating func finalizePending() {
         guard let top = pendingTopAlt else { return }
         let drop = top - pendingBotAlt
         if drop >= Self.minRunDropM {
-            let (distance, topSpeed, first, last) = measure(from: pendingSkiFrom, to: pendingBotTime)
+            // The min-drop test above uses the FULL descent, so trimming the runout can never
+            // delete a run the mountain earned; it only decides where to stop counting it (S16).
+            let skiTo = descentEnd(skiFrom: pendingSkiFrom,
+                                   botTime: pendingBotTime, botAlt: pendingBotAlt)
+            let endAlt = altTrail.last(where: { $0.dt <= skiTo })?.alt ?? pendingBotAlt
+            let (distance, topSpeed, first, last) = measure(from: pendingSkiFrom, to: skiTo)
             runs.append(Run(startTime: pendingSkiFrom, topTime: pendingTopTime,
-                            endTime: pendingBotTime, drop: drop,
+                            endTime: skiTo, drop: top - endAlt,
                             distanceM: distance, topSpeedMS: topSpeed,
                             startLat: first?.lat ?? .nan, startLon: first?.lon ?? .nan,
                             endLat: last?.lat ?? .nan, endLon: last?.lon ?? .nan))
