@@ -239,3 +239,25 @@ from 8.8% to 1.6%. The generalisable form: before fitting a parameter, ask what 
 you and the reference, and construct a comparison where only the thing you are fitting can move.
 A fit that lands on zero while two known differences point opposite ways has not been validated —
 it has been balanced. *(S14.)*
+
+**R29 — When a signal won't separate, try the same method on the part of the day you weren't
+looking at.** S14b spent a session on run comparison and concluded there was no threshold: the
+shape scores across descents were a continuum — 11, 21, 25, 30, 35, 43 m — with no gap to cut at,
+which was read as a fact about the resort's overlapping corridors. It was a fact about *skiers*.
+People do not repeat a line down a piste. Run the identical resample-and-compare over the **lift
+rides** in the same files and the same metric produces two clean populations, 3–109 m within a lift
+against 169 m and up across lifts, because a cable hangs where it hangs. The lift then partitions
+the runs, which is what the run question needed all along. The generalisable form: a metric that
+fails to separate has been tested on one class of object, not proven useless — before discarding
+it, ask whether some *other* object in the same data is more repeatable, and whether identifying
+that object answers the original question indirectly. Half a ski day is ascending. *(S15.)*
+
+**R29b — A commercial competitor's export can validate your model better than your own hand tags.**
+The lift clustering was not scored against anything Martin tagged. Slopes puts a stable per-lift
+UUID (`trackIDs`) on every `<Action type="Lift">` in its export and nothing on its runs — a slice
+of the resort database its paywall protects, handed over free. Clustering our own rides recovered
+that partition exactly: five clusters, five UUIDs, 21/21, no cluster spanning two IDs and no ID
+split, plus two rides Slopes' own database failed to identify that we placed anyway. Hand tags have
+Martin's 18 s glove-tap precision and n=1 attention; an external database has neither problem.
+Before building a labelling exercise, read the reference export attribute by attribute and check
+whether the answer is already sitting in it. *(S15.)*

@@ -5,7 +5,54 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S14b)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S15)
+
+### 🟢 S15 — the lift is the key, and we recover Slopes' resort database from the track alone
+
+S14b left run comparison blocked on a human: the shape scores were a continuum with no gap, and
+Slopes' export has no trail name, so **only Martin could say which descents are the same piste.**
+He then pointed out the thing that made that ask look impossible — *Vertical has no map and no
+replay, so there is nothing in our app to point at and name.* He can identify **Slopes'** runs, not
+ours.
+
+**That turns out not to matter, and the reason is a finding we already had.** S12c proved the two
+apps record the identical CoreLocation stream, so "the run overlapping this one in time" is not an
+approximation — it is the same descent. A label written against a Slopes row therefore lands on our
+run for free, by the same time-overlap pairing `grade.py` already uses (R27). `Tools/label.py`
+writes the sheets: every row carries the clock time, vertical, distance and duration **exactly as
+Slopes itemises them**, so each one can be found in that app's run list.
+
+**But the bigger result came from trying the method on the other half of the day. A lift is a
+rail.** `similar.py` failed on descents because skiers do not repeat a line. The cable, however,
+hangs where it hangs. Over 23 detected rides on three days:
+
+| | separation |
+|---|---|
+| same-lift pairs | **3–109 m** |
+| different-lift pairs | **169–1,623 m** |
+
+That is two populations with a **60 m empty band** between them — the gap `similar.py` could not
+find in the descents. `Tools/liftid.py` clusters at 140 m, in the middle of the band rather than
+fitted to either edge.
+
+**🟢 Validated against an external database, not our own tags.** Slopes puts a `trackIDs` attribute
+— a stable per-lift UUID out of the resort database its paywall pays for — on every
+`<Action type="Lift">`, and **nothing on the runs**. Our five clusters map **1:1 onto its five
+trackIDs, 21 of 21 identified rides correct**, no cluster spanning two IDs and no ID split across
+clusters. Two further rides that **Slopes itself left with no trackID** get placed by us,
+consistent with their cross-day cluster. This is the strongest validation the project has: an
+external commercial database, not hand tags.
+
+**What it buys run comparison.** Conditioned on our own lift cluster — no Slopes data anywhere in
+the path — **every run pair below 114 m is same-lift**. The lift is the coarse key; shape within a
+lift group is the fine one. It also collapses the ask to Martin from "which of these 24 are the
+same?" to "of the 12 descents off this one lift, which are the same piste?", plus five lift names.
+
+**It is a Premium feature on its own:** "you rode this lift 12 times" needs no map, no OSM
+`aerialway`, and no new sensor.
+
+**🔴 R5, stated not buried:** 23 rides, one resort, three days, and Portillo's va-et-vient platters
+already broke the detector once. `CLUSTER_M` has been tested nowhere else.
 
 ### 🟢 S14b — per-run distance and top speed, and our own distance method was +9.8%
 
@@ -96,6 +143,18 @@ identical-CoreLocation-stream finding, because it tests the one number each app 
 On two of three days Slopes' published fastest moment is **our gated peak fix's exact coordinates
 and altitude** — the same instant on the mountain — and the entire published difference is its
 smoothing of that fix. On the third it lands one fix away.
+
+### 🔴 Open after S15
+1. **⬅ THE ONE ASK FOR MARTIN: fill in `Data/labels/lifts.csv` (5 rows) and
+   `Data/labels/runs.csv` (24 rows, grouped by lift).** The lift sheet is five names and makes
+   every screen readable. The run sheet is the ground truth `similar.py` has been blocked on since
+   S14b; each row is findable in the Slopes app by its clock time and vertical. Two rows sharing a
+   name is the entire signal — blank is a fine answer for anything he doesn't remember. Then
+   `Tools/label.py --score` prints whether shape separates same-piste from different-piste pairs,
+   and **deliberately does not choose a threshold if they overlap** — that overlap would itself be
+   the finding (R20).
+2. **Port `liftid.py` to Swift** once the clustering has a second resort under it, the same way
+   `detect.py` was: prototype in Python, validate, then port.
 
 ### 🔴 Open after S14b
 1. **Our run ends run ~60 s past Slopes'.** First time this is quantified. It is the single biggest

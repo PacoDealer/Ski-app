@@ -24,6 +24,14 @@ overlapping corridors should look like. Choosing a number here and shipping "you
 run 5 times" would be a claim we have not validated (R20), and **Slopes' export carries no trail
 name**, so it cannot settle it either. The ground truth is Martin, who skied them. Until those
 labels exist this prints candidates for a human to confirm and deliberately asserts nothing.
+
+**➡️ S15 read that continuum correctly, and it was a fact about skiers, not about the resort
+(R29).** People do not repeat a line down a piste — but a lift is a rail, and the identical metric
+run over the *ascents* in these same files gives two clean populations with a 60 m empty band
+between them. See `liftid.py`, which clusters the rides, is validated 1:1 against Slopes' own
+per-lift `trackIDs`, and partitions the runs: conditioned on the lift, **every run pair below 114 m
+is same-lift**. This module is now the *fine* half of a two-step answer, not the whole one, and
+`label.py` collects the human labels that would let a threshold be chosen inside a lift group.
 """
 
 import sys
