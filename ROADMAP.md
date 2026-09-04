@@ -7,6 +7,35 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S15b)
 
+### 🔴 S15b — one screenshot from Martin found two bugs in the matcher
+
+He confirmed the two `Juncalillo` descents are **the same piste** — *"I was alone and did it faster
+on 1 Sep. I was with my beginner girlfriend on 3 Sep"* — and sent a screenshot of the overlay where
+the two tracks sit on top of each other for the whole run. Our score for that pair was **142 m**.
+Both causes were ours, and one change fixes both (`similar.py: band_deviation`):
+
+1. **Traversing defeats resampling by track length.** Nursing a beginner down took **2,661 m of
+   track** over a piste he covered in **2,063 m** alone, so "40% of the way along" is not the same
+   place on the mountain for the two of them — and the error grows monotonically down the run,
+   which is exactly the 32/37/96/151/167/187/205/262 m profile it printed.
+2. **A truncated run gets stretched to fit.** We split the 3 Sep descent at a four-minute stop
+   (**Martin: "the third run is just the end of the second"**), so its bottom was 45 m higher, and
+   normalising each run onto its own range mapped two different places onto each other.
+
+**Sampling at absolute altitudes shared by both** fixes both — altitude is the one coordinate a
+skier cannot pad. The pair goes **142 m -> 19 m**, and stays 19 m even against the truncated half.
+
+**🔴 But it does not rescue the labels, and that is the honest result.** Every confirmed-same pair
+now sits at **11-34 m** — and the pairs he described *differently* sit at **25-37 m**. Still
+overlapping. Now we know why: off one lift at Portillo the descents genuinely share a corridor, and
+his names encode **where he was going**, not only the line he took. **Geometry can recover the
+corridor; it cannot recover his label.** The lift key remains the reliable one.
+
+**🟡 Third independent vote that we over-split 3 Sep run 2:** Slopes calls it one run, the shared-band
+score calls it one run, and now Martin does. `MERGE_GAP_S` is 60 s and the stop was ~4 min.
+**Not changed** — it moves a golden number, and every mid-run gap across all four fixtures should be
+printed before touching it (R5).
+
 ### 🔴 S15b — the labels are in, and they say the unit is wrong
 
 Martin labelled all 24 runs (`Data/labels/pistes.json`). He did not write piste names; he wrote

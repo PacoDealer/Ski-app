@@ -91,6 +91,52 @@ def load_runs():
     return runs
 
 
+def positions_at(fixes, altitudes):
+    """Where the skier was at each of these absolute altitudes. Assumes a monotonic descent."""
+    pts = [(f["lat"], f["lon"], f["alt"]) for f in fixes]
+    out, j = [], 0
+    for target in altitudes:
+        while j < len(pts) - 2 and pts[j + 1][2] > target:
+            j += 1
+        a, b = pts[j], pts[j + 1]
+        span = a[2] - b[2]
+        f = 0.0 if abs(span) < 1e-9 else max(0.0, min(1.0, (a[2] - target) / span))
+        out.append((a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f))
+    return out
+
+
+def band_deviation(fa, fb, n=SAMPLES, min_band=30.0):
+    """Mean separation sampled over the altitude band BOTH descents actually cover.
+
+    **This replaces resampling by track length, which had two bugs that a single screenshot from
+    Martin exposed at once (S15b).** He skied the same piste on 1 and 3 September — alone the first
+    time, with a beginner the second — and the two tracks lie on top of each other on the map, yet
+    length-resampling scored them **142 m apart**:
+
+    1. **Traversing defeats it.** Nursing a beginner down meant 2,661 m of track over a piste he had
+       covered in 2,063 m alone. "40% of the way along the track" is then not the same place on the
+       mountain for the two of them, and the error grows monotonically down the run — which is
+       exactly the 32/37/96/151/167/187/205/262 m profile it produced.
+    2. **A truncated run is stretched to fit.** We split his 3 September descent in two at a
+       four-minute stop, so its "bottom" was 45 m higher than the other's, and normalising each run
+       onto its own top and bottom mapped those two different places onto each other.
+
+    Altitude fixes both, because it is the one coordinate a skier cannot pad: you can traverse as
+    long as you like, but you are still at 2,900 m when you are at 2,900 m. Sampling at *absolute*
+    altitudes shared by both, rather than at fractions of each one's own range, also makes the
+    comparison immune to one of them being cut short. The pair goes to **19 m**, and stays at 19 m
+    even when scored against the truncated half. It is also the project's best sensor (barometer,
+    0.85 m drift over 3.2 min) rather than its worst.
+    """
+    top = min(fa[0]["alt"], fb[0]["alt"])
+    bottom = max(fa[-1]["alt"], fb[-1]["alt"])
+    if top - bottom < min_band:
+        return None
+    targets = [top - (top - bottom) * k / (n - 1) for k in range(n)]
+    d = [haversine(*p, *q) for p, q in zip(positions_at(fa, targets), positions_at(fb, targets))]
+    return sum(d) / len(d)
+
+
 def deviation(a, b):
     """Mean and worst point-to-point separation between two resampled tracks, in metres."""
     d = [haversine(*p, *q) for p, q in zip(a["track"], b["track"])]
