@@ -62,11 +62,65 @@ either. **The −3% vertical inside Slopes' own windows is a pure measurement qu
 on four days and 43 runs, and it is the only accuracy item still open.
 **Still do not retune it on the top-speed smoothing coincidence** (A18's lesson).
 
+### 🟢 S17 — AND THE −3% VERTICAL IS ANSWERED. It was never our error.
+
+`Tools/altsrc.py` (new) closes the last open accuracy item in the project. The standing hypothesis
+was bad and was labelled as such: Slopes' top speed sits +3.59% above ours and was attributed to
+smoothing, so "maybe altitude is smoothed by the same ~3%" — a coincidence of sign and size, filed
+as **not a mechanism** (A18) and flagged twice as something not to retune on. **It is not
+smoothing. It is a different sensor and a different convention, and both halves are measurable.**
+
+1. **Slopes' published `vertical` is just the altitude column of its own export**, top-to-bottom
+   over the run — it reproduces to **−0.3%/−0.5%** on all four graded days.
+2. **That column is our raw `CLLocation.altitude`.** Paired on exact lat/lon (the field neither app
+   processes; Slopes exports 6 dp): a rigid **−0.2203 s** clock offset from p5 to p95 — S12c's
+   same-stream signature — and the altitudes are **identical to the millimetre on 96.4%** of paired
+   fixes. Only ~24% of its rows pair, so this step alone is exposed to a selection effect; step 3
+   uses no pairing at all.
+3. **The pairing-free result.** Over Slopes' own windows, measured twice from OUR file:
+
+   |            | baro 1st-last | baro max-min | gps 1st-last | **gps max-min** |
+   |---|---|---|---|---|
+   | 2026-09-01 | −3.2% | −2.3% | −1.4% | **+0.5%** |
+   | 2026-09-02 | −3.5% | −2.6% | −2.1% | **+0.4%** |
+   | 2026-09-03 | −2.3% | −1.3% | −1.0% | **+0.2%** |
+   | 2026-09-04 | −2.8% | −1.8% | −1.3% | **+0.1%** |
+
+   **GPS altitude, max minus min, lands on Slopes to +0.1/+0.5% on every day.** The residual is
+   **two** independent choices, not one — the SENSOR is worth ~1.3–1.8 points and the CONVENTION
+   another ~1.0 — which is why every single-cause story for it had the size wrong.
+4. **And max−min over GPS altitude is inflated by scatter, by about the amount observed.** The
+   control: 5-minute windows in the real ski files where the *barometer* says nothing moved (≤2 m)
+   — standing at the top, in a queue, stopped for lunch — so the true vertical is ~0.
+
+   | 11 flat outdoor windows | mean | median | worst |
+   |---|---|---|---|
+   | barometer, max−min | 1.66 m | | 1.96 m |
+   | **GPS altitude, max−min** | **8.46 m** | 5.05 m | 32.95 m |
+
+   On a 300 m Portillo run that is **+2.8% mean / +1.7% median of phantom vertical**, against a
+   measured residual of 2.3–3.5%. The 81-minute stationary fixture says the same thing from a
+   recording with no skiing in it: **7.65 m** on GPS against **0.87 m** on the barometer.
+
+**⇒ We are not reading 3% low. Slopes reads ~2–3% high, by an amount its own sensor and convention
+predict, and our barometric top-to-bottom figure is the more conservative measurement.** It is the
+same finding as Carve's +11% (S5) one order of magnitude down: Carve sums smoothed GPS altitude
+across the day, Slopes takes max−min of it per run, we take the barometer top-to-bottom.
+**Change nothing.** Adopting max−min GPS to close the gap would be fitting to the reference and
+would import the phantom metres measured above.
+
+**What this does NOT do:** retire the top-speed −3.59%, which is still smoothing (A18) and is a
+separate number; or escape R5 — one resort, four days, one device, and the flat-window control has
+n=11 with a mean pulled by a 33 m worst case, so quote its median beside it.
+
 ### 🔴 Open after S17
-1. **Why vertical reads ~3% low inside Slopes' own windows.** The one open accuracy item.
-   Boundary is ruled out at both ends. Next probe is the barometer→altitude path itself, compared
-   against Slopes' `GPS.csv` altitude column over the same fixes — not a retune.
+1. **Nothing on accuracy.** Vertical, distance, top speed and both run boundaries are now either
+   graded-and-explained or deliberately-and-measurably ours. The next honest move on accuracy is a
+   **second resort** (R5/D3), not more Portillo analysis.
 2. **Snow runs out ~2026-09-07.** Any further capture has days left; desk work does not.
+3. **The Premium feature list is what's left** (D7): run comparison is still blocked on the
+   labelling unit problem from S15b (compare shared SEGMENTS, not whole descents), then speed
+   heatmaps and offline maps. Distribution is still gated on Yomi shipping → the $99 program (D5).
 
 ### 🟢 S16 — the two accuracy residuals were never one problem, and one of them isn't ours
 

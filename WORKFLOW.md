@@ -344,3 +344,27 @@ distance from **−967 m to +1,207 m**, past the reference rather than onto it.
 so **neither boundary can account for the −3% vertical measured inside Slopes' own windows**. Two
 sessions of boundary work have not moved it, which is what promotes it from "probably
 segmentation" to a measurement question worth opening the barometer path for. *(S17.)*
+
+**R35 — When your number disagrees with a reference, check that you are measuring the same
+QUANTITY before you look for an error in how you measure yours.** Our vertical read ~3% under
+Slopes' inside Slopes' own run windows, and that was carried for two sessions as an open defect in
+our measurement, with one hypothesis attached: its top speed is +3.59% above ours from smoothing,
+so perhaps altitude is smoothed by the same amount. Sign and size matched, which is exactly what
+made it tempting and exactly what A18 says is not a mechanism. It was wrong. Slopes' published
+vertical is **max minus min of GPS altitude**; ours is **top-to-bottom barometric**. Two different
+sensors AND two different conventions, worth ~1.3-1.8 and ~1.0 points respectively — which is why
+every single-cause explanation got the size wrong and none of them could be made to fit. The check
+that settled it needed no new data: measure the same windows out of our own file four ways (sensor
+x convention) and see which cell lands on the reference. GPS max-min hit +0.1/+0.5% on four days
+out of four. *(S17.)*
+
+**R35b — A reference that agrees with you 1% of the time is still worth reproducing exactly; a
+reference you can reproduce exactly can be graded back.** Once Slopes' number was reproducible
+from our own file, the question inverted from "why are we low?" to "is its convention any good?" —
+and that is answerable with a control this project already had. Five-minute windows where the
+barometer says the phone did not move are windows whose true vertical is zero, and over them
+**GPS max-min invents 8.46 m (median 5.05) against the barometer's 1.66 m**, which on a 300 m run
+is the 2-3% in question. The competitor's number is not a target to converge on; it is a
+measurement with its own error, and reproducing it is what lets you size that error. Note the
+direction this reverses: the finding is not that we were 3% low but that Slopes is ~2-3% high.
+*(S17.)*
