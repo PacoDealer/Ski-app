@@ -5,7 +5,40 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S15)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-03, S15b)
+
+### 🔴 S15b — the labels are in, and they say the unit is wrong
+
+Martin labelled all 24 runs (`Data/labels/pistes.json`). He did not write piste names; he wrote
+**routes** — "Las Lomas, a Canarios, hasta el hotel" is three pistes linked, and at Portillo that is
+what a descent is. **`label.py --score` reports OVERLAP and picks no threshold**, which is the
+correct outcome and not a step towards one:
+
+| | |
+|---|---|
+| same-name pairs | 11, 21, 25, 35, 59, **142** m |
+| different-name pairs | from **30** m |
+
+**The mean cannot express his answer.** But the divergence profile — separation in eighths along the
+descent — sorts his labels into three kinds of thing, and that is the actual finding:
+
+    ████████   11-35 m   a LINE.  "Las Lomas" x3, and "conejo hasta poma princesa" repeating 1->3 Sep
+    █▓▓░░▓██     59 m    a ROUTE. Both "Plateau a lomas": same ends, different line down the face
+    ██░░░░░░    142 m    an AREA. Both "Juncalillo": together for one eighth, then apart entirely
+
+**So run comparison should compare shared segments, not whole descents.** Slopes can do it the easy
+way because it owns a trail database where a run is an atom; ours are composed at ski time. **Not
+built — 24 labels, 6 same-name pairs, 3 days (R5).**
+
+🔴 **Two questions for Martin would settle the boundary**, because both disputed pairs may be
+language rather than geometry: (1) are "Plateau a lomas" and "Plateau, que conecta con lomas hacia
+la silla de las lomas" the same run described twice? — that pair scores **30 m** and is currently
+what sets the floor for "different". (2) Is **Juncalillo an area rather than one run**? The two he
+named that share only their first eighth.
+
+🟢 **The lift key survived contact with the labels: 6/6 same-name pairs were also same-lift.**
+
+### 🟢 S15 — the lift is the key, and we recover Slopes' resort database from the track alone
 
 ### 🟢 S15 — the lift is the key, and we recover Slopes' resort database from the track alone
 
@@ -145,14 +178,7 @@ and altitude** — the same instant on the mountain — and the entire published
 smoothing of that fix. On the third it lands one fix away.
 
 ### 🔴 Open after S15
-1. **⬅ THE ONE ASK FOR MARTIN: fill in `Data/labels/lifts.csv` (5 rows) and
-   `Data/labels/runs.csv` (24 rows, grouped by lift).** The lift sheet is five names and makes
-   every screen readable. The run sheet is the ground truth `similar.py` has been blocked on since
-   S14b; each row is findable in the Slopes app by its clock time and vertical. Two rows sharing a
-   name is the entire signal — blank is a fine answer for anything he doesn't remember. Then
-   `Tools/label.py --score` prints whether shape separates same-piste from different-piste pairs,
-   and **deliberately does not choose a threshold if they overlap** — that overlap would itself be
-   the finding (R20).
+1. **⬅ DONE in S15b — all 24 labelled.** See the S15b section above for what they said.
 2. **Port `liftid.py` to Swift** once the clustering has a second resort under it, the same way
    `detect.py` was: prototype in Python, validate, then port.
 
