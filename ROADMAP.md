@@ -5,7 +5,68 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-04, S16)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-04, S17)
+
+### 🟢 S17 — THE HELD-OUT DAY. S16's rule predicted, and the R32 control replicated.
+
+`Data/fixtures/2026-09-04_portillo_s5.jsonl` — 20 runs, **4,509 m**, 23.66 km, 6 h 56 m, clean
+close, 0.94 Hz GPS, 626,414 IMU samples at 100.4% coverage with no gap over 0.2 s. Slopes exported
+the same day (`Data/comparisons/slopes_2026-09-04/`). **This is the fourth graded day S16 asked
+for, and it is the first that is genuinely held out:** every threshold in the pipeline was frozen,
+tested and installed on the phone *before* it was skied, so these grades are a prediction, not a
+fit. Nothing was tuned on it in this session.
+
+| S16 built the rule on 3 days | it predicted on day 4 |
+|---|---|
+| run end **+65 s** → +21 s after the trim | **+24 s** mean, **+0 s median**, late on 10/20 |
+| R32 control, distance over Slopes' windows | **+0.3%** (S16 measured +0.1%) |
+| R32 control, vertical over Slopes' windows | **−2.8%** (S16 measured −3.0%) |
+
+Day totals vs Slopes: vertical **−1.4%**, distance **−4.6%**, **20 runs vs 20**. Across all four
+days, 43 graded runs: vertical **+0.63%**, distance **−0.27%**, top speed **−1.78%**.
+**Do not quote those means without the per-day line** — distance runs −2.0 / +0.9 / +2.5 / −4.6%
+and cancels (R28). Swift == Python bit-for-bit on all 20 runs (`replay.sh`); the day is pinned as
+`portilloS5`, mutation-checked, **27/27 tests**.
+
+### 🟢 S17 — fixing one boundary promoted the other, and `Tools/runup.py` says LEAVE IT ALONE
+
+With the end fixed, the **run START** is now the larger boundary error: **+21.3 s later than
+Slopes, later on 34 of 43 runs** — one-directional, so structural, the identical shape that made
+the end worth chasing. On day 4 it is **+34 s, later on 17 of 20**, and that day's distance reads
+−4.6% over our windows against +0.3% over Slopes' own. So the obvious move was to loosen the
+leading-plateau trim (S7/A19).
+
+**`Tools/runup.py` (new) — the mirror of `runout.py` — read what is inside those seconds first,
+and the answer is that none of them is skiing:**
+
+| 34 heads | |
+|---|---|
+| duration | mean **37 s**, median 26 s, worst 160 s |
+| vertical they hold | mean **2.5 m**, total **84 m** |
+| distance they hold | mean **64 m**, total **2,173 m** |
+| already moving (≥ 8 km/h) | **17 / 34** |
+| already descending (≥ 5 m) | **2 / 34** |
+| **both — i.e. real run** | **0 / 34** |
+
+**⇒ The head is horizontal motion with no descent: skating and traversing off the lift towards the
+run entrance, at 5–17 km/h across flat ground.** Slopes counts that as run distance; we do not,
+and S7/A19 decided not to on purpose after standing-at-the-top time put our ski time 33% over
+Slopes'. **This is a definitional difference, not a measurement error.** The arithmetic agrees
+with the decision, exactly as it did at the other end: restoring the heads moves distance from
+**−967 m to +1,207 m** and vertical from **−43 m to +41 m** — past Slopes, not onto it.
+
+**⇒ And the more valuable consequence: the vertical residual is now cornered.** The heads hold
+84 m of vertical and the tails 63 m, against a day-scale deficit of tens of metres — so **neither
+boundary can explain −2.8%**. S16 proved the end was not the cause; this proves the start is not
+either. **The −3% vertical inside Slopes' own windows is a pure measurement question**, replicated
+on four days and 43 runs, and it is the only accuracy item still open.
+**Still do not retune it on the top-speed smoothing coincidence** (A18's lesson).
+
+### 🔴 Open after S17
+1. **Why vertical reads ~3% low inside Slopes' own windows.** The one open accuracy item.
+   Boundary is ruled out at both ends. Next probe is the barometer→altitude path itself, compared
+   against Slopes' `GPS.csv` altitude column over the same fixes — not a retune.
+2. **Snow runs out ~2026-09-07.** Any further capture has days left; desk work does not.
 
 ### 🟢 S16 — the two accuracy residuals were never one problem, and one of them isn't ours
 

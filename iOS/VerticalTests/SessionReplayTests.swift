@@ -135,6 +135,36 @@ struct SessionReplayTests {
         #expect(s.imuMaxGapS < 2)
     }
 
+    @Test("2026-09-04: twenty runs, and the first day the pipeline never saw before it was skied")
+    func portilloS5() throws {
+        // THE HELD-OUT DAY. Every rule that measures this file — the hAcc speed gate, the descent
+        // merge, the leading-plateau start, the false-top merge, the distance decimation and S16's
+        // runout trim — was frozen, tested and installed on the phone BEFORE 2026-09-04 was skied.
+        // The three earlier fixtures all fed some threshold in that list; this one fed none, so it
+        // is the only fixture whose grades are a prediction rather than a fit (R5).
+        //
+        // It predicted well. Against `4 September 2026 - Portillo.slopes`: 20 runs to Slopes' 20,
+        // day vertical -1.4%, day distance -4.6%, and the run end — the number S16 shipped a rule
+        // for — lands at +24 s mean, +0 s median, late on 10 of 20, against the +65 s it was built
+        // to fix on the tuning days. The R32 control replicates too: measured over Slopes' own
+        // windows this day reads distance +0.3% and vertical -2.8% (S16 saw +0.1% / -3.0%).
+        let s = try summarize(Fixtures.portilloS5)
+        #expect(s.runs.count == 20)
+        #expect(abs(s.descentM - 4509) < 1)
+        #expect(abs(s.descentDistanceM - 23_660) < 20)
+        #expect(s.closedCleanly)
+
+        // No multipath burst survived the gate this day — A18's precondition, as on 2026-09-02.
+        #expect(abs(s.maxSpeedMS * 3.6 - 75.7) < 0.1)
+        #expect(s.maxSpeedUngatedMS <= s.maxSpeedMS)
+
+        // Seven hours of 25 Hz device motion. The six-hour claim pinned by `portilloS3` was the
+        // longest evidence background delivery had; this is the longest it has now.
+        #expect(s.imuCount == 626_414)
+        #expect(s.imuCoverage > 0.99)
+        #expect(s.imuMaxGapS < 2)
+    }
+
     @Test("Per-run distance and top speed, graded against Slopes' own export")
     func perRunDistanceAndTopSpeed() throws {
         // Golden numbers for the run-by-run stats added in S14, pinned on the best-graded day.

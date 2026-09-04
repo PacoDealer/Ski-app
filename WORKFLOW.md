@@ -319,3 +319,28 @@ evidence of the negative state. Flipped, so missing speed counts as *moving* and
 a no-op on a run with no GPS, the fixtures moved by 0.11% and the failure mode became "keeps the
 old behaviour" instead of "silently eats real vertical". Note which half of this the real data
 could and could not test: three ski days could never have found it. *(S16.)*
+
+**R34 — Fixing one end of a boundary promotes the other end; re-grade both before believing the
+improvement.** S16 trimmed the run end from **+65 s to +21 s**, and the day-total grades duly
+improved. What that hid is that the **start** was then the larger error: **+21.3 s late, later on
+34 of 43 runs**, and on the held-out day **+34 s, later on 17 of 20** — costing that day 4.9% of
+its distance against a measurement that is exact over Slopes' own windows. The start had been
+sitting at ~26 s the whole time and was reported as "unchanged", which read as *fine* rather than
+as *now the biggest one*. A boundary has two ends and one of them is always the worst; a fix at
+either end is only finished when both have been re-graded, signed. *(S17.)*
+
+**R34b — Ask what is in the seconds at BOTH ends before touching either rule; the answer can
+differ in kind, not just in size.** `runout.py` found the tail was dead time — 3.3 km/h, mostly
+neither moving nor descending — and the fix was to cut it. Running the mirror analysis on the head
+(`runup.py`) found something else entirely: **17 of 34 heads are moving at 5–17 km/h, but only 2 of
+34 are descending, and 0 of 34 are doing both.** That is not the detector failing to notice a
+start; it is skating and traversing off the lift across flat ground, which S7/A19 deliberately
+excluded from run time. Same symptom (our boundary disagrees with Slopes'), same one-directional
+signature, opposite verdict: **cut the tail, keep the head.** The symmetric fix would have been
+wrong, and the arithmetic that says so is the same one S16 used — restoring the heads moves
+distance from **−967 m to +1,207 m**, past the reference rather than onto it.
+
+**And the finding that outlives both:** the heads hold **84 m** of vertical and the tails **63 m**,
+so **neither boundary can account for the −3% vertical measured inside Slopes' own windows**. Two
+sessions of boundary work have not moved it, which is what promotes it from "probably
+segmentation" to a measurement question worth opening the barometer path for. *(S17.)*

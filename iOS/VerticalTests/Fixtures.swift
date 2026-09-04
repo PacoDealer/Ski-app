@@ -48,6 +48,11 @@ enum Fixtures {
     /// higher-top merge rule ship (R5 wanted a third graded day). It also carries a 2 h 55 m midday
     /// break that Slopes had to mark `ignore` and our segmenter simply reports as no runs.
     static let portilloS4 = day("2026-09-03_portillo_s4")
+    /// 2026-09-04: the biggest day and the only **held-out** one — every rule in the pipeline was
+    /// frozen and shipped before it was skied, so its grades are the first that were not tuned on.
+    /// Twenty runs to Slopes' twenty, 4,509 m over 6 h 56 m, and the S16 runout trim lands the run
+    /// end at +24 s mean / **+0 s median** against the +65 s it was built to fix. See S17.
+    static let portilloS5 = day("2026-09-04_portillo_s5")
 
     /// The byte offset the cable stopped at, rounded down to the last complete line.
     static let devicectlPrefixBytes = 39_998_540
