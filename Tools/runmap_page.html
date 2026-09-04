@@ -1,0 +1,287 @@
+<title>Portillo Run Labeller</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f2f4f7; --panel:#ffffff; --sunk:#e7ebf1; --line:#cfd7e2;
+  --ink:#161c26; --ink-2:#4c5769; --ink-3:#7d8798;
+  --accent:#d9a326;            /* the hotel yellow, the one bold colour */
+  --accent-ink:#7a5a08;
+  --compare:#1f7a8c;           /* the second slot, cold to the accent's warm */
+  --track:#8e9bad; --lift:#b3bdcb; --lift-on:#5d6a7d;
+  --good:#2f7d51; --warn:#b4531f;
+  --r:3px;
+}
+:root:not([data-theme="light"]){ @media (prefers-color-scheme: dark){
+  --ground:#10141b; --panel:#171d26; --sunk:#0c1016; --line:#2a3341;
+  --ink:#e8edf4; --ink-2:#a3aebd; --ink-3:#6d7889;
+  --accent:#f0bc47; --accent-ink:#f5d488;
+  --compare:#4fb3c7; --track:#5b6879; --lift:#3a4553; --lift-on:#8492a3;
+  --good:#5cbf87; --warn:#e08b52;
+}}
+:root[data-theme="dark"]{
+  --ground:#10141b; --panel:#171d26; --sunk:#0c1016; --line:#2a3341;
+  --ink:#e8edf4; --ink-2:#a3aebd; --ink-3:#6d7889;
+  --accent:#f0bc47; --accent-ink:#f5d488;
+  --compare:#4fb3c7; --track:#5b6879; --lift:#3a4553; --lift-on:#8492a3;
+  --good:#5cbf87; --warn:#e08b52;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);
+  font:400 14px/1.55 Archivo,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;padding:28px 26px 60px;max-width:1320px;margin:0 auto}
+h1{font:600 27px/1.15 Archivo,sans-serif;margin:0 0 6px;letter-spacing:-.015em;text-wrap:balance}
+.sub{color:var(--ink-2);max-width:66ch;margin:0 0 22px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.eyebrow{font:600 10.5px/1 "Archivo Narrow",Arial,sans-serif;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3)}
+
+/* lift tabs */
+.lifts{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 20px;padding:0;list-style:none}
+.lifts button{font:500 13px Archivo,sans-serif;color:var(--ink-2);background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r);padding:7px 13px;cursor:pointer;
+  display:flex;align-items:baseline;gap:8px}
+.lifts button:hover{border-color:var(--lift-on)}
+.lifts button[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.lifts .n{font-family:"IBM Plex Mono",monospace;font-size:11px;opacity:.65}
+.src{font:500 9.5px/1 "Archivo Narrow",sans-serif;letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 4px;border-radius:2px;background:var(--sunk);color:var(--ink-3)}
+.lifts button[aria-pressed="true"] .src{background:rgba(255,255,255,.16);color:inherit}
+
+.wrap{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px;align-items:start}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.panel > header{padding:13px 15px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+
+#map{display:block;width:100%;height:auto;background:var(--sunk)}
+.verdict{padding:12px 15px;border-top:1px solid var(--line);display:flex;
+  align-items:baseline;gap:10px;flex-wrap:wrap;min-height:46px}
+.verdict b{font:600 19px "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.hint{color:var(--ink-3)}
+
+/* thumbnails */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;padding:15px}
+.thumb{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);
+  padding:8px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:6px;
+  font:inherit;color:inherit}
+.thumb:hover{border-color:var(--lift-on)}
+.thumb:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.thumb[data-slot="a"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.thumb[data-slot="b"]{border-color:var(--compare);box-shadow:inset 0 0 0 1px var(--compare)}
+.thumb svg{display:block;width:100%;height:auto;background:var(--sunk);border-radius:2px}
+.tmeta{display:flex;justify-content:space-between;align-items:baseline;gap:6px;
+  font-size:11px;color:var(--ink-3)}
+.tid{font:500 12px "IBM Plex Mono",monospace;color:var(--ink)}
+.pin{width:100%;font:400 12px Archivo,sans-serif;color:var(--ink);background:var(--sunk);
+  border:1px solid transparent;border-radius:2px;padding:4px 6px}
+.pin::placeholder{color:var(--ink-3)}
+.pin:focus{outline:none;border-color:var(--accent);background:var(--panel)}
+.pin[data-filled="1"]{border-color:var(--good);color:var(--ink)}
+
+.out{margin-top:22px}
+.out textarea{width:100%;min-height:120px;background:var(--sunk);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;
+  font:400 12px/1.6 "IBM Plex Mono",monospace;resize:vertical}
+.foot{color:var(--ink-3);font-size:12.5px;margin-top:10px;max-width:72ch}
+.foot code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  background:var(--sunk);padding:1px 4px;border-radius:2px}
+@media (prefers-reduced-motion:no-preference){
+  #map path,.thumb{transition:opacity .12s linear,border-color .12s linear}
+}
+</style>
+<h1>Portillo Run Labeller</h1>
+<p class="sub">Twenty-four recorded descents over three days, grouped by the lift that carried them
+up. Pick two off the same lift and the map draws them together, so &ldquo;is this the same piste?&rdquo;
+becomes something you look at rather than remember. The number under the map is what the shape
+metric scores that pair — your answer is the one that decides whether it means anything.</p>
+
+<ul class="lifts" id="lifts"></ul>
+
+<div class="wrap">
+  <section class="panel">
+    <header>
+      <span class="eyebrow">Overlay &mdash; <span id="mapLift"></span></span>
+      <span class="eyebrow" id="mapScale"></span>
+    </header>
+    <svg id="map" viewBox="0 0 600 520" role="img" aria-label="Recorded ski tracks at Portillo"></svg>
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+  <section class="panel">
+    <header>
+      <span class="eyebrow">Descents &mdash; click two to compare</span>
+      <span class="eyebrow" id="count"></span>
+    </header>
+    <div class="grid" id="grid"></div>
+  </section>
+</div>
+
+<section class="out">
+  <span class="eyebrow">Labels so far</span>
+  <textarea id="out" readonly aria-label="Labels in CSV form"></textarea>
+  <p class="foot">Runs sharing a name are the entire signal — anything recognisable works, and blank
+  is a fine answer. Paste this back into the session, or into <code>Data/labels/runs.csv</code>, and
+  <code>Tools/label.py --score</code> will say whether shape separates same-piste pairs from
+  different-piste ones. If it doesn't separate, that is the finding and no threshold gets picked.</p>
+</section>
+
+<script>
+const DATA = __DATA__;
+const NAMED_BY = {"Las Lomas":"you","Plateau":"you","La Laguna":"osm","Juncalillo":"osm","Los Canarios":"osm"};
+const ORDER = ["Las Lomas","Plateau","La Laguna","Juncalillo","Los Canarios"];
+const KEY = "portillo-piste-labels-v2";   // v1 was keyed on ids that collided
+
+let labels = Object.assign({}, DATA.labels);   // what is already in Data/labels/pistes.json
+try { Object.assign(labels, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(labels)); } catch (e) {} };
+
+const byLift = {};
+DATA.runs.forEach(r => (byLift[r.lift] = byLift[r.lift] || []).push(r));
+const lifts = ORDER.filter(n => byLift[n]);
+let current = lifts[0], slotA = null, slotB = null;
+
+const pairScore = (x, y) => DATA.pairs[x + "|" + y] ?? DATA.pairs[y + "|" + x] ?? null;
+
+function bounds(list, pad) {
+  const xs = [], ys = [];
+  list.forEach(r => r.pts.forEach(p => { xs.push(p[0]); ys.push(p[1]); }));
+  const b = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+  const w = b.x1 - b.x0, h = b.y1 - b.y0, m = Math.max(w, h) * pad;
+  return { x0: b.x0 - m, x1: b.x1 + m, y0: b.y0 - m, y1: b.y1 + m };
+}
+function fit(b, W, H) {
+  const s = Math.min(W / (b.x1 - b.x0), H / (b.y1 - b.y0));
+  const ox = (W - (b.x1 - b.x0) * s) / 2, oy = (H - (b.y1 - b.y0) * s) / 2;
+  return { s, px: p => [(p[0] - b.x0) * s + ox, (p[1] - b.y0) * s + oy] };
+}
+const path = (pts, f) => pts.map((p, i) => (i ? "L" : "M") + f.px(p).map(v => v.toFixed(1)).join(" ")).join("");
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function drawMap() {
+  const runs = byLift[current];
+  const f = fit(bounds(runs, 0.09), 600, 520);
+  const near = DATA.lifts.filter(w => {
+    const c = w.pts.map(f.px);
+    return c.some(p => p[0] > -60 && p[0] < 660 && p[1] > -60 && p[1] < 580);
+  });
+  let s = "";
+  near.forEach(w => {
+    const on = w.name === current;
+    s += `<path d="${path(w.pts, f)}" fill="none" stroke="var(--${on ? "lift-on" : "lift"})"
+      stroke-width="${on ? 2 : 1}" stroke-dasharray="${on ? "" : "3 4"}" stroke-linecap="round"/>`;
+    const m = f.px(w.pts[Math.floor(w.pts.length / 2)]);
+    if (m[0] > 4 && m[0] < 596 && m[1] > 10 && m[1] < 512)
+      s += `<text x="${m[0].toFixed(1)}" y="${(m[1] - 6).toFixed(1)}" fill="var(--${on ? "lift-on" : "lift"})"
+        font-family="Archivo Narrow, sans-serif" font-size="10.5" font-weight="600"
+        letter-spacing="1.1" text-anchor="middle">${esc(w.name.toUpperCase())}</text>`;
+  });
+  const draw = (r, stroke, w, o) =>
+    `<path d="${path(r.pts, f)}" fill="none" stroke="${stroke}" stroke-width="${w}"
+      stroke-linejoin="round" stroke-linecap="round" opacity="${o}"/>`;
+  const dim = slotA || slotB;
+  runs.forEach(r => {
+    if (r.id === slotA || r.id === slotB) return;
+    s += draw(r, "var(--track)", 1.4, dim ? 0.2 : 0.62);
+  });
+  runs.forEach(r => {
+    if (r.id === slotB) s += draw(r, "var(--compare)", 2.6, 1);
+    if (r.id === slotA) s += draw(r, "var(--accent)", 2.6, 1);
+  });
+  const bar = 200 * f.s;
+  s += `<g transform="translate(18,496)"><path d="M0 0 H${bar.toFixed(1)}" stroke="var(--ink-3)"
+    stroke-width="1.2"/><path d="M0 -3 V3 M${bar.toFixed(1)} -3 V3" stroke="var(--ink-3)" stroke-width="1.2"/>
+    <text x="${(bar / 2).toFixed(1)}" y="-6" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace"
+    font-size="10" text-anchor="middle">200 m</text></g>`;
+  document.getElementById("map").innerHTML = s;
+  document.getElementById("mapLift").textContent = current;
+  document.getElementById("mapScale").textContent = byLift[current].length + " descents";
+}
+
+function drawGrid() {
+  const runs = byLift[current];
+  const b = bounds(runs, 0.12);            // one scale for every thumbnail — that is the comparison
+  const f = fit(b, 116, 92);
+  document.getElementById("grid").innerHTML = runs.map(r => {
+    const slot = r.id === slotA ? "a" : r.id === slotB ? "b" : "";
+    const col = slot === "a" ? "var(--accent)" : slot === "b" ? "var(--compare)" : "var(--track)";
+    const n = r.near[0];
+    return `<div class="thumb" data-slot="${slot}" data-id="${esc(r.id)}">
+      <svg viewBox="0 0 116 92" role="img" aria-label="Track for ${esc(r.id)}">
+        <path d="${path(r.pts, f)}" fill="none" stroke="${col}" stroke-width="${slot ? 2.2 : 1.5}"
+          stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <div class="tmeta"><span class="tid">${esc(r.id)}</span><span class="mono">${r.drop} m</span></div>
+      <div class="tmeta"><span>${esc(r.date.slice(5))} ${esc(r.start)}</span>
+        <span class="mono">${n ? n.m + " m" : "&mdash;"}</span></div>
+      <input class="pin" placeholder="piste name" value="${esc(labels[r.id] || "")}"
+        data-filled="${labels[r.id] ? 1 : 0}" data-id="${esc(r.id)}" aria-label="Piste name for ${esc(r.id)}">
+    </div>`;
+  }).join("");
+  document.getElementById("count").textContent = runs.length + " on " +
+    new Set(runs.map(r => r.date)).size + " days";
+}
+
+function drawVerdict() {
+  const v = document.getElementById("verdict");
+  if (!slotA) { v.innerHTML = '<span class="hint">Click a descent to put it on the map.</span>'; return; }
+  if (!slotB) {
+    v.innerHTML = `<span class="eyebrow" style="color:var(--accent-ink)">A</span>
+      <span class="mono">${esc(slotA)}</span>
+      <span class="hint">— click a second one to compare.</span>`;
+    return;
+  }
+  const m = pairScore(slotA, slotB);
+  const verdict = m == null ? "" : m < 60 ? "tight — same line"
+    : m < 140 ? "close — could be the same piste skied differently"
+    : "far apart — probably two pistes";
+  v.innerHTML = `<span class="eyebrow" style="color:var(--accent-ink)">A</span>
+    <span class="mono">${esc(slotA)}</span>
+    <span class="eyebrow" style="color:var(--compare)">B</span>
+    <span class="mono">${esc(slotB)}</span>
+    <b style="margin-left:auto">${m == null ? "&mdash;" : m + " m"}</b>
+    <span class="hint">${verdict}</span>`;
+}
+
+function drawOut() {
+  const rows = DATA.runs.filter(r => labels[r.id])
+    .map(r => `${r.date},${r.id},${r.lift},${labels[r.id]}`);
+  document.getElementById("out").value = rows.length
+    ? "date,our_run,lift,piste\n" + rows.join("\n")
+    : "date,our_run,lift,piste\n(nothing named yet)";
+}
+
+document.getElementById("lifts").innerHTML = lifts.map(n =>
+  `<li><button aria-pressed="${n === current}" data-lift="${esc(n)}">${esc(n)}
+    <span class="n">&times;${byLift[n].length}</span>
+    <span class="src">${NAMED_BY[n] === "you" ? "yours" : "osm"}</span></button></li>`).join("");
+
+document.getElementById("lifts").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  current = b.dataset.lift; slotA = slotB = null;
+  document.querySelectorAll("#lifts button").forEach(x =>
+    x.setAttribute("aria-pressed", x.dataset.lift === current));
+  render();
+});
+
+document.getElementById("grid").addEventListener("click", e => {
+  if (e.target.classList.contains("pin")) return;
+  const t = e.target.closest(".thumb"); if (!t) return;
+  const id = t.dataset.id;
+  if (id === slotA) slotA = null;
+  else if (id === slotB) slotB = null;
+  else if (!slotA) slotA = id;
+  else slotB = id;
+  render();
+});
+
+document.getElementById("grid").addEventListener("input", e => {
+  if (!e.target.classList.contains("pin")) return;
+  const v = e.target.value.trim();
+  if (v) labels[e.target.dataset.id] = v; else delete labels[e.target.dataset.id];
+  e.target.dataset.filled = v ? 1 : 0;
+  save(); drawOut();
+});
+
+function render() { drawMap(); drawGrid(); drawVerdict(); drawOut(); }
+render();
+</script>

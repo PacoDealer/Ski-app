@@ -261,3 +261,29 @@ split, plus two rides Slopes' own database failed to identify that we placed any
 Martin's 18 s glove-tap precision and n=1 attention; an external database has neither problem.
 Before building a labelling exercise, read the reference export attribute by attribute and check
 whether the answer is already sitting in it. *(S15.)*
+
+**R30 — An identifier a human types against must be unique, and duplicate-check it before you ask.**
+The run-labelling page keyed every descent as `09-01 r1`, built from the date and the run index. It
+is not unique: 1 September is **two** recording sessions, so `09-01 r1` named both the 10:39 descent
+off La Laguna and the 12:48 descent off Plateau. The page stored labels under that key, so each of
+the three colliding pairs silently overwrote the other, and Martin's 1 September answers came back
+identical in pairs and unusable — his work, wasted, by a key. A `collections.Counter` over the
+labels would have caught it in one line before the sheet was ever handed over. Any id shown to a
+person, or used as a storage key, gets that check at the point it is generated. *(S15b.)*
+
+**R31 — When the labels come back and disagree with the metric, read the disagreement before
+touching the metric.** Martin's labels put a pair he named identically at 59 m and a pair he
+described differently at 43 m, so no threshold on mean deviation reproduces his answers. The first
+instinct is that the metric needs tuning. It does not: he had not written piste *names*, he had
+written *routes* — "Las Lomas, a Canarios, hasta el hotel" — because at Portillo a descent links
+several pistes, and two descents can share five eighths of their line and part at the bottom.
+Splitting the separation into eighths along the track makes all four cases legible where the mean
+ranked two of them backwards. The generalisable form: a label set that contradicts your metric is
+usually telling you the *unit* is wrong, not the threshold. *(S15b.)*
+
+**R31b — Normalise free text before comparing it, and distrust a verdict that improves.** The first
+scoring run compared labels with `==`, so "Plateau a lomas" and "Plateau a Lomas" were two different
+pistes. That removed the single overlapping pair and printed **SEPARATED**, an empty 19 m band, and
+a threshold of 34 m — a confident, shippable, wrong number, produced by a capital L. The tool
+existed specifically to refuse invented thresholds and it nearly emitted one. When a comparison
+suddenly reports a cleaner result than the data felt like, suspect the comparison. *(S15b.)*

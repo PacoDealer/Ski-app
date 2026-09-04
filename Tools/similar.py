@@ -86,7 +86,8 @@ def load_runs():
             track = resample([(l["lat"], l["lon"]) for l in locs
                               if r["start"] <= l["dt"] <= r["end"]])
             if track:
-                runs.append({"label": f"{name[5:10]} r{i}", "drop": r["drop"], "track": track})
+                runs.append({"label": f"{name[5:10]} {name.split('_')[-1]} r{i}",
+                              "drop": r["drop"], "track": track})
     return runs
 
 

@@ -82,7 +82,7 @@ def load_day(name):
             tr = track(s["start"], s["end"])
             if tr:
                 out.append({"file": name, "day": _day(name), "n": i,
-                            "label": f"{_day(name)[5:]} {kind}{i}",
+                            "label": f"{_day(name)[5:]} {name.split('_')[-1]} {kind}{i}",
                             "start": s["start"], "end": s["end"],
                             "clock": clock(s["start"]), "clock_end": clock(s["end"]),
                             "drop": s.get("drop", s.get("gain", 0.0)), "track": tr})

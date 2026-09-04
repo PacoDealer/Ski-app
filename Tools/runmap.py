@@ -44,7 +44,7 @@ def full_tracks():
         runs = [r for t, a in split_at_seams([x[0] for x in baro], [x[1] for x in baro], seams)
                 for r in segment_runs(t, a)]
         for i, r in enumerate(runs, 1):
-            out[f"{name[5:10]} r{i}"] = [(l["lat"], l["lon"])
+            out[f"{name[5:10]} {name.split('_')[-1]} r{i}"] = [(l["lat"], l["lon"])
                                          for l in locs if r["start"] <= l["dt"] <= r["end"]]
     return out
 
@@ -87,7 +87,13 @@ def build():
             if a["lift"] == b["lift"]:
                 pairs[f"{a['label']}|{b['label']}"] = round(deviation(a, b)[0])
 
+    labels = {}
+    lp = ROOT / "Data" / "labels" / "pistes.json"
+    if lp.exists():
+        labels = json.loads(lp.read_text())
+
     return {
+        "labels": labels,
         "pairs": pairs,
         "lifts": [{"name": w["name"], "kind": w["kind"], "pts": [project(p) for p in w["pts"]]}
                   for w in aerial],
@@ -100,8 +106,13 @@ def build():
     }
 
 
+TEMPLATE = Path(__file__).parent / "runmap_page.html"
+
+
 if __name__ == "__main__":
     data = build()
-    out = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "Data" / "labels" / "map_data.json"
-    out.write_text(json.dumps(data))
-    print(f"{len(data['runs'])} runs, {len(data['lifts'])} aerialways -> {out}")
+    out = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "Data" / "labels" / "runmap.html"
+    page = TEMPLATE.read_text().replace("__DATA__", json.dumps(data, separators=(",", ":")))
+    out.write_text(page)
+    print(f"{len(data['runs'])} runs, {len(data['lifts'])} aerialways, "
+          f"{len(data['labels'])} labels -> {out}")
