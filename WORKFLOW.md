@@ -307,3 +307,15 @@ mean speed **3.3 km/h**, and **12 of 21 tails neither moving nor descending**. T
 not wrong in principle — a real runout *is* skiing — it was simply never checked against what the
 seconds contained. Label a choice deliberate and you exempt it from grading; grade it anyway.
 *(S16.)*
+
+**R33 — When a gate reads a signal that can be missing, decide what MISSING means, and default to
+the side that cannot destroy data.** The runout trim asks "was he still moving?" from GPS. The
+first version treated *no usable fix* as **not moving**, which is the reading that trims. On the
+real fixtures it looked perfect — GPS is present all day at Portillo, so the branch was never
+taken, and every graded number improved. The synthetic segmentation tests took it: a continuous
+ramp to the bottom with no GPS at all had its last 4 m cut off, because inside the hysteresis band
+every sample looks stationary when there is nothing to say otherwise. Absence of evidence is not
+evidence of the negative state. Flipped, so missing speed counts as *moving* and the rule becomes
+a no-op on a run with no GPS, the fixtures moved by 0.11% and the failure mode became "keeps the
+old behaviour" instead of "silently eats real vertical". Note which half of this the real data
+could and could not test: three ski days could never have found it. *(S16.)*

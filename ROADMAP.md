@@ -50,10 +50,47 @@ Slopes' top speed sits +3.59% above ours and S12c/S14b called that smoothing; a 
 the same sign and size on altitude is a coincidence worth checking, **not a mechanism to quote**
 (A18's lesson). **Do not retune vertical on it.**
 
-**➡️ Next:** the trim rule the tails justify is *conditional*, not blanket — end the run when the
-skier stops descending **and** stops moving, which is 12 of 21 tails and leaves the 2 genuinely
-still-moving ones alone. Size it with `runout.py` before writing it, then grade it, then port to
-`LiveMetrics` and prove `replay.sh` still agrees to the decimal.
+### ✅ S16 — and the rule is built, graded, ported and on the phone
+
+`Tools/trimend.py` graded eleven candidate end rules. A purely barometric trailing-plateau trim —
+the mirror of `descent_start` — cuts every tail including the two still genuinely moving. **Worth
+recording on its own: S7 rejected that rule for undershooting Slopes' ski time by 13%, measured on
+one day. Across three days it undershoots by 1.3%. The rejection was right for the wrong size.**
+
+The rule adopted is **`descent_end`: walk back from the altitude minimum while the skier is inside
+the floor band AND not moving**, where movement must be *sustained* — the median gated speed over
+a ±10 s window — because the naive form stops at the first sample over the gate and one noisy fix
+preserves the whole tail. Sweeping 7–12 km/h against 6–16 s windows is a **flat plateau**, so 8 km/h
+and 10 s sit mid-plateau rather than fitted to an edge (`liftid.py`'s 140 m discipline), and the
+existing 3 m hysteresis is reused so only one new pair of numbers enters the code.
+
+| graded on 3 days / 23 runs | before | after |
+|---|---|---|
+| vertical | +2.87% | **+1.38%** |
+| distance | +5.75% | **+2.61%** |
+| run end | +65 s, late on 21/23 | **+21 s, late on 14/23** |
+| top speed | −3.59% | −3.59% *(unchanged)* |
+| run start | 26 s | 26 s *(unchanged)* |
+
+Top speed and run start being untouched is the check that the trim clips no peaks and leaves the
+leading-plateau rule alone.
+
+**🔴 The synthetic tests caught a real defect the ski days never could (R33).** The first version
+read *no usable fix* as **not moving** — the reading that trims. Portillo has GPS all day, so that
+branch was never taken and every graded number improved; a continuous ramp to the bottom with no
+GPS at all, however, had its last 4 m cut off, because inside the hysteresis band every sample
+looks stationary when nothing says otherwise. Missing speed now counts as **moving**, so the rule
+is a no-op on a run with no GPS and keeps the old behaviour. Costs 0.11% on the real fixtures.
+
+**Verified:** `replay.sh` agrees Swift == Python on **all 24 runs** across the four ski fixtures,
+the stationary control still reports zero, and that comparison was itself mutation-checked (R22) by
+moving the Swift gate to 20 km/h — which it caught. **26/26 tests pass**, goldens updated with
+measured values. **Built and installed on the phone** (profile still valid to 2026-09-10 12:32 UTC).
+
+**➡️ Next:** the residual is now *measurement*, not segmentation — distance is +0.1% over Slopes'
+own windows, so what is left is the unexplained **−3.0% vertical inside those windows**. Do not
+retune it on the smoothing coincidence. A **4th graded day** (ski + `.slopes` export) is worth more
+than anything at the desk, and the snow runs out ~2026-09-07.
 
 ---
 
