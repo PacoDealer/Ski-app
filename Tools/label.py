@@ -143,13 +143,25 @@ def read_labels():
             name = (row.get("name  <-- FILL IN") or "").strip()
             if name:
                 lifts[row["lift"]] = name
-    if PISTES.exists():
-        runs.update(json.loads(PISTES.read_text()))
+    # The CSV sheet first, then `pistes.json` on top. **The order is deliberate and load-bearing:**
+    # the sheet is what Martin typed the first time, and `pistes.json` is where a *corrected* answer
+    # lands — the two disagree on exactly one run today, `09-01 s2 r1`, because he confirmed in S15b
+    # that "Plateau, que conecta con lomas hacia la silla de las lomas" and "Plateau a lomas" are the
+    # same run and they were merged (`33a962d`). Reading the sheet last would silently revert that.
+    #
+    # 🔴 S18: this loop used to key the CSV as `f"{row['date']} {row['our_run']}"` — e.g.
+    # "2026-09-01 09-01 s1 r1" — while every lookup uses the run label alone ("09-01 s1 r1"). **So
+    # every label typed into the sheet was silently discarded**, and only `pistes.json` was ever
+    # read. It went unnoticed because the two sources agree on 23 of 24 rows. That is R30's failure
+    # a second time (an identifier a human types against has to be the one the code looks up), and
+    # the same cost: work Martin did, thrown away without a word.
     if RUN_SHEET.exists():
         for row in csv.DictReader(open(RUN_SHEET)):
             piste = (row.get("piste  <-- FILL IN") or "").strip()
             if piste:
-                runs[f"{row['date']} {row['our_run']}"] = piste
+                runs[row["our_run"]] = piste
+    if PISTES.exists():
+        runs.update(json.loads(PISTES.read_text()))
     return lifts, runs
 
 
