@@ -88,6 +88,38 @@ struct RecoveryTests {
                                                 now: started.addingTimeInterval(120)) == nil)
     }
 
+    @Test("S18: the scan of a real day agrees with a full replay of the same file")
+    func recoveryScanMatchesAFullReplay() throws {
+        // Every other test here runs on a synthetic file of a few lines, which is why none of them
+        // ever exercised — or timed — the path that actually runs after a jetsam kill. This one
+        // uses a real recording, and checks the cheap byte probes against `SessionReplay`, which
+        // parses the same file properly with `JSONSerialization`. Two implementations, one answer.
+        let dir = try Fixtures.makeTempDirectory()
+        defer { Fixtures.remove(dir) }
+
+        // Named so it sorts as the newest, and stripped of its `end` record so it reads as a
+        // recording that died rather than one that finished.
+        let url = dir.appendingPathComponent("2026-09-01_100000_AAAAAAAA.jsonl")
+        let full = try String(contentsOf: Fixtures.portilloS1, encoding: .utf8)
+        let lines = full.split(separator: "\n", omittingEmptySubsequences: true)
+            .filter { !$0.contains(#""t":"end""#) }
+        try (lines.joined(separator: "\n") + "\n").write(to: url, atomically: true, encoding: .utf8)
+
+        let replay = try SessionReplay.summarize(url)
+        let found = try #require(SessionRecovery.findInterrupted(
+            in: dir, now: replay.startedAt!.addingTimeInterval(replay.duration + 60)))
+
+        // `SessionReplay` excludes the pre-start cached fixes from `locCount` and counts them
+        // separately; the recovery scan counts every `loc` line, so the two sides differ by
+        // exactly those.
+        #expect(found.locCount == replay.locCount + replay.staleFixCount)
+        #expect(found.baroCount == replay.baroCount)
+        #expect(found.markCount == replay.markCount)
+        #expect(found.startedAt == replay.startedAt)
+        #expect(abs(found.lastSampleAt.timeIntervalSince(found.startedAt) - replay.duration) < 0.001,
+                "the scan's clock lands on the last sample the replay saw")
+    }
+
     // MARK: - SampleWriter
 
     @Test("S4: reopening a recording appends to it — `createFile` truncates")

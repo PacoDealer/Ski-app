@@ -92,7 +92,11 @@ nonisolated struct SessionTrack {
                 out.append(p)
             }
         }
-        if let last = pts.last, out.count > 1, out[out.count - 1].dt != last.dt {
+        // "First and last always survive" was not quite true: an `out.count > 1` guard here also
+        // dropped the last point whenever *every* point sat within `minStepM` of the first, which
+        // is a short slow run rather than an impossible input. The `dt` test below is the only one
+        // needed — it already covers the single-point case, where first and last are the same fix.
+        if let last = pts.last, out[out.count - 1].dt != last.dt {
             out.append(last)
         }
         return out

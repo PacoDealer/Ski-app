@@ -75,80 +75,150 @@ nonisolated enum SessionRecovery {
     }
 
     /// One pass over the file. Full JSON decoding happens only for the header; every other line is
-    /// classified by a substring probe and read for `dt` alone.
+    /// classified by a byte probe and read for `dt` alone.
     ///
-    /// A full day is tens of thousands of lines and this runs on the launch path — possibly a
-    /// background launch with seconds of wall clock to work with — so it stays deliberately cheap.
+    /// **This runs synchronously inside `App.init()`**, before there is a screen — and on a
+    /// background relaunch after a jetsam kill there may never *be* one, with seconds of wall
+    /// clock to work with. So its cost is a correctness property, not a nicety, and it has to be
+    /// measured rather than asserted.
+    ///
+    /// It was measured, in S18, and the first version was not cheap at all: **4.3 s on a Mac** —
+    /// `-O`, warm page cache — for the 56 MB day-4 file, and a phone is slower than that. The
+    /// cause was not the file size but a per-line cost paid five times over: each line was
+    /// converted to a `String` by `value(of:)`, and `contains` called it once per candidate tag,
+    /// so the *largest* lines (a 1.6 kB IMU batch matches none of the four tags) paid the most.
+    /// Scanning the bytes instead, and classifying once, is the same rule at ~1/40th the cost.
+    /// The two are pinned together by `recoveryScanMatchesAFullReplay`, which cross-checks the
+    /// counts against `SessionReplay`'s independent parse of a real day.
     private static func scan(_ url: URL) -> Scan? {
         guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else { return nil }
 
         var header: Scan?
 
-        for slice in data.split(separator: 0x0A, omittingEmptySubsequences: true) {
-            let line = Data(slice)
+        // Explicitly the raw-buffer overload: `Data.withUnsafeBytes` also has a deprecated
+        // `UnsafePointer<T>` form, and an unannotated closure leaves the two ambiguous.
+        data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+            let bytes = raw.bindMemory(to: UInt8.self)
+            var i = bytes.startIndex
 
-            guard var scan = header else {
-                // The header is the first line and the only one worth decoding properly: without
-                // it we have no timeline to resume onto. Lines before it (there shouldn't be any)
-                // are skipped rather than treated as fatal.
-                let dec = JSONDecoder()
-                dec.dateDecodingStrategy = .iso8601
-                if let meta = try? dec.decode(MetaSample.self, from: line) {
-                    header = Scan(startedAt: meta.startedAt, sessionID: meta.sessionID)
+            while i < bytes.endIndex {
+                var j = i
+                while j < bytes.endIndex, bytes[j] != 0x0A { j += 1 }
+                let line = bytes[i..<j]
+                i = j + 1
+                if line.isEmpty { continue }
+
+                guard var scan = header else {
+                    // The header is the first line and the only one worth decoding properly:
+                    // without it we have no timeline to resume onto. Lines before it (there
+                    // shouldn't be any) are skipped rather than treated as fatal.
+                    let dec = JSONDecoder()
+                    dec.dateDecodingStrategy = .iso8601
+                    if let meta = try? dec.decode(MetaSample.self, from: Data(line)) {
+                        header = Scan(startedAt: meta.startedAt, sessionID: meta.sessionID)
+                    }
+                    continue
                 }
-                continue
+
+                // Classified once per line. The old form asked the same question up to four times.
+                if let kind = valueRange(of: Self.tKey, in: line) {
+                    if matches(kind, in: line, SampleKind.end.rawValue) {
+                        scan.closedCleanly = true
+                    } else if matches(kind, in: line, SampleKind.loc.rawValue) {
+                        scan.locCount += 1
+                    } else if matches(kind, in: line, SampleKind.baro.rawValue) {
+                        scan.baroCount += 1
+                    } else if matches(kind, in: line, SampleKind.mark.rawValue) {
+                        scan.markCount += 1
+                    }
+                }
+
+                // A line with no readable `dt` is the torn tail a power cut leaves behind. Not
+                // fatal: it just doesn't move the clock, and the writer closes it off before
+                // appending.
+                if let r = valueRange(of: Self.dtKey, in: line), let dt = double(r, in: line) {
+                    scan.maxDt = max(scan.maxDt, dt)
+                }
+
+                header = scan
             }
-
-            if contains(line, tag: SampleKind.end.rawValue) {
-                scan.closedCleanly = true
-            } else if contains(line, tag: SampleKind.loc.rawValue) {
-                scan.locCount += 1
-            } else if contains(line, tag: SampleKind.baro.rawValue) {
-                scan.baroCount += 1
-            } else if contains(line, tag: SampleKind.mark.rawValue) {
-                scan.markCount += 1
-            }
-
-            // A line with no readable `dt` is the torn tail a power cut leaves behind. Not fatal:
-            // it just doesn't move the clock, and the writer closes it off before appending.
-            if let dt = dt(in: line) { scan.maxDt = max(scan.maxDt, dt) }
-
-            header = scan
         }
 
         return header
     }
 
-    /// True when the line's `"t"` field is `tag`.
-    private static func contains(_ line: Data, tag: String) -> Bool {
-        value(of: "t", in: line) == tag
-    }
+    // MARK: - Byte probes
 
-    /// Pulls `dt` out without building a full object.
-    private static func dt(in line: Data) -> TimeInterval? {
-        value(of: "dt", in: line).flatMap(TimeInterval.init)
-    }
+    /// One line of the mapped file. Indices are absolute into the whole buffer.
+    private typealias Line = Slice<UnsafeBufferPointer<UInt8>>
 
-    /// Reads one top-level scalar out of a JSON line as text, tolerating whitespace around the
-    /// colon and returning string values unquoted.
+    private static let tKey = Array("\"t\"".utf8)
+    private static let dtKey = Array("\"dt\"".utf8)
+
+    /// The byte range of one top-level scalar's value, tolerating whitespace around the colon and
+    /// returning string values unquoted.
     ///
-    /// This is deliberately more forgiving than the files we write. `JSONEncoder` never emits a
-    /// space after a colon, so a literal `"t":"end"` search matches everything the app produces —
-    /// and then fails silently on a file that came from anywhere else, which is precisely how a
+    /// Deliberately more forgiving than the files we write. `JSONEncoder` never emits a space
+    /// after a colon, so a literal `"t":"end"` search matches everything the app produces — and
+    /// then fails silently on a file that came from anywhere else, which is precisely how a
     /// recovery check ends up quietly deciding that a finished session is still running. Being
     /// strict buys nothing here; being wrong costs a resume that shouldn't happen.
-    private static func value(of key: String, in line: Data) -> String? {
-        guard let text = String(data: line, encoding: .utf8),
-              let range = text.range(of: "\"\(key)\"") else { return nil }
+    private static func valueRange(of key: [UInt8], in line: Line) -> Range<Int>? {
+        guard var p = firstIndex(of: key, in: line) else { return nil }
+        while p < line.endIndex, line[p] == 0x20 { p += 1 }            // space
+        guard p < line.endIndex, line[p] == 0x3A else { return nil }   // ':'
+        p += 1
+        while p < line.endIndex, line[p] == 0x20 { p += 1 }
+        guard p < line.endIndex else { return nil }
 
-        var rest = Substring(text[range.upperBound...]).drop { $0 == " " }
-        guard rest.first == ":" else { return nil }
-        rest = rest.dropFirst().drop { $0 == " " }
-
-        if rest.first == "\"" {
-            return String(rest.dropFirst().prefix { $0 != "\"" })
+        if line[p] == 0x22 {                                           // '"'
+            p += 1
+            var q = p
+            while q < line.endIndex, line[q] != 0x22 { q += 1 }
+            return p..<q
         }
-        let scalar = rest.prefix { $0.isNumber || $0 == "." || $0 == "-" || $0 == "e" || $0 == "+" }
-        return scalar.isEmpty ? nil : String(scalar)
+        var q = p
+        while q < line.endIndex, isScalarByte(line[q]) { q += 1 }
+        return q > p ? p..<q : nil
+    }
+
+    /// Index just past `key`, or nil. `key` is short and the hit is usually early, so a plain
+    /// scan beats anything cleverer here.
+    private static func firstIndex(of key: [UInt8], in line: Line) -> Int? {
+        guard line.count >= key.count else { return nil }
+        let last = line.endIndex - key.count
+        var i = line.startIndex
+        while i <= last {
+            if line[i] == key[0] {
+                var k = 1
+                while k < key.count, line[i + k] == key[k] { k += 1 }
+                if k == key.count { return i + key.count }
+            }
+            i += 1
+        }
+        return nil
+    }
+
+    private static func isScalarByte(_ b: UInt8) -> Bool {
+        (b >= 0x30 && b <= 0x39)        // 0-9
+            || b == 0x2E || b == 0x2D   // . -
+            || b == 0x65 || b == 0x45   // e E
+            || b == 0x2B                // +
+    }
+
+    private static func matches(_ r: Range<Int>, in line: Line, _ s: String) -> Bool {
+        let want = Array(s.utf8)
+        guard r.count == want.count else { return false }
+        for (k, idx) in r.enumerated() where line[idx] != want[k] { return false }
+        return true
+    }
+
+    /// Parses the few bytes of a number. Only the value is converted, never the whole line —
+    /// which is the entire point of the rewrite above.
+    private static func double(_ r: Range<Int>, in line: Line) -> Double? {
+        var text = ""
+        text.reserveCapacity(r.count)
+        for idx in r { text.append(Character(UnicodeScalar(line[idx]))) }
+        return Double(text)
     }
 }

@@ -130,6 +130,11 @@ final class TrackRecorder {
         roughDescent = 0
         lastRelForDescent = nil
         MotionRecorder.sampleCount.withLock { $0 = 0 }
+        // Counted in a static, so without this a write failure in the morning's session was still
+        // showing its yellow "N samples failed to write to disk" banner over the afternoon's —
+        // which reads as *this* recording being damaged when it isn't. Reset with the rest of the
+        // per-session counters. Not reset on resume: there the file is the same one.
+        SampleWriter.failedWrites.withLock { $0 = 0 }
         metrics = LiveMetrics()
         lastError = nil
         resumedAfterInterruption = nil
