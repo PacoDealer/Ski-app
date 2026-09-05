@@ -26,9 +26,6 @@ final class TrackRecorder {
     /// the entire max-speed approach depends on, and it's absent indoors — this makes "is the GPS
     /// actually healthy?" answerable at a glance on the mountain instead of after a file pull.
     private(set) var dopplerValidCount = 0
-    private(set) var markCount = 0
-    private(set) var lastMarkLabel: String?
-    private(set) var lastMarkAt: Date?
     private(set) var authStatus: CLAuthorizationStatus = .notDetermined
     private(set) var altimeterAvailable = CMAltimeter.isRelativeAltitudeAvailable()
     /// True when the bundle can't legally record in the background, so the UI can say so plainly.
@@ -124,9 +121,6 @@ final class TrackRecorder {
         locCount = 0
         baroCount = 0
         dopplerValidCount = 0
-        markCount = 0
-        lastMarkLabel = nil
-        lastMarkAt = nil
         roughDescent = 0
         lastRelForDescent = nil
         MotionRecorder.sampleCount.withLock { $0 = 0 }
@@ -172,10 +166,7 @@ final class TrackRecorder {
         startedAt = found.startedAt
         locCount = found.locCount
         baroCount = found.baroCount
-        markCount = found.markCount
         dopplerValidCount = 0     // not recoverable from the scan; counts from here on
-        lastMarkLabel = nil
-        lastMarkAt = nil
         roughDescent = 0
         lastRelForDescent = nil
         // Live metrics count from here too. Everything skied before the interruption is in the
@@ -257,15 +248,9 @@ final class TrackRecorder {
         startedAt = nil
     }
 
-    /// Tags the current moment. These hand-placed markers are the ground truth that run/lift
-    /// segmentation gets validated against later — the most valuable thing in the file per byte.
-    func mark(_ label: String) {
-        guard isRecording else { return }
-        writer?.write(MarkSample(dt: elapsed, label: label))
-        markCount += 1
-        lastMarkLabel = label
-        lastMarkAt = Date()
-    }
+    // `mark(_:)` was removed with the tag buttons in S18 (R19). Nothing writes a `mark` record
+    // any more; `SessionRecovery`, `SessionReplay` and `analyze.py` all still read one, because the
+    // four recorded days contain them.
 
     func note(_ text: String) {
         guard isRecording else { return }

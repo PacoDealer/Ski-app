@@ -354,6 +354,22 @@ Both causes were ours, and one change fixes both (`similar.py: band_deviation`):
 **Sampling at absolute altitudes shared by both** fixes both — altitude is the one coordinate a
 skier cannot pad. The pair goes **142 m -> 19 m**, and stays 19 m even against the truncated half.
 
+> 🔴 **S18: `band_deviation` was never wired in, and scored across the whole label set it makes
+> classification WORSE.** Nothing imported it — `label.py`, `similar.py` and `runmap.py` all still
+> call `deviation`, and `load_runs` never even kept the altitude-bearing fixes it needs, so it was
+> not callable. Scored properly for the first time in S18, it does exactly what this paragraph
+> claims on the pair it was written for (142 → **19 m**) and tightens every same-piste pair
+> (11–142 m → **11–34 m**) — **and it collapses different-piste pairs too**, one from 673 m to
+> **13 m**. Mechanism: the shared band can be a thin slice near a common lift station, where every
+> route looks alike. Seven of the twelve false matches share only **10–50%** of the longer run's
+> altitude.
+>
+> **⇒ Coverage is not a detail, it is half the score.** A shared-segment comparison must report how
+> much the two descents actually share, not just how far apart they are where they do. The other
+> five false matches sit at 84–94% coverage and 22–27 m, so **S15b's conclusion still stands** —
+> geometry recovers the corridor, not the label. This is R31b a second time: the fix was validated
+> on the single pair that motivated it, and improved on that pair.
+
 **🔴 But it does not rescue the labels, and that is the honest result.** Every confirmed-same pair
 now sits at **11-34 m** — and the pairs he described *differently* sit at **25-37 m**. Still
 overlapping. Now we know why: off one lift at Portillo the descents genuinely share a corridor, and
@@ -388,11 +404,13 @@ descent — sorts his labels into three kinds of thing, and that is the actual f
 way because it owns a trail database where a run is an atom; ours are composed at ski time. **Not
 built — 24 labels, 6 same-name pairs, 3 days (R5).**
 
-🔴 **Two questions for Martin would settle the boundary**, because both disputed pairs may be
-language rather than geometry: (1) are "Plateau a lomas" and "Plateau, que conecta con lomas hacia
-la silla de las lomas" the same run described twice? — that pair scores **30 m** and is currently
-what sets the floor for "different". (2) Is **Juncalillo an area rather than one run**? The two he
-named that share only their first eighth.
+✅ **~~Two questions for Martin would settle the boundary.~~ BOTH ANSWERED, later in S15b — and
+this block stayed 🔴 for three sessions anyway (R37).** (1) "Plateau a lomas" and "Plateau, que
+conecta con lomas hacia la silla de las lomas" **are one run described twice** — merged in
+`33a962d`, which moved the different-name floor 30 → 43 m and took same-lift to 8/8. (2)
+**Juncalillo is one piste, not an area** — *"I was alone and did it faster on 1 Sep. I was with my
+beginner girlfriend on 3 Sep"*, plus a screenshot of the two tracks overlaid; that answer found two
+bugs of ours and produced `band_deviation` (`1f5c8db`). **Do not re-ask these.**
 
 🟢 **The lift key survived contact with the labels: 6/6 same-name pairs were also same-lift.**
 

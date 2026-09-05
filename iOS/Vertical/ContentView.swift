@@ -22,7 +22,6 @@ struct ContentView: View {
                     elapsedDisplay
                     headline
                     statsGrid
-                    if recorder.isRecording { markButtons }
                     primaryButton
                 }
                 .padding()
@@ -176,7 +175,6 @@ struct ContentView: View {
             stat("BARO FIXES", "\(recorder.baroCount)", .white)
             stat("DOPPLER", "\(recorder.dopplerValidCount)/\(recorder.locCount)", dopplerColor)
             stat("MOTION", motionText, motionColor)
-            stat("TAGS", "\(recorder.markCount)", .indigo)
             stat("H.ACC", recorder.lastHorizontalAccuracy >= 0
                  ? String(format: "±%.0f m", recorder.lastHorizontalAccuracy) : "—",
                  accuracyColor)
@@ -242,50 +240,19 @@ struct ContentView: View {
         .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
     }
 
-    /// Hand-placed ground truth. Every one of these makes the offline segmentation work
-    /// dramatically easier to validate, so they're front and centre rather than buried.
-    private var markButtons: some View {
-        VStack(spacing: 10) {
-            // Confirmation that a tap actually registered. Without it, the smoke test showed
-            // three "Top" tags in three seconds — pressing again because nothing acknowledged
-            // the first press. In gloves, on a lift, that guessing is worse.
-            if let label = recorder.lastMarkLabel, let at = recorder.lastMarkAt,
-               now.timeIntervalSince(at) < 4 {
-                Label("Tagged “\(label)”", systemImage: "checkmark.circle.fill")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(.green, in: RoundedRectangle(cornerRadius: 12))
-                    .transition(.opacity)
-            } else {
-                Text("TAG A MOMENT")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            }
-            HStack(spacing: 10) {
-                markButton("Top", "arrow.up.to.line")
-                markButton("Bottom", "arrow.down.to.line")
-            }
-            HStack(spacing: 10) {
-                markButton("Lift on", "tram.fill")
-                markButton("Lift off", "figure.skiing.downhill")
-            }
-        }
-    }
-
-    private func markButton(_ label: String, _ icon: String) -> some View {
-        Button {
-            recorder.mark(label)
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-        } label: {
-            Label(label, systemImage: icon)
-                .font(.title3.weight(.bold))
-                .frame(maxWidth: .infinity, minHeight: 60)
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(.indigo)
-    }
+    // The four tag buttons — Top / Bottom / Lift on / Lift off — were removed in S18.
+    //
+    // **They were always scaffolding, and R19 named the condition for taking them out: the app
+    // auto-detects, press START and pocket the phone.** That condition is met three times over.
+    // Segmentation is validated against Slopes' own per-lift `trackIDs` (21/21 rides, S15) rather
+    // than against hand tags; Martin had already stopped using them, with **one tag in seven hours**
+    // on 2026-09-04; and capture closed on 2026-09-05, so no further ground truth will ever be
+    // recorded. A button whose only purpose was to label data we will never collect again is not a
+    // feature, it is a live control on a glove-sized screen that can only be pressed by mistake.
+    //
+    // Reading tags is deliberately kept: the four recorded days contain them, `SessionReplay` still
+    // parses them and `SessionDetailView` still lists them. Removing the writer does not orphan the
+    // format (R13 — never make an old recording unreadable).
 
     private var primaryButton: some View {
         Button {
