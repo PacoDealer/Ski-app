@@ -55,10 +55,60 @@ needed new data to catch. **They survived because the entry-point documents are 
 appended to, while the evidence lives in the session log**, and a session that reads the top of
 `CLAUDE.md` gets the S5 view of the project. **R37.**
 
-**➡️ Next:** the accuracy work is done and cannot go further without a second resort. What is
-left is the Premium list (D7) — run comparison over shared segments, then offline maps — plus the
-two S15b label questions and removing the tag buttons (R19), whose purpose has now permanently
-expired.
+### 🟢 S18 — the tag buttons are out, and run comparison is in
+
+**Tag buttons removed (R19).** Their stated condition was met three times over: segmentation is
+validated against Slopes' `trackIDs` rather than hand tags, day 4 carried **one tag in seven
+hours**, and capture is closed so no further ground truth will ever exist. Reading tags is kept —
+the four days contain them and the detail screen still lists them (R13).
+
+**`RunComparison` + `Tools/compare.py` — the first Premium item under the new shipping bar.**
+Martin's answer to "what's the bar?" was *only resort-independent features*, and to "what should
+comparison show?" was *whatever is best for the app*. Those pick the same design:
+
+    ≈ run 5  ·  shares 114 m (83%)  ·  23 m apart  ·  68s v 411s  −343s
+
+- **The unit is the shared segment, not the run.** Slopes compares named runs from a trail database,
+  so it can compare nothing at an unmapped resort and nothing that only partly overlaps. This is
+  strictly more general, and it is the honest unit: at Portillo a descent is composed at ski time.
+- **It never says "same run".** Grading against the 24 labels: coverage narrows the same/different
+  overlap from 21 m to 11 m and **still does not separate**. So it ranks and shows both numbers.
+- **`MIN_COVERAGE = 0.5` is a definition, not a fit.** 70% grades better on Portillo; adopting it
+  for that reason would fit a constant to one resort off eight pairs. `MIN_BAND_M` reuses
+  `MIN_RUN_DROP_M`. No new fitted number enters the code.
+- 🔴 **The sampling coordinate is GPS altitude, not the barometer — measured, against instinct.**
+  `CMAbsoluteAltitude` moves same-piste pairs 11–34 m → 19–43 m and widens the overlap 12 → 15 m,
+  because it carries a weather-driven offset: paired against GPS it sits at **−0.2 / +5.4 / +8.1 /
+  +7.4 m** across the four recordings, an 8 m swing between days and 5.6 m between two sessions of
+  one morning. A bias is constant *inside* a descent and ruinous *between* them. S17's lesson in a
+  new place — sensor and question get chosen together.
+
+### 🔴 S18 — two defects the comparison work uncovered
+
+1. **Every Python geometry tool segmented runs without the S16 runout trim.** `segment_runs` applies
+   it only when given a `speed_at` callback, and `similar.py`, `liftid.py`, `label.py` and
+   `compare.py` all called it without one — so the rule degraded to a no-op (R33) and every run kept
+   its runout. Starts matched the app exactly; **ends ran 41–91 s late**, out on the flat by the
+   base. So every geometry result in the project was computed over descents carrying dead time
+   measured at 3.3 km/h, dragging each track's bottom around the base area exactly where two
+   descents converge. Fixed in all four; Swift and Python now agree **bit-for-bit to four
+   decimals**. `label.py --score` keeps its shape (still OVERLAP, 8/8 lift check) and
+   `liftid --validate` is untouched.
+2. **The screenshot caught the feature comparing the wrong thing.** v1 printed the two runs' *whole*
+   durations — "faster by 296 s" on a pair sharing 87% — a whole-run comparison wearing a
+   shared-segment badge. Times are now interpolated on the shared band's own boundaries, and
+   `comparisonLine` takes no `Run` so it cannot reach for a whole-run figure again. **R36 again: the
+   math looked right and the screen showed it wasn't.**
+
+**➡️ Next.** Accuracy cannot go further without a second resort. On the list:
+1. **The mid-run stop rule Martin chose** — "one run or two *depends on whether you moved*". It must
+   reuse S16's already-graded constants (8 km/h sustained, the 3 m hysteresis) rather than introduce
+   new fitted ones; if it can't be built that way, ask rather than fit. Moves goldens, so print every
+   mid-run gap across the four fixtures first (R5).
+2. **Cross-day comparison.** Today's comparison is within one session, which needs no new storage;
+   comparing against previous days needs a small cached per-session index rather than reparsing
+   every file.
+3. Then offline maps — the first item that needs the OpenSkiMap ingest and an ODbL surface.
 
 ---
 

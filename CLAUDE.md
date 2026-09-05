@@ -94,7 +94,7 @@ it works — Martin flagged this and he's right.
   handoff.
 - `WORKFLOW.md` — the rules of process (R1–R20), each tied to the session that earned it.
 
-**Fourteen offline tools now, all stdlib-only, all run against a raw session file.** The four that
+**Fifteen offline tools now, all stdlib-only, all run against a raw session file.** The five that
 carry weight:
 - `Tools/analyze.py` — the accuracy harness. Computes every metric the careful way *and* the naive
   way on the same data, so the thesis is measurable rather than asserted.
@@ -105,6 +105,10 @@ carry weight:
   been done by a human reading two printouts.
 - `Tools/replay.sh` — compiles `iOS/Vertical/Recorder/*.swift` *unmodified* and runs it over a
   fixture, which is what makes that diff meaningful.
+- `Tools/compare.py` — the run-comparison twin of `RunComparison.swift`: how much of the mountain
+  two descents share and how far apart they were over it, graded against Martin's 24 labels. Added
+  S18. **Its grading table is the evidence that the feature must not claim two descents are the
+  same run**, so read it before anyone is tempted to add a threshold.
 
 The rest are single-question instruments, each written to answer one thing and kept because the
 answer is reproducible: `runout.py` / `runup.py` (what is inside the seconds at each end of a run),
@@ -112,6 +116,10 @@ answer is reproducible: `runout.py` / `runup.py` (what is inside the seconds at 
 `liftid.py` / `liftname.py` / `similar.py` / `label.py` / `runmap.py` (the lift key and the
 labelling work), `falsetop.py`, `detect.py` (the original Phase-1 prototype, superseded by
 `LiveMetrics` shipping in the app).
+
+> ⚠️ **Anything that calls `analyze.segment_runs` must pass `speed_at`.** Without it the S16 runout
+> trim silently degrades to a no-op (R33) and every run ends 41–91 s late, out on the flat by the
+> base. Four tools had this bug until S18 and none of them looked wrong.
 
 **Seven docs**, not the four this line used to claim: the four below plus `README.md`,
 `iOS/README.md` and `Data/comparisons/README.md` — and three per-day `*_slopes_export.md` notes
