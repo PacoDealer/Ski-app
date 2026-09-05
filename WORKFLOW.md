@@ -395,3 +395,35 @@ opt-in, the tests assert that turning it on changes no reported value, and one t
 median specifically — mutating it to a mean fails. An unknown speed also stays unknown rather than
 being interpolated from its neighbours: the grey band exists to say "no Doppler here", and filling
 it in would turn missing data into a confident colour. *(S17.)*
+
+**R37 — A doc that is written once and appended to will go stale where it is read most; audit the
+entry points against the log, not against memory.** The S18 audit found four false claims, and
+**every one of them was already contradicted by something in this repo.** `CLAUDE.md`'s Status
+block said "battery is still unmeasured" while `ROADMAP.md`'s session log, three screens down,
+carried three replicated measurements from S12, S14 and S16. `README.md` argued the accuracy thesis
+that `CLAUDE.md` explicitly warns against re-litigating, on the page a stranger reads first. None
+of it needed new data to catch; it needed someone to read the top of a file against the bottom.
+
+The asymmetry is structural, not careless. **Evidence accumulates in the session log, which is
+append-only and therefore always current. Conclusions live in the summary blocks, which are
+rewritten only when someone remembers to** — and those are exactly the blocks a new session loads
+into context first, so a stale one is not a dormant error, it is an actively misleading premise
+for every following session. The log is right and unread; the summary is wrong and authoritative.
+
+So: when a session answers a question the docs list as open, close it **in the summary block, in
+the same commit** — not only in the log entry that proves it. And periodically re-read the
+entry-point files (`README.md`, `CLAUDE.md` Status, `RESEARCH.md` §13) against the log and against
+`ls`, which is how "two offline tools" was still on the page with fourteen in `Tools/`. *(S18.)*
+
+**R38 — If a claim is load-bearing, the thing that checks it is a program, not a reading.** From
+S12 onward, every session log said some form of "`replay.sh` agrees Swift == Python on all N runs"
+— the claim that the number on the phone is the number the analyzer prints, which is what R12a
+exists to guarantee and what makes every graded figure in the project transferable. **Nothing
+compared the two outputs.** A person ran two harnesses and read two printouts side by side, on a
+comparison of 4 columns x 44 runs that got harder every time a fixture was added.
+
+It was true — `Tools/parity.py` confirmed it on all 44 runs the day it was written — and that is
+the point: **the practice was unsafe while the result was correct**, so nothing would have gone
+wrong until the once it did, silently, in the direction of a published number. The tell is a claim
+stated in every handoff with no command that returns non-zero when it stops being true. Write the
+differ; it took an hour and it now gates a commit. *(S18.)*

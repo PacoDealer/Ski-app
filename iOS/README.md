@@ -130,14 +130,31 @@ fixtures. (Stale simulator state first, always.)
 
 ## What this app does and does not do
 
-It records. That's all it does.
+> ⚠️ **This section said "It records. That's all it does" until S18, and that stopped being true
+> in S9.** The capture-first priority below is unchanged and still the point; what changed is that
+> the honest numbers are now computed on the phone as well as on the Mac. Corrected per R6.
 
-Every `CLLocation` and every barometer reading is appended to a JSONL file as it arrives, at full
-fidelity, with no processing whatsoever. The vertical figure on screen is a deliberately naive
-running total and is **not** the real metric — it's a liveness indicator so you can tell the thing
-is working.
+**It records first.** Every `CLLocation`, every barometer reading and 25 Hz device motion is
+appended to a JSONL file as it arrives, at full fidelity, with no processing whatsoever,
+`fsync`'d, append-only. That ordering is the whole design: getting the analysis wrong is
+recoverable, not capturing is not.
 
-All the actual work — sensor fusion, lift/run segmentation, honest vertical, Doppler max speed —
-happens offline against these files, and can be rewritten and re-run as many times as we like
-without needing to be on a mountain again. Getting the analysis wrong is recoverable. Not
-capturing is not.
+**And it reports.** The record screen shows the honest live numbers — run-segmented vertical,
+accuracy-gated Doppler top speed, run count — computed by `LiveMetrics`, which is the *same source
+file* the offline analyzer replays. Under each one, in small type, is the naive alternative: the
+summed-deltas vertical and the ungated speed. **The gap between the two lines is the whole point**,
+and on 2026-09-01 it was live on this screen with nobody able to see it.
+
+Saved days get a detail screen: per-run vertical, distance, duration, top and average speed, and
+the day's track over a base map coloured by speed.
+
+**What is still offline-only** is the grading — comparing any of it against Slopes' exports — and
+every experiment that has not earned its way into the app yet.
+
+**One rule, one implementation (R12a).** The phone, `Tools/replay.sh` and `Tools/analyze.py` run
+the same rules, and `Tools/parity.py` diffs them run-by-run so they cannot drift apart quietly.
+Run it before believing a number from either side:
+
+```sh
+Tools/parity.py     # exits non-zero if the app and the analyzer disagree
+```

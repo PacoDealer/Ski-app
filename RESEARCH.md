@@ -372,6 +372,11 @@ different spans. The honest range from either is **0–11 %/h**, and no battery 
 until a session runs long enough to accumulate three or more steps — about 3 h. `Tools/analyze.py`
 now prints the step count and refuses the decimal below that.
 
+> ✅ **That condition was met three times over, S12–S17: 6.7 / 6.5 / 6.5 %/h across days of
+> 6.00 / 5.42 / 6.92 h with 8 / 7 / 9 steps.** §13.4 item 2 has the table. This paragraph is the
+> S6 record and is left standing as one — the bound it sets was right, and the number it refused
+> to print is now measured.
+
 #### The open question this raised: where does Slopes' 67.2 km/h come from?
 
 Slopes' day top speed is **67.2 km/h**, ours is 64.7. Session 2's maximum is 43.9, so the number
@@ -855,15 +860,32 @@ phase of the roadmap.
 
 ### 13.4 What is still genuinely unknown
 
-1. **~~Everything rests on one 56-minute morning.~~ Partly answered, S6.** A second session
-   (`_s2.jsonl`, 48 min) replicates the fix-quality result and both competitor deltas — Slopes
-   +1.0% and Carve +18.9% against the **saved** day records (§5.1.3; the +1.2%/+10.4% pair came
-   from live screens). Still one mountain, one phone, one weather system, and still **n=1 for the
-   multipath glitch**, which is the single sample the top-speed claim rests on.
-2. **No battery data at all, cold or otherwise.** The 5.5%/h and 6.7%/h figures are one 5%
-   quantisation step each and mean nothing (§5.1.2); the real bound from both days is 0–11 %/h.
-   Needs a 3 h+ recording, and then a cold one — lithium cells lose capacity below freezing and
-   Portillo at ~10 °C is not that test either.
+1. **~~Everything rests on one 56-minute morning.~~ Answered, and then CLOSED PERMANENTLY, S18.**
+   Four full days were recorded (1–4 September 2026) with `.slopes` exports for each, and 43 runs
+   graded run-by-run. **Capture ended 2026-09-05** — Martin left Portillo without skiing again — so
+   the dataset is final. What that leaves is not an open question but a **standing limitation**:
+   **one mountain, one phone, one week, one skier.** `CLUSTER_M`, the run-boundary rules and every
+   threshold in the pipeline have been tested nowhere else, and no further analysis of these four
+   days can change that. State it beside any number quoted from them (R5).
+2. **~~No battery data at all, cold or otherwise.~~ ANSWERED (the un-cold half), S12–S17;
+   this entry was stale until S18.** [V] Three full days, measured by `analyze.py` from the
+   `note` records the app writes every 5 minutes:
+
+   | day | drain | unplugged | 5% steps | rate |
+   |---|---|---|---|---|
+   | 2026-09-02 | 40% | 6.00 h | 8 | **6.7 %/h** |
+   | 2026-09-03 | 35% | 5.42 h | 7 | **6.5 %/h** |
+   | 2026-09-04 | 45% | 6.92 h | 9 | **6.5 %/h** |
+
+   All three clear the harness's own criterion (a rate is only meaningful once several discrete 5%
+   steps have been seen), and they replicate to within 0.2 %/h. **A 7-hour recording day costs
+   ~45% of an iPhone**, GPS at full rate plus barometer plus 25 Hz device motion. Against
+   Snowduck's advertised ~1 %/h (§5.2) we are six times heavier, and that comparison is worth
+   making honestly rather than avoiding.
+
+   **Still open: the cold case.** Portillo in September at ~10 °C is not the test. Lithium cells
+   lose capacity below freezing, and the 1★ reviews in this category are dead batteries. That one
+   is now unanswerable with the data we have — see item 1.
 3. **No competitor has been installed and driven by us** — S1 flagged this and it is still true.
    Slopes' free tier and Carve are both installed on Martin's phone, which is as close as we get
    without the paid account.

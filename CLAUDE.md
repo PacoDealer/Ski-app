@@ -40,11 +40,17 @@ Slopes" line**; S5 found it was built from two unrelated numbers and withdrew it
 **➡️ Read `ROADMAP.md` → "⚡ START HERE" first. It has the handoff, the exact commands, and the
 one open question.**
 
-**S5 (2026-09-01): the first outdoor day is recorded, and the three-app head-to-head is done.**
-GPS outdoors is green (1.00 Hz, Doppler valid on 3,342/3,342 fixes, hAcc median ±8 m) and
-replicated on a second session in S6. **Battery is still unmeasured** — `batteryLevel` moves in 5%
-steps and no session has been long enough to see more than one. Martin is at Portillo until ~2026-09-07; the build expires ~2026-09-07 (free
-provisioning).
+**S18 (2026-09-05): capture is closed. Four graded days, 43 runs, and the dataset is final.**
+Martin left Portillo on 2026-09-05 without skiing again, so `Data/fixtures/` is now everything this
+project will ever have: 1–4 September 2026, one resort, one phone, `.slopes` exports for all four.
+**R5 is no longer a to-do; it is a permanent caveat** — nothing in the pipeline has been tested on a
+second mountain, and no amount of desk work changes that.
+
+GPS outdoors is green (0.94–1.00 Hz, hAcc median ±7–8 m). **Battery is measured and replicated:
+6.7 / 6.5 / 6.5 %/h** over three full days of 6.00 / 5.42 / 6.92 h unplugged, with 8 / 7 / 9
+discrete 5% steps — so all three clear `analyze.py`'s own "meaningful" bar, and a 7-hour day costs
+~45% of the phone. *(This entry read "battery is still unmeasured" until S18, twelve sessions after
+it stopped being true; `ROADMAP.md`'s session log had the numbers all along.)*
 
 **The thesis survived contact with reality, but not in the shape it was written above.** Over the
 whole morning **Slopes reported 912 m to our 905 m — 0.8%**, and matched us to ~2% on run-1
@@ -88,21 +94,38 @@ it works — Martin flagged this and he's right.
   handoff.
 - `WORKFLOW.md` — the rules of process (R1–R20), each tied to the session that earned it.
 
-Two offline tools, both stdlib-only, both run against a raw session file:
+**Fourteen offline tools now, all stdlib-only, all run against a raw session file.** The four that
+carry weight:
 - `Tools/analyze.py` — the accuracy harness. Computes every metric the careful way *and* the naive
   way on the same data, so the thesis is measurable rather than asserted.
-- `Tools/detect.py` — the auto-detection prototype (Phase 1). Finds lifts and runs with no user
-  input and scores itself against the hand tags. When its scores are good enough, the tag buttons
-  come out of the app.
+- `Tools/grade.py` — grades our per-run numbers against Slopes' `.slopes` exports, the only
+  external ground truth the project has. Pairs by time overlap, never by index (R27).
+- `Tools/parity.py` — diffs `replay.sh` (the app's own Swift) against `analyze.py`, run by run.
+  R12a's "harness that proves it"; added S18, when the audit found the comparison had only ever
+  been done by a human reading two printouts.
+- `Tools/replay.sh` — compiles `iOS/Vertical/Recorder/*.swift` *unmodified* and runs it over a
+  fixture, which is what makes that diff meaningful.
 
-Four docs. The fourth was added in S5 because three separate false claims had survived five
-sessions, and "be careful" is not a process. Split more out when a doc actually gets unwieldy.
+The rest are single-question instruments, each written to answer one thing and kept because the
+answer is reproducible: `runout.py` / `runup.py` (what is inside the seconds at each end of a run),
+`trimend.py` (grading eleven candidate end rules), `altsrc.py` (the −3% vertical, answered),
+`liftid.py` / `liftname.py` / `similar.py` / `label.py` / `runmap.py` (the lift key and the
+labelling work), `falsetop.py`, `detect.py` (the original Phase-1 prototype, superseded by
+`LiveMetrics` shipping in the app).
+
+**Seven docs**, not the four this line used to claim: the four below plus `README.md`,
+`iOS/README.md` and `Data/comparisons/README.md` — and three per-day `*_slopes_export.md` notes
+under `Data/comparisons/`, which are records of a specific export rather than living documents.
+Split more out when a doc actually gets unwieldy.
 
 ## Tech stack (provisional — nothing committed until Phase 0)
 
 - Swift + SwiftUI, iOS 26 target (matching Yomi's no-back-deployment stance)
 - `CoreLocation` + `CoreMotion` (`CMAltimeter`) — the recording engine
-- Map renderer: **undecided.** MapLibre Native has no 3D terrain on iOS yet — see `RESEARCH.md` §9.1
+- Map renderer: **MapKit, for the 2D case, decided by shipping it** (S17). The speed-coloured track
+  draws the user's own file over Apple's base map, which needs no trail database, no OpenSkiMap
+  ingest and no ODbL attribution surface. **3D terrain is still undecided** — MapLibre Native has
+  none on iOS yet, see `RESEARCH.md` §9.1, and that is the decision worth an ADR when it comes
 - Persistence: GRDB is the known-good choice from Yomi. Tracks are time-series; revisit if that shape fights it
 - Backend: **ideally none.** Everything except lift status and social works fully on-device
 

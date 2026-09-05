@@ -5,7 +5,64 @@ Companion docs: `RESEARCH.md` (market + feasibility), `CLAUDE.md` (project conte
 
 ---
 
-## ⚡ START HERE — handoff for the next session (updated 2026-09-04, S17)
+## ⚡ START HERE — handoff for the next session (updated 2026-09-05, S18)
+
+### 🔴 S18 — CAPTURE IS CLOSED, and an audit of everything that was taken on trust
+
+Martin asked for an audit rather than a feature: *"Lets first audit what we have now. Lets check
+everything without taking anything for granted. All our docs, all our code, our research, what
+we've built."* Mid-session he added the thing that reshapes the roadmap: **he left Portillo on
+2026-09-05 without skiing again.** Four graded days is the final dataset. See "Open after S17",
+revised.
+
+**What survived the audit, verified rather than re-read:**
+- **Swift == Python on all 44 runs across 6 fixtures**, now mechanically diffed on vertical,
+  distance, duration and top speed (`Tools/parity.py`, new).
+- **Every headline number in the S17 handoff reproduces exactly** — `grade.py`'s 43-run means,
+  day 4's +24 s / +0 s median / late-on-10-of-20 run end, all four rows of `altsrc.py`'s
+  sensor×convention table, the 11-window flat control, and `runup.py`'s 34 heads.
+- **35/35 tests pass**, and the bundle config is correct: `UIBackgroundModes`, `UIFileSharingEnabled`
+  and `LSSupportsOpeningDocumentsInPlace` are all present in the *built* product (R14).
+- **No dangling rule references** anywhere in the docs or code — every `R<n>` cited resolves.
+
+**What did not, and is now fixed:**
+1. 🔴 **`SessionRecovery.scan` took 4.28 s on the 56 MB day-4 file** — Mac, `-O`, warm cache — and
+   it runs **synchronously inside `App.init()`**, on the path that recovers a recording after a
+   jetsam kill. Slowest exactly when it matters most. Byte-scanning instead of five whole-line
+   `String` conversions per line: **0.19 s, 23× faster.** No test had ever run it on a real file;
+   one does now, cross-checked against `SessionReplay` and mutation-checked.
+2. 🔴 **`Tools/parity.py` did not exist.** R12a's "harness that proves it" was half-built:
+   `replay.sh` printed the Swift, `analyze.py` printed the Python, and *nothing compared them.*
+   Every "Swift == Python on all N runs" in this log was a human reading two printouts.
+3. 🔴 **Battery had been measured since S12 and three docs still said it hadn't** — including
+   `CLAUDE.md`'s Status block and `RESEARCH.md` §13.4, the two files a new session reads first.
+   **6.7 / 6.5 / 6.5 %/h over three full days**, 8 / 7 / 9 discrete 5% steps. A 7-hour day costs
+   ~45% of the phone. The numbers were in *this* file's session log the whole time.
+4. 🔴 **`README.md` still argued the withdrawn thesis** — "the whole category has soft numbers …
+   accuracy is the product" — which `CLAUDE.md` explicitly forbids re-litigating, and still said
+   the app has "no map, no stats UI, and no analysis", all three false since S9–S17.
+5. 🟡 **This table's mean-abs column had been dropped** when the sample grew from 23 runs to 43.
+   Distance mean abs is **9.41%** and got *worse* on the held-out day.
+6. 🟡 Two small code defects: `SampleWriter.failedWrites` is a static that was never reset, so a
+   morning write failure kept its "samples failed to write" banner up over the afternoon's clean
+   recording; and `SessionTrack.thinned` dropped the last point whenever every point sat within
+   8 m of the first, contradicting its own comment.
+
+**🔴 The process finding, and it is about how the docs are read.** Every stale claim above was
+contradicted by something already in this repo — the battery numbers by this file's own log, the
+README's thesis by `CLAUDE.md`'s warning, the parity claim by the absence of any differ. Nothing
+needed new data to catch. **They survived because the entry-point documents are written once and
+appended to, while the evidence lives in the session log**, and a session that reads the top of
+`CLAUDE.md` gets the S5 view of the project. **R37.**
+
+**➡️ Next:** the accuracy work is done and cannot go further without a second resort. What is
+left is the Premium list (D7) — run comparison over shared segments, then offline maps — plus the
+two S15b label questions and removing the tag buttons (R19), whose purpose has now permanently
+expired.
+
+---
+
+## Previous handoff (2026-09-04, S17)
 
 ### 🟢 S17 — THE HELD-OUT DAY. S16's rule predicted, and the R32 control replicated.
 
@@ -23,9 +80,27 @@ fit. Nothing was tuned on it in this session.
 | R32 control, vertical over Slopes' windows | **−2.8%** (S16 measured −3.0%) |
 
 Day totals vs Slopes: vertical **−1.4%**, distance **−4.6%**, **20 runs vs 20**. Across all four
-days, 43 graded runs: vertical **+0.63%**, distance **−0.27%**, top speed **−1.78%**.
+days, 43 graded runs:
+
+| 43 graded runs | mean | mean abs | worst |
+|---|---|---|---|
+| vertical | **+0.63%** | 3.97% | +36.6% |
+| distance | **−0.27%** | **9.41%** | −29.3% |
+| top speed | **−1.78%** | 4.43% | +57.0% |
+| run start | — | 37 s | 160 s |
+| run end | **+23 s** | 33 s | median +2 s, later on 24/43 |
+
 **Do not quote those means without the per-day line** — distance runs −2.0 / +0.9 / +2.5 / −4.6%
-and cancels (R28). Swift == Python bit-for-bit on all 20 runs (`replay.sh`); the day is pinned as
+and cancels (R28).
+
+> 🔴 **The mean-abs column was missing from this table until S18, and it is the half that
+> matters.** `grade.py` prints it, and the 23-run version of this same table (S14b, below) carried
+> it — it was dropped exactly when the sample grew. A signed mean of −0.27% next to a mean
+> absolute error of **9.41%** is not a precise instrument; it is a scattered one whose errors
+> cancel, which is R28's lesson pointed back at our own headline. **And distance dispersion got
+> *worse* on the held-out day** — 8.70% over 23 runs became 9.41% over 43. That is the one number
+> day 4 did not vindicate, and the run-end rule predicting well should not be allowed to obscure
+> it. Per-run distance is the weakest thing this project measures. Swift == Python bit-for-bit on all 20 runs (`replay.sh`); the day is pinned as
 `portilloS5`, mutation-checked, **27/27 tests**.
 
 ### 🟢 S17 — fixing one boundary promoted the other, and `Tools/runup.py` says LEAVE IT ALONE
@@ -150,14 +225,27 @@ without any of Phase 2's data work.
   and **the Simulator does not expose its buttons to accessibility**, so the harness cannot tap.
 - **34 tests** (7 new), mutation-checked; `replay.sh` unchanged on all fixtures.
 
-### 🔴 Open after S17
+### 🔴 Open after S17 — *revised S18, because the capture window closed early*
 1. **Nothing on accuracy.** Vertical, distance, top speed and both run boundaries are now either
    graded-and-explained or deliberately-and-measurably ours. The next honest move on accuracy is a
    **second resort** (R5/D3), not more Portillo analysis.
-2. **Snow runs out ~2026-09-07.** Any further capture has days left; desk work does not.
+2. **~~Snow runs out ~2026-09-07.~~ CAPTURE IS CLOSED, 2026-09-05.** Martin left Portillo without
+   skiing again. **Four graded days is the final dataset** — there is no fifth day, no second
+   resort this season, and no cold-weather battery test. Item 1 is therefore not a task waiting on
+   a free afternoon; it is **blocked until someone skis somewhere else**, and every threshold in
+   the pipeline carries "tested at one resort" permanently until then. Do not plan work that
+   assumes more data is coming.
 3. **The Premium feature list is what's left** (D7): run comparison is still blocked on the
-   labelling unit problem from S15b (compare shared SEGMENTS, not whole descents), then speed
-   heatmaps and offline maps. Distribution is still gated on Yomi shipping → the $99 program (D5).
+   labelling unit problem from S15b (compare shared SEGMENTS, not whole descents), then offline
+   maps and 3D — the speed heatmap shipped in S17. Distribution is still gated on Yomi shipping →
+   the $99 program (D5).
+4. **Per-run distance is the weakest measurement** — mean abs 9.41% across 43 runs, and it got
+   worse on the held-out day. See the table above. It is the one accuracy item that a re-read of
+   the existing four days could still legitimately improve.
+5. **The tag buttons have outlived their purpose** (R19). They exist to produce hand-labelled
+   ground truth for building the detector; the detector is now validated against Slopes'
+   `trackIDs` instead, day 4 carries **one** hand tag in seven hours, and no further ground truth
+   will ever be captured. Their stated removal condition is met.
 
 ### 🟢 S16 — the two accuracy residuals were never one problem, and one of them isn't ours
 
