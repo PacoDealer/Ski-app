@@ -14,15 +14,17 @@ import SwiftUI
 /// "green vs yellow" carries no reading without a constant trip back to the legend, and it fails
 /// for colour-blind users outright.
 ///
-/// The ramp is the blue sequential scale, steps 250→700, **validated against pure white** rather
-/// than against a chart surface, because the surface here is *snow*:
+/// The ramp is the blue sequential scale, steps 250→700, validated against **pure white**:
 /// `validate_palette.js "#86b6ef,#5598e7,#2a78d6,#1c5cab,#0d366b" --ordinal --surface "#ffffff"`
 /// passes all four checks, with the palest step still clearing the 2:1 floor at 2.11:1. The
 /// obvious-looking tighter ramp (dropping the pale end) FAILED on adjacent lightness — the steps
 /// bunched — which is exactly why the check is run rather than eyeballed.
 ///
-/// Dark = fast is the right way round on snow: the fastest stretches are what the eye should find
-/// first, and dark-on-white is the most legible pairing in direct alpine sunlight.
+/// **White is not an assumption about the base map; it is supplied.** The first version of this
+/// comment justified white by saying a ski map is snow, and the first screenshot disproved it —
+/// Apple's Portillo imagery is summer terrain with a mean colour of `#605b4f`. See `casingTitle`
+/// and R36: the line carries its own white casing, so the ramp sits on white at any resort in any
+/// season, and dark = fast stays the legible direction in direct alpine sunlight.
 struct TrackMapView: UIViewRepresentable {
 
     let track: SessionTrack
@@ -52,7 +54,10 @@ struct TrackMapView: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let map = MKMapView()
         map.delegate = context.coordinator
-        map.mapType = .satelliteFlyover      // snow reads better than the vector map at a resort
+        // Imagery, not the vector map: off-piste terrain has no roads or labels to orient by, and
+        // the shape of the face is the only landmark. (Whether that imagery is snow-covered is up
+        // to Apple and the season — Portillo's is summer. See the casing.)
+        map.mapType = .satelliteFlyover
         map.isRotateEnabled = false          // a glove on a map that spins is a lost map
         map.pointOfInterestFilter = .excludingAll
         map.showsCompass = false
