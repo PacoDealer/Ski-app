@@ -73,17 +73,20 @@ silently on next launch and appended to on the same timeline — verified on the
 **A real peer exists.** [Carve](https://apps.apple.com/gb/app/carve-ski-snowboard/id6758206264) is
 a free, no-paywall, solo-dev tracker already shipping auto lift detection, 3D terrain replay,
 speed heatmaps and run comparison (`RESEARCH.md` §2.2). It says nothing about accuracy anywhere.
-**The accuracy thesis above is now the only load-bearing part of this project** — treat "we'll be
-the free one" as dead.
+Treat "we'll be the free one" as dead — but **do not read this as "accuracy is the project" either**;
+that framing is withdrawn at the top of this file, and S18 found it still being argued in
+`README.md` nine sessions later. Carve's own numbers are the reason it is not a threat on accuracy:
++10.1% on vertical, and a multipath glitch published as its top speed.
 
 Verified on real hardware: barometer is excellent (0.85 m drift over 3.2 min stationary; pressure
 matches Portillo's 2,880 m), location auth is Always, background recording is correctly entitled,
 and **GPS outdoors is fine** — the alarming indoor numbers (0.34 Hz, Doppler on 8 of 68 fixes) were
 the building.
 
-**Interaction model:** the app must **auto-detect** runs and lifts. Press START, pocket the phone.
-The tag buttons in the UI are temporary scaffolding for building the detector and get removed once
-it works — Martin flagged this and he's right.
+**Interaction model:** the app **auto-detects** runs and lifts. Press START, pocket the phone.
+✅ **The tag buttons were scaffolding and were removed in S18 (R19)** — the detector is validated
+against Slopes' `trackIDs` rather than hand tags, day 4 carried one tag in seven hours, and capture
+is closed so no further ground truth will ever be recorded. START and STOP are the only controls.
 
 ## Key docs
 
@@ -92,7 +95,7 @@ it works — Martin flagged this and he's right.
   a primary source. **Start here.**
 - `ROADMAP.md` — current state, phases, open decisions, session log. Its "⚡ START HERE" is the
   handoff.
-- `WORKFLOW.md` — the rules of process (R1–R20), each tied to the session that earned it.
+- `WORKFLOW.md` — the rules of process (**R1–R38**), each tied to the session that earned it.
 
 **Fifteen offline tools now, all stdlib-only, all run against a raw session file.** The five that
 carry weight:
