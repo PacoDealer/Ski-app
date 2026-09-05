@@ -26,13 +26,31 @@ nonisolated struct SessionTrack {
         /// is not zero** — an ungated fix is unknown, and colouring it as "slow" would invent a
         /// stopped skier out of a missing field.
         let speedMS: Double
+        /// Raw `CLLocation.altitude`, metres. **GPS on purpose, and not the barometer** — see
+        /// `RunComparison`, which is the only thing that reads it. The barometer is the better
+        /// sensor for a difference inside one descent and the worse one for registering two
+        /// descents against each other, because its offset moves with the weather (measured at
+        /// −0.2 to +8.1 m across the four recordings, S18). Never use this for vertical.
+        let altitude: Double
+
+        /// Altitude defaults to "unknown" rather than to a number. A missing GPS altitude is not
+        /// sea level, and `RunComparison` drops NaN points instead of registering two descents
+        /// against a fix that never carried one.
+        init(dt: TimeInterval, lat: Double, lon: Double,
+             speedMS: Double, altitude: Double = .nan) {
+            self.dt = dt
+            self.lat = lat
+            self.lon = lon
+            self.speedMS = speedMS
+            self.altitude = altitude
+        }
     }
 
     private(set) var points: [Point] = []
 
     var isEmpty: Bool { points.isEmpty }
 
-    mutating func append(dt: TimeInterval, lat: Double, lon: Double,
+    mutating func append(dt: TimeInterval, lat: Double, lon: Double, altitude: Double = .nan,
                          speed: Double, horizontalAccuracy: Double, speedAccuracy: Double) {
         guard !lat.isNaN, !lon.isNaN,
               horizontalAccuracy >= 0, horizontalAccuracy <= LiveMetrics.maxPositionHAccM
@@ -43,7 +61,8 @@ nonisolated struct SessionTrack {
         let gated = speed >= 0
             && horizontalAccuracy <= LiveMetrics.maxSpeedHAccM
             && speedAccuracy >= 0 && speedAccuracy <= LiveMetrics.maxSpeedAccMS
-        points.append(Point(dt: dt, lat: lat, lon: lon, speedMS: gated ? speed : -1))
+        points.append(Point(dt: dt, lat: lat, lon: lon,
+                            speedMS: gated ? speed : -1, altitude: altitude))
     }
 
     /// The points of one run, by the run's own time window.

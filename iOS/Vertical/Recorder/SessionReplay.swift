@@ -148,7 +148,8 @@ nonisolated enum SessionReplay {
                                     latitude: lat, longitude: lon,
                                     at: dt)
                 if collectTrack {
-                    s.track.append(dt: dt, lat: lat, lon: lon, speed: speed,
+                    s.track.append(dt: dt, lat: lat, lon: lon,
+                                   altitude: obj["alt"] as? Double ?? .nan, speed: speed,
                                    horizontalAccuracy: hAcc, speedAccuracy: speedAcc)
                 }
 

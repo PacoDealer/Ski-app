@@ -45,7 +45,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from analyze import (MAX_H_ACC, load, resume_seams, segment_runs, split_at_seams)
+from analyze import (MAX_H_ACC, load, resume_seams, segment_runs, speed_lookup,
+                     split_at_seams)
 from detect import detect_lifts
 from similar import FILES, FIXTURES, deviation, resample
 
@@ -76,8 +77,13 @@ def load_day(name):
         return (started + datetime.timedelta(seconds=dt)).astimezone(TZ)
 
     lifts, runs = [], []
+    # Runs get the speed lookup so their windows carry the S16 runout trim; lifts do not take one.
+    # Without it `segment_runs` cannot read speed and the trim degrades to a no-op (R33), which
+    # left every run here ending up to 91 s late, out on the flat by the base (S18).
+    speed_at = speed_lookup(locs)
     for segs, kind, out in ((detect_lifts, "L", lifts), (segment_runs, "r", runs)):
-        found = [s for t, a in split for s in segs(t, a)]
+        found = [s for t, a in split
+                 for s in (segs(t, a) if kind == "L" else segs(t, a, speed_at=speed_at))]
         for i, s in enumerate(found, 1):
             tr = track(s["start"], s["end"])
             if tr:

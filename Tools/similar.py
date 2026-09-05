@@ -38,7 +38,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from analyze import (MAX_H_ACC, haversine, load, resume_seams, segment_runs, split_at_seams)
+from analyze import (MAX_H_ACC, haversine, load, resume_seams, segment_runs,
+                     speed_lookup, split_at_seams)
 
 ROOT = Path(__file__).parent.parent
 FIXTURES = ROOT / "Data" / "fixtures"
@@ -80,8 +81,10 @@ def load_runs():
         locs = [l for l in recs["loc"] if l["dt"] >= 0 and 0 <= l["hAcc"] <= MAX_H_ACC]
         baro = [(b["dt"], b["relAlt"]) for b in recs["baro"]]
         seams = resume_seams(recs["note"])
+        # See `liftid.load_day` — without `speed_at` the S16 runout trim is a no-op (R33, S18).
+        speed_at = speed_lookup(locs)
         segmented = [r for t, a in split_at_seams([x[0] for x in baro], [x[1] for x in baro], seams)
-                     for r in segment_runs(t, a)]
+                     for r in segment_runs(t, a, speed_at=speed_at)]
         for i, r in enumerate(segmented, 1):
             track = resample([(l["lat"], l["lon"]) for l in locs
                               if r["start"] <= l["dt"] <= r["end"]])

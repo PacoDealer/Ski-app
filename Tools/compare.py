@@ -40,7 +40,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from analyze import MAX_H_ACC, haversine, load, resume_seams, segment_runs, split_at_seams
+from analyze import (MAX_H_ACC, haversine, load, resume_seams, segment_runs,
+                     speed_lookup, split_at_seams)
 from similar import FILES, FIXTURES
 
 ROOT = Path(__file__).parent.parent
@@ -72,7 +73,14 @@ def descents():
         baro = [(b["dt"], b["relAlt"]) for b in recs["baro"]]
         seams = resume_seams(recs["note"])
         split = split_at_seams([x[0] for x in baro], [x[1] for x in baro], seams)
-        runs = [r for t, a in split for r in segment_runs(t, a)]
+        # **`speed_at` is not optional here, and leaving it out was a real defect (S18).**
+        # `segment_runs` applies the S16 runout trim only when it can read speed; without it the
+        # rule degrades to a no-op (R33, missing speed counts as MOVING) and every run keeps its
+        # runout. `similar.py`, `liftid.py` and `label.py` all still call it that way, so every
+        # geometry tool in this project has been comparing descents that include up to **91 s** of
+        # standing around at the base — dead time S16 measured at 3.3 km/h, dragging the bottom of
+        # each track around the base area exactly where two descents converge.
+        runs = [r for t, a in split for r in segment_runs(t, a, speed_at=speed_lookup(locs))]
         for i, r in enumerate(runs, 1):
             fixes = [l for l in locs if r["start"] <= l["dt"] <= r["end"]]
             if len(fixes) >= 2:
