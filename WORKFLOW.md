@@ -368,3 +368,30 @@ is the 2-3% in question. The competitor's number is not a target to converge on;
 measurement with its own error, and reproducing it is what lets you size that error. Note the
 direction this reverses: the finding is not that we were 3% low but that Slopes is ~2-3% high.
 *(S17.)*
+
+**R36 — Validate a colour against the surface it will actually be drawn on, and get the surface
+from a screenshot rather than from the story you are telling about it.** The speed ramp for the
+map was validated properly — one hue, monotone lightness, adjacent steps far enough apart, palest
+step clearing contrast — against **pure white**, on the reasoning that a ski map is snow. The
+first render disproved the premise in one look: Apple's satellite imagery for Portillo is **summer
+terrain**, and sampling the map card gives a mean of **`#605b4f`**, a mid-dark brown. A mid-tone
+base is the worst case for a sequential ramp, because the dark end vanishes into it — so the
+validation had been run correctly against the wrong surface, which is a more comfortable failure
+than not validating at all and just as wrong.
+
+The fix is worth keeping too: rather than re-stepping the ramp for one resort's imagery — which
+would break at the next resort, and in winter — the line was given **its own surface**, a white
+casing underneath. The validated palette then sits on white *by construction*, everywhere,
+independent of the base map. When a design check depends on an environment you do not control,
+consider supplying the environment instead of chasing it. *(S17.)*
+
+**R36b — A display transform is allowed to smooth; a published number is not. Put the boundary in
+a test.** The map needed two transforms the measurement side must never see: a rolling **median**
+speed for colouring, and **distance thinning** of the drawn points. Both are ordinary cartography,
+and both are precisely what this project criticises other apps for doing to their *numbers* —
+Slopes smooths its top speed (+3.59%, A18), Carve smooths GPS altitude and publishes it as vertical
+(S5). The risk is not that the transform is wrong, it is that it leaks. So the collection is
+opt-in, the tests assert that turning it on changes no reported value, and one test pins the
+median specifically — mutating it to a mean fails. An unknown speed also stays unknown rather than
+being interpolated from its neighbours: the grey band exists to say "no Doppler here", and filling
+it in would turn missing data into a confident colour. *(S17.)*

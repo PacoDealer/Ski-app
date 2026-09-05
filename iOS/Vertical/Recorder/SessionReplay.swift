@@ -66,6 +66,10 @@ nonisolated enum SessionReplay {
         /// Hand tags, in order, as `(dt, label)`.
         var marks: [(dt: TimeInterval, label: String)] = []
 
+        /// The line on the ground, for a map. Empty unless `summarize` was asked for it — the
+        /// recorder and the replay harness never need it and never pay for it. See `SessionTrack`.
+        var track = SessionTrack()
+
         var runs: [LiveMetrics.Run] { metrics.runs }
         var descentM: Double { metrics.descentM }
         var maxSpeedMS: Double { metrics.maxSpeed }
@@ -85,7 +89,10 @@ nonisolated enum SessionReplay {
     enum Failure: Error { case unreadable }
 
     /// Replay one session file. Blocking and CPU-bound — call it off the main thread.
-    static func summarize(_ url: URL) throws -> Summary {
+    ///
+    /// - Parameter collectTrack: also keep every drawable fix, for a map. Off by default so the
+    ///   one caller that wants a line on the ground pays for it and nothing else does.
+    static func summarize(_ url: URL, collectTrack: Bool = false) throws -> Summary {
         guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else {
             throw Failure.unreadable
         }
@@ -134,11 +141,16 @@ nonisolated enum SessionReplay {
                      && speedAcc >= 0 && speedAcc <= LiveMetrics.maxSpeedAccMS) {
                     s.speedGateRejected += 1
                 }
+                let lat = obj["lat"] as? Double ?? .nan
+                let lon = obj["lon"] as? Double ?? .nan
                 s.metrics.ingestFix(speed: speed, horizontalAccuracy: hAcc,
                                     speedAccuracy: speedAcc,
-                                    latitude: obj["lat"] as? Double ?? .nan,
-                                    longitude: obj["lon"] as? Double ?? .nan,
+                                    latitude: lat, longitude: lon,
                                     at: dt)
+                if collectTrack {
+                    s.track.append(dt: dt, lat: lat, lon: lon, speed: speed,
+                                   horizontalAccuracy: hAcc, speedAccuracy: speedAcc)
+                }
 
             case "baro":
                 s.baroCount += 1

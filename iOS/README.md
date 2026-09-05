@@ -93,6 +93,41 @@ Three independent routes, on purpose:
 ~/Desktop/Projects/Vertical/Tools/analyze.py ~/Downloads/2026-08-31_*.jsonl
 ```
 
+## Screenshotting a real ski day in the simulator
+
+A simulator has no GPS and no barometer, so the record screen can only ever show zeroes there. But
+`SessionDetailView` replays a **file**, so it renders a real day perfectly well — which makes the
+simulator the only place a screenshot can be taken without a phone in someone's hand.
+
+Getting to that screen by hand needs two taps, and an automated harness has no way to take them:
+the location prompt sits over the first screen and the Simulator does not expose its buttons to
+accessibility. So the screen names itself, via a DEBUG-only launch argument.
+
+```sh
+xcodebuild build -project iOS/Vertical.xcodeproj -scheme Vertical \
+    -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0'
+
+xcrun simctl boot "iPhone 17"                       # ignore "already booted"
+xcrun simctl install booted "$(xcodebuild -project iOS/Vertical.xcodeproj -scheme Vertical \
+    -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0' -showBuildSettings \
+    | awk -F' = ' '/ BUILT_PRODUCTS_DIR/{d=$2} / FULL_PRODUCT_NAME/{n=$2} END{print d"/"n}')"
+
+# the app lists whatever is in its own Documents/Sessions, so seed it with a fixture
+CONTAINER=$(xcrun simctl get_app_container booted com.gamberg.vertical data)
+mkdir -p "$CONTAINER/Documents/Sessions"
+cp Data/fixtures/2026-09-01_portillo_s1.jsonl "$CONTAINER/Documents/Sessions/"
+
+xcrun simctl launch booted com.gamberg.vertical \
+    -screenshotSession 2026-09-01_portillo_s1 -screenshotRun 1   # -screenshotRun is optional
+sleep 9      # MapKit needs to fetch its imagery before the shot is worth taking
+xcrun simctl io booted screenshot /tmp/run1.png
+```
+
+**If a system alert is stuck on screen** — a location prompt that reappears after every relaunch —
+`simctl privacy grant` will not clear it. Erase the device and start clean:
+`xcrun simctl shutdown booted && xcrun simctl erase <udid>`, then reinstall and re-seed the
+fixtures. (Stale simulator state first, always.)
+
 ## What this app does and does not do
 
 It records. That's all it does.

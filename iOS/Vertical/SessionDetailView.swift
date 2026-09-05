@@ -18,6 +18,20 @@ struct SessionDetailView: View {
 
     @State private var summary: SessionReplay.Summary?
     @State private var failed = false
+    /// Which run the map is showing, or nil for the whole day.
+    @State private var mapFocus: Int?
+    /// DEBUG-only: `-screenshotRun 1` opens the map already focused on that run, because the
+    /// screenshot harness has no way to work the picker. See `VerticalApp.screenshotSession`.
+    private static var screenshotRun: Int? {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        guard let i = args.firstIndex(of: "-screenshotRun"), i + 1 < args.count,
+              let n = Int(args[i + 1]) else { return nil }
+        return n - 1
+        #else
+        return nil
+        #endif
+    }
 
     var body: some View {
         Group {
@@ -55,10 +69,14 @@ struct SessionDetailView: View {
     @Sendable private func load() async {
         let url = file.url
         let result = await Task.detached(priority: .userInitiated) {
-            try? SessionReplay.summarize(url)
+            // The track is collected here and nowhere else — this is the one screen that draws it.
+            try? SessionReplay.summarize(url, collectTrack: true)
         }.value
         summary = result
         failed = result == nil
+        if let r = Self.screenshotRun, let runs = result?.runs, runs.indices.contains(r) {
+            mapFocus = r
+        }
     }
 
     // MARK: - Content
@@ -69,6 +87,8 @@ struct SessionDetailView: View {
                 headline(s)
                     .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
             }
+
+            mapSection(s)
 
             Section("THE DAY") {
                 row("Started", s.startedAt.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "—")
@@ -136,6 +156,42 @@ struct SessionDetailView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /// The track, coloured by speed. Only appears when there is something to draw — a stationary
+    /// recording or a file with no usable fixes gets no empty grey rectangle.
+    @ViewBuilder
+    private func mapSection(_ s: SessionReplay.Summary) -> some View {
+        let drawn = mapFocus.map { s.runs.indices.contains($0) ? [s.runs[$0]] : s.runs } ?? s.runs
+        let points = drawn.flatMap { Array(s.track.points(in: $0)) }
+        if points.count >= 2 {
+            Section {
+                VStack(spacing: 8) {
+                    TrackMapView(track: s.track, runs: s.runs, focus: mapFocus)
+                        .frame(height: 260)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    if let r = SessionTrack.speedRange(points) {
+                        SpeedLegend(loKMH: r.lo * 3.6, hiKMH: r.hi * 3.6)
+                    }
+                    // Whole day or one run. A day at Portillo is 20 descents down the same few
+                    // faces, so the day view is a picture of the resort and the per-run view is
+                    // the one that shows a line.
+                    Picker("Showing", selection: $mapFocus) {
+                        Text("Whole day").tag(Int?.none)
+                        ForEach(Array(s.runs.indices), id: \.self) { i in
+                            Text("Run \(i + 1)").tag(Int?.some(i))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+            } header: {
+                Text("WHERE YOU SKIED")
+            } footer: {
+                Text("Colour is speed, light to dark. Grey means the fix carried no Doppler speed we trust — unknown, not slow. Lifts aren't drawn.")
             }
         }
     }

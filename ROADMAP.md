@@ -113,6 +113,43 @@ would import the phantom metres measured above.
 separate number; or escape R5 — one resort, four days, one device, and the flat-window control has
 n=11 with a mean pulled by a 33 m worst case, so quote its median beside it.
 
+### 🟢 S17 — the map is in, and it is the first Premium item since lift recognition
+
+`WHERE YOU SKIED` on the session detail screen: the day's track over Apple's base map, **coloured
+by speed**, whole-day or per-run. A speed heatmap is on Slopes' Premium list (D7). It needs no
+trail database, no OpenSkiMap ingest and no ODbL attribution surface — the base map is Apple's and
+the only thing drawn on it is the user's own file, so Phase 2's biggest user-facing item lands
+without any of Phase 2's data work.
+
+- **New `SessionTrack`** (pure Foundation, `Recorder/`). `LiveMetrics` is a *streaming* summariser
+  that keeps a run's endpoints and throws the middle away — correct for a phone in a pocket for
+  seven hours, useless for a map. The track is collected on the same single parse, **opt-in**
+  (`summarize(_:collectTrack:)`), so the recorder and `replay.sh` never pay for it. ~1 MB a day.
+- **The colour was computed, not chosen.** Speed is a magnitude ⇒ sequential, **one hue, light to
+  dark** (`dataviz`), which rules out the rainbow ramp this category defaults to. Ramp is blue
+  steps 250→700, and `validate_palette.js --ordinal` **passed** it; the tighter ramp I tried first
+  **FAILED on adjacent lightness**, which is exactly why the rule is "run the validator".
+- 🔴 **The screenshot corrected the premise.** The ramp was validated against white "because a ski
+  map is snow" — and Apple's Portillo imagery is **summer terrain, mean colour `#605b4f`**, a
+  mid-dark brown that is the worst case for a sequential ramp. Fix is cartographic rather than
+  chromatic: a **white casing** under the line, so the ramp sits on white wherever it is drawn and
+  the validation becomes true by construction instead of by assumption. **R36.**
+- 🔴 **Two display transforms, and the boundary they must not cross.** The map first drew as a
+  string of blobs, and the cause was real data: where the skier is slow, 1 Hz fixes pile twenty
+  deep inside a few metres. So the track is **thinned by distance** (8 m, the display twin of
+  `minDistanceDtS`) and coloured off a **rolling median** speed. **Neither touches a reported
+  number** — which matters more here than anywhere, because smoothing a published figure is
+  precisely what we measured Slopes doing to top speed (A18) and Carve doing to altitude (S5).
+  A test pins it, and mutating the median to a mean fails it.
+- **The colour range is percentile-based (5th/95th), not min/max** — the display-layer form of
+  R25. One multipath second would otherwise own the ramp and flatten the whole day to one colour.
+- **New: a DEBUG launch argument** `-screenshotSession <name> [-screenshotRun N]` opens straight
+  onto one recording's detail screen. A simulator has no GPS or barometer, but `SessionDetailView`
+  replays a *file*, so it renders a real ski day there — and this is the only way to see it without
+  asking Martin to hold a phone. It was needed because the location prompt covers the first screen
+  and **the Simulator does not expose its buttons to accessibility**, so the harness cannot tap.
+- **34 tests** (7 new), mutation-checked; `replay.sh` unchanged on all fixtures.
+
 ### 🔴 Open after S17
 1. **Nothing on accuracy.** Vertical, distance, top speed and both run boundaries are now either
    graded-and-explained or deliberately-and-measurably ours. The next honest move on accuracy is a
@@ -1329,7 +1366,9 @@ against a known reference, with the error quantified.
 - [ ] 2D vector map with runs coloured by difficulty, lifts, run names — **all unpaywalled**.
 - [ ] Search trails by name / difficulty.
 - [ ] ODbL attribution surface, correctly placed.
-- [ ] Track drawn over the map; run replay with speed heatmap; scrubber.
+- [x] **Track drawn over the map, coloured by speed — shipped S17** (`TrackMapView.swift`). Whole
+      day or one run. Needs no OpenSkiMap and no ODbL surface: Apple's base map plus the user's own
+      file. Still to do here: **run replay with a scrubber**.
 
 ## Phase 3 — 3D — **cut from v1** (S5)
 
